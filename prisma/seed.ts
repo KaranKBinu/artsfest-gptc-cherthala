@@ -24,7 +24,6 @@ async function main() {
                 name: h.name,
                 color: h.color,
                 description: h.description,
-                isGirlsHouse: false,
             },
         })
     }

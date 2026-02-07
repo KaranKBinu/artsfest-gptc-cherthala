@@ -80,7 +80,6 @@ model House {
   name         String   @unique
   color        String?
   description  String?
-  isGirlsHouse Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

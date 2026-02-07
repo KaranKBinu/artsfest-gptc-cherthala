@@ -1,21 +1,62 @@
 import { prisma } from './prisma'
 import { Gender } from '@prisma/client'
 
+// House mapping based on the provided algorithm
+// houseId 1: Kochery, 2: Narachi, 3: Gadwal, 4: Nirappel, 5: Mahishmathi
+const HOUSE_MAPPING: Record<string, Record<string, number>> = {
+    MALE: {
+        'CT1': 1, 'CHE2': 1, 'ME3': 1,
+        'CHE1': 2, 'IE2': 2, 'EC3': 2,
+        'ME1': 3, 'EC2': 3, 'CT3': 3,
+        'IE1': 4, 'CT2': 4, 'CHE3': 4,
+        'EC1': 5, 'ME2': 5, 'IE3': 5
+    },
+    FEMALE: {
+        'CT1': 1,
+        'CT2': 2, 'ME1': 2, 'ME2': 2, 'IE2': 2,
+        'CT3': 3, 'CHE1': 3,
+        'EC3': 4, 'CHE2': 4,
+        'CHE3': 5, 'EC2': 5, 'IE3': 5
+    }
+}
+
 /**
  * Assign a house to a student based on gender, department, and semester
- * 
- * Algorithm:
- * - All female students go to the dedicated girls house
- * - Male students are distributed across other houses using balanced shuffling
- * - Distribution considers department and semester for diversity
  */
 export async function assignHouse(
     gender: Gender,
     department?: string,
     semester?: string
 ): Promise<string> {
-    // Get all houses
+    // Get all houses in the order they were seeded
     const houses = await prisma.house.findMany({
+        orderBy: { createdAt: 'asc' }
+    })
+
+    if (houses.length === 0) {
+        throw new Error('No houses available. Please create houses first.')
+    }
+
+    // Prepare the group code (e.g., CT1, CHE2)
+    // Assuming semester is 1, 2, or 3
+    const groupCode = `${department}${semester}`
+
+    let houseIndex = -1
+
+    if (gender === Gender.MALE) {
+        houseIndex = HOUSE_MAPPING.MALE[groupCode] || -1
+    } else if (gender === Gender.FEMALE) {
+        houseIndex = HOUSE_MAPPING.FEMALE[groupCode] || -1
+    }
+
+    // If we have a direct mapping, use it
+    if (houseIndex !== -1 && houses[houseIndex - 1]) {
+        return houses[houseIndex - 1].id
+    }
+
+    // Fallback: If no mapping found (e.g., OTHER gender or unknown group), 
+    // use balanced distribution among all houses
+    const housesWithCounts = await prisma.house.findMany({
         include: {
             _count: {
                 select: { users: true },
@@ -23,40 +64,10 @@ export async function assignHouse(
         },
     })
 
-    if (houses.length === 0) {
-        throw new Error('No houses available. Please create houses first.')
-    }
-
-    // If female, assign to girls house
-    if (gender === Gender.FEMALE) {
-        const girlsHouse = houses.find(h => h.isGirlsHouse)
-
-        if (!girlsHouse) {
-            throw new Error('Girls house not found. Please create a girls house.')
-        }
-
-        return girlsHouse.id
-    }
-
-    // For male students, distribute across non-girls houses
-    const maleHouses = houses.filter(h => !h.isGirlsHouse)
-
-    if (maleHouses.length === 0) {
-        throw new Error('No houses available for male students.')
-    }
-
-    // If only one house, assign to it
-    if (maleHouses.length === 1) {
-        return maleHouses[0].id
-    }
-
-    // Use balanced distribution based on current counts
-    // This ensures houses have similar member counts
-    const sortedHouses = maleHouses.sort((a, b) => {
+    const sortedHouses = housesWithCounts.sort((a, b) => {
         return a._count.users - b._count.users
     })
 
-    // Assign to the house with the least members
     return sortedHouses[0].id
 }
 
@@ -97,7 +108,6 @@ export async function getHouseStats() {
         return {
             id: house.id,
             name: house.name,
-            isGirlsHouse: house.isGirlsHouse,
             totalMembers: house._count.users,
             departmentDistribution: departmentCounts,
             semesterDistribution: semesterCounts,

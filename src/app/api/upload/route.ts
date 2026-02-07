@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
+import { put } from '@vercel/blob'
 import path from 'path'
 
-// NOTE: Local filesystem uploads will NOT work on Vercel as it is read-only.
-// In production, consider using Supabase Storage or AWS S3.
-
+// Using Vercel Blob for storage (Free tier: 250MB)
 export async function POST(request: NextRequest) {
     try {
         const data = await request.formData()
@@ -14,17 +12,28 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 })
         }
 
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
+        // Check if token exists
+        if (!process.env.BLOB_READ_WRITE_TOKEN) {
+            return NextResponse.json({
+                success: false,
+                error: 'BLOB_READ_WRITE_TOKEN is not configured in .env'
+            }, { status: 500 })
+        }
 
-        // Unique filename
-        const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-        const filepath = path.join(uploadDir, filename)
+        // 4MB limit for now, though Blob supports up to 500MB
+        if (file.size > 4 * 1024 * 1024) {
+            return NextResponse.json({ success: false, error: 'File too large. Max 4MB allowed.' }, { status: 400 })
+        }
 
-        await writeFile(filepath, buffer)
+        // Create unique filename in the requested folder
+        const filename = `artsfest2026/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
 
-        return NextResponse.json({ success: true, url: `/uploads/${filename}` })
+        // Upload to Vercel Blob
+        const blob = await put(filename, file, {
+            access: 'public',
+        })
+
+        return NextResponse.json({ success: true, url: blob.url })
     } catch (error) {
         console.error('Upload failed:', error)
         return NextResponse.json({ success: false, error: 'Upload failed' }, { status: 500 })

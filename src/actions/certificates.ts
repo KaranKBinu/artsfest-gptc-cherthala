@@ -68,6 +68,11 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                             const filePath = path.join(process.cwd(), 'public', templateBase64)
                             imageData = await fs.readFile(filePath)
                             if (templateBase64.toLowerCase().endsWith('.png')) format = 'PNG'
+                        } else if (templateBase64.startsWith('http')) {
+                            const res = await fetch(templateBase64)
+                            const arrayBuffer = await res.arrayBuffer()
+                            imageData = Buffer.from(arrayBuffer)
+                            if (templateBase64.toLowerCase().endsWith('.png')) format = 'PNG'
                         }
                         doc.addImage(imageData as any, format, 0, 0, width, height)
                     } catch (e) {

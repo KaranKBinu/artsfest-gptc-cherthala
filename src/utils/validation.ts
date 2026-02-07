@@ -82,5 +82,4 @@ export const createHouseSchema = z.object({
     name: z.string().min(1, 'House name is required'),
     color: z.string().optional(),
     description: z.string().optional(),
-    isGirlsHouse: z.boolean().default(false),
 })

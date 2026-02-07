@@ -21,7 +21,6 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
                         id: true,
                         name: true,
                         color: true,
-                        isGirlsHouse: true,
                     },
                 },
             },
