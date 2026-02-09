@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
 import { jsPDF } from 'jspdf'
 import { revalidatePath } from 'next/cache'
+import fs from 'fs/promises'
+import path from 'path'
 
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
@@ -21,6 +23,16 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
 
         if (registrations.length === 0) {
             return { success: false, error: 'No eligible registrations found (students must be present)' }
+        }
+
+        // Load Malayalam Font
+        let malayalamFontBase64: string | null = null
+        try {
+            const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
+            const fontBuffer = await fs.readFile(fontPath)
+            malayalamFontBase64 = fontBuffer.toString('base64')
+        } catch (e) {
+            console.warn('Malayalam font not found, falling back to default.', e)
         }
 
         // 2. Fetch Configurations
@@ -51,6 +63,12 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     format: 'a4'
                 })
 
+                // Add Malayalam Font if available
+                if (malayalamFontBase64) {
+                    doc.addFileToVFS('NotoSansMalayalam-Regular.ttf', malayalamFontBase64)
+                    doc.addFont('NotoSansMalayalam-Regular.ttf', 'NotoSansMalayalam', 'normal')
+                }
+
                 const width = doc.internal.pageSize.getWidth()
                 const height = doc.internal.pageSize.getHeight()
 
@@ -63,8 +81,6 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                         else if (templateBase64.toLowerCase().endsWith('.webp')) format = 'WEBP'
 
                         if (templateBase64.startsWith('/uploads/')) {
-                            const fs = await import('fs/promises')
-                            const path = await import('path')
                             const filePath = path.join(process.cwd(), 'public', templateBase64)
                             imageData = await fs.readFile(filePath)
                             if (templateBase64.toLowerCase().endsWith('.png')) format = 'PNG'
@@ -118,13 +134,17 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
 
                 doc.text(`${achievementText} in the event`, width / 2, 92, { align: 'center' })
 
-                // Program Name
-                doc.setFont('times', 'bold')
+                // Program Name (Use Malayalam Font if available)
+                if (malayalamFontBase64) {
+                    doc.setFont('NotoSansMalayalam', 'normal')
+                } else {
+                    doc.setFont('times', 'bold')
+                }
                 doc.setFontSize(22)
                 doc.setTextColor(150, 30, 30)
                 doc.text(`${reg.program.name} (${reg.program.type})`, width / 2, 104, { align: 'center' })
 
-                // Festival Line
+                // Revert font for subsequent text
                 doc.setFont('times', 'italic')
                 doc.setFontSize(16)
                 doc.setTextColor(60, 60, 60)
