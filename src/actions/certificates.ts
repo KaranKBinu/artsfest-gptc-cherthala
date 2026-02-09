@@ -95,15 +95,16 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
                 const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold)
                 const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
-                let customFont = timesBold;
+                let malayalamFont = timesBold; // Fallback to timesBold
 
                 if (malayalamFontBytes && malayalamFontBytes.length > 1000) {
                     try {
                         console.log('Attempting to embed Malayalam font, bytes:', malayalamFontBytes.length);
-                        customFont = await pdfDoc.embedFont(malayalamFontBytes)
+                        malayalamFont = await pdfDoc.embedFont(malayalamFontBytes, { subset: true })
                         console.log('Malayalam font successfully embedded for', reg.user.fullName);
                     } catch (e: any) {
                         console.error('CRITICAL: Failed to embed Malayalam font:', e.message);
+                        console.error('Full error:', e);
                     }
                 } else {
                     console.warn('NO Malayalam font bytes available to embed');
@@ -146,9 +147,13 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 const achieveText = (grade && grade !== 'PARTICIPATION') ? `has secured ${grade.replace(/_/g, ' ')}` : 'has successfully participated'
                 drawCenteredText(page, `${achieveText} in the event`, 334, timesFont, 18, rgb(0.16, 0.16, 0.16))
 
-                // Program Name
+                // Program Name - Use Malayalam font for program name
                 const progName = `${reg.program.name} (${reg.program.type})`
-                drawCenteredText(page, progName, 300, customFont, 24, rgb(0.59, 0.12, 0.12))
+                // Check if program name contains Malayalam characters
+                const hasMalayalam = /[\u0D00-\u0D7F]/.test(progName)
+                const programFont = hasMalayalam ? malayalamFont : timesBold
+                console.log(`Program name: "${progName}", has Malayalam: ${hasMalayalam}, using font: ${hasMalayalam ? 'Malayalam' : 'Times Bold'}`);
+                drawCenteredText(page, progName, 300, programFont, 24, rgb(0.59, 0.12, 0.12))
 
                 drawCenteredText(page, `conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
                 const dateStr = `Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
