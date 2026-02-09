@@ -7,6 +7,8 @@ import fs from 'fs/promises'
 import path from 'path'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
+import { MALAYALAM_FONT_B64 } from '@/lib/fonts'
+
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
         // Safe require for fontkit to avoid build issues
@@ -33,16 +35,24 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         // 2. Load Fonts
         let malayalamFontBytes: Buffer | null = null
         try {
-            const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
-            malayalamFontBytes = await fs.readFile(fontPath)
-            console.log('Successfully loaded Malayalam font, size:', malayalamFontBytes.length)
+            // Priority 1: In-code Base64 (Reliable for Vercel)
+            if (MALAYALAM_FONT_B64) {
+                malayalamFontBytes = Buffer.from(MALAYALAM_FONT_B64, 'base64')
+                console.log('Loaded Malayalam font from Base64 constants')
+            }
+
+            // Priority 2: Public folder (Local Dev)
+            if (!malayalamFontBytes) {
+                try {
+                    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
+                    malayalamFontBytes = await fs.readFile(fontPath)
+                    console.log('Successfully loaded Malayalam font from public/fonts')
+                } catch (e) {
+                    console.warn('Failed to load from public/fonts fallback')
+                }
+            }
         } catch (e) {
-            console.error('Failed to load Malayalam font from public/fonts:', e)
-            // Fallback to node_modules if public is missing
-            try {
-                const nmPath = path.join(process.cwd(), 'node_modules', '@fontsource', 'noto-sans-malayalam', 'files', 'noto-sans-malayalam-malayalam-400-normal.woff2')
-                malayalamFontBytes = await fs.readFile(nmPath)
-            } catch (e2) { }
+            console.error('Malayalam font loading error:', e)
         }
 
         // 3. Fetch Configs
@@ -61,10 +71,16 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         let failCount = 0
 
         // Helper to draw centered text
-        const drawCenteredText = (page: any, text: string, y: number, font: any, size: number, color: any) => {
-            const textWidth = font.widthOfTextAtSize(text, size)
-            const x = (page.getWidth() - textWidth) / 2
-            page.drawText(text, { x, y, size, font, color })
+        const drawCenteredText = (page: any, text: string, y: number, font: any, size: number, color: any, isUnicode = false) => {
+            try {
+                const textWidth = font.widthOfTextAtSize(text, size)
+                const x = (page.getWidth() - textWidth) / 2
+                page.drawText(text, { x, y, size, font, color })
+            } catch (e: any) {
+                console.warn(`Font error for "${text}":`, e.message);
+                // If it fails and it's unicode, we can't do much with standard fonts, 
+                // but let's at least not crash.
+            }
         }
 
         for (const reg of registrations) {
