@@ -1648,18 +1648,40 @@ export default function DashboardPage() {
                                     )}
                                 </div>
                                 <div className={styles.configGrid}>
-                                    {configs.map(c => (
-                                        <div key={c.id} className={styles.configCard}>
-                                            <div>
-                                                <div className={styles.configKey}>{c.key}</div>
-                                                <div className={styles.configDesc}>{c.description || 'No description provided.'}</div>
+                                    {configs.map(c => {
+                                        const isImage = (c.key === 'certificateTemplate' || c.key.toLowerCase().includes('image') || (typeof c.value === 'string' && c.value.match(/\.(jpeg|jpg|gif|png|webp)$/i)));
+                                        return (
+                                            <div key={c.id} className={styles.configCard}>
+                                                <div>
+                                                    <div className={styles.configKey}>{c.key}</div>
+                                                    <div className={styles.configDesc}>{c.description || 'No description provided.'}</div>
+                                                </div>
+                                                <div className={styles.configValueContainer} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                    {isImage && c.value && c.value.startsWith('http') ? (
+                                                        <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem', width: '100%' }}>
+                                                            <img
+                                                                src={c.value}
+                                                                alt={c.key}
+                                                                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', border: '1px solid #444', borderRadius: '4px', backgroundColor: '#f0f0f0' }}
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                                    // Fallback to showing link
+                                                                }}
+                                                            />
+                                                            <div style={{ fontSize: '0.75rem', opacity: 0.7, wordBreak: 'break-all', marginTop: '0.25rem' }}>
+                                                                <a href={c.value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-red)', textDecoration: 'underline' }}>View Image</a>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className={styles.configValue} style={{ wordBreak: 'break-all', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                            {c.value}
+                                                        </span>
+                                                    )}
+                                                    <button className={styles.editConfigBtn} onClick={() => { setEditingConfig(c); setConfigModalOpen(true) }}>Edit Change</button>
+                                                </div>
                                             </div>
-                                            <div className={styles.configValueContainer}>
-                                                <span className={styles.configValue}>{c.value}</span>
-                                                <button className={styles.editConfigBtn} onClick={() => { setEditingConfig(c); setConfigModalOpen(true) }}>Edit Change</button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )
