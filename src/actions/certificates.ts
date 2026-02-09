@@ -37,8 +37,9 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         try {
             // Priority 1: In-code Base64 (Reliable for Vercel)
             if (MALAYALAM_FONT_B64) {
+                console.log('MALAYALAM_FONT_B64 length correctly detected:', MALAYALAM_FONT_B64.length);
                 malayalamFontBytes = Buffer.from(MALAYALAM_FONT_B64, 'base64')
-                console.log('Loaded Malayalam font from Base64 constants')
+                console.log('Loaded Malayalam font from Base64 constants, byte length:', malayalamFontBytes.length)
             }
 
             // Priority 2: Public folder (Local Dev)
@@ -99,13 +100,16 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
                 let customFont = timesBold;
 
-                if (malayalamFontBytes && malayalamFontBytes.length > 1000) { // Ensure it's not a small error file
+                if (malayalamFontBytes && malayalamFontBytes.length > 1000) {
                     try {
+                        console.log('Attempting to embed Malayalam font, bytes:', malayalamFontBytes.length);
                         customFont = await pdfDoc.embedFont(malayalamFontBytes)
-                        console.log('Custom font embedded for', reg.user.fullName)
-                    } catch (e) {
-                        console.error('Failed to embed custom font:', e)
+                        console.log('Malayalam font successfully embedded for', reg.user.fullName);
+                    } catch (e: any) {
+                        console.error('CRITICAL: Failed to embed Malayalam font:', e.message);
                     }
+                } else {
+                    console.warn('NO Malayalam font bytes available to embed');
                 }
 
                 // Background Image
