@@ -30,6 +30,7 @@
   "homepage": "https://github.com/gptcarts52-lgtm/artsfest-gptc-cherthala#readme",
   "dependencies": {
     "@fontsource/noto-sans-malayalam": "^5.2.8",
+    "@pdf-lib/fontkit": "^1.1.1",
     "@prisma/client": "^5.22.0",
     "@vercel/blob": "^2.2.0",
     "bcryptjs": "^2.4.3",
@@ -39,6 +40,7 @@
     "jspdf-autotable": "^5.0.7",
     "next": "^14.2.23",
     "nodemailer": "^8.0.0",
+    "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.4.0",

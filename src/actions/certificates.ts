@@ -2,10 +2,11 @@
 
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
-import { jsPDF } from 'jspdf'
 import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
 
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
@@ -15,165 +16,181 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 id: { in: registrationIds },
                 attendances: { some: { isPresent: true } }
             },
-            include: {
-                user: true,
-                program: true,
-            }
+            include: { user: true, program: true }
         })
 
         if (registrations.length === 0) {
             return { success: false, error: 'No eligible registrations found (students must be present)' }
         }
 
-        // Load Malayalam Font
-        let malayalamFontBase64: string | null = null
+        // 2. Load Fonts
+        let malayalamFontBytes: Buffer | null = null
         try {
-            const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
-            const fontBuffer = await fs.readFile(fontPath)
-            malayalamFontBase64 = fontBuffer.toString('base64')
+            // Priority 1: Fetch from Google Fonts (TTF) - Most reliable for pdf-lib
+            try {
+                const response = await fetch('https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSansMalayalam/NotoSansMalayalam-Regular.ttf');
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    malayalamFontBytes = Buffer.from(arrayBuffer);
+                }
+            } catch (err) {
+                console.warn('Failed to fetch font from URL, trying local files...', err);
+            }
+
+            // Priority 2: Public folder (if download worked previously)
+            if (!malayalamFontBytes) {
+                try {
+                    const publicPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
+                    malayalamFontBytes = await fs.readFile(publicPath)
+                } catch { } // Ignore
+            }
+
+            // Priority 3: node_modules (WOFF - might fail with some versions of fontkit but worth a shot)
+            if (!malayalamFontBytes) {
+                try {
+                    const nmPath = path.join(process.cwd(), 'node_modules', '@fontsource', 'noto-sans-malayalam', 'files', 'noto-sans-malayalam-malayalam-400-normal.woff')
+                    malayalamFontBytes = await fs.readFile(nmPath)
+                } catch { } // Ignore
+            }
         } catch (e) {
-            console.warn('Malayalam font not found, falling back to default.', e)
+            console.warn('Malayalam font loading completely failed:', e)
         }
 
-        // 2. Fetch Configurations
+        // 3. Fetch Configs
         const configs = await prisma.configuration.findMany({
-            where: {
-                key: { in: ['certificateTemplate', 'smtpConfig', 'festivalName'] }
-            }
+            where: { key: { in: ['certificateTemplate', 'smtpConfig', 'festivalName'] } }
         })
 
-        const templateBase64 = configs.find(c => c.key === 'certificateTemplate')?.value || ''
+        const templateVal = configs.find(c => c.key === 'certificateTemplate')?.value || ''
         const smtpStr = configs.find(c => c.key === 'smtpConfig')?.value || '{}'
         const festivalName = configs.find(c => c.key === 'festivalName')?.value || 'ArtsFest GPTC'
 
         let smtpConfigObj: any = {}
-        try {
-            smtpConfigObj = JSON.parse(smtpStr)
-        } catch (e) { }
+        try { smtpConfigObj = JSON.parse(smtpStr) } catch (e) { }
 
         let successCount = 0
         let failCount = 0
 
+        // Helper to draw centered text
+        const drawCenteredText = (page: any, text: string, y: number, font: any, size: number, color: any) => {
+            const textWidth = font.widthOfTextAtSize(text, size)
+            const x = (page.getWidth() - textWidth) / 2
+            page.drawText(text, { x, y, size, font, color })
+        }
+
         for (const reg of registrations) {
             try {
-                // 3. Generate PDF
-                const doc = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'mm',
-                    format: 'a4'
-                })
+                const pdfDoc = await PDFDocument.create()
+                pdfDoc.registerFontkit(fontkit)
 
-                // Add Malayalam Font if available
-                if (malayalamFontBase64) {
-                    doc.addFileToVFS('NotoSansMalayalam-Regular.ttf', malayalamFontBase64)
-                    doc.addFont('NotoSansMalayalam-Regular.ttf', 'NotoSansMalayalam', 'normal')
+                const page = pdfDoc.addPage([841.89, 595.28]) // A4 Landscape (approx)
+                const { width, height } = page.getSize()
+
+                // Fonts
+                const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
+                const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold)
+                const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
+                let customFont = timesBold;
+
+                if (malayalamFontBytes) {
+                    try {
+                        customFont = await pdfDoc.embedFont(malayalamFontBytes)
+                    } catch (e) {
+                        console.error('Failed to embed custom font', e)
+                    }
                 }
 
-                const width = doc.internal.pageSize.getWidth()
-                const height = doc.internal.pageSize.getHeight()
-
-                // --- BASE LAYER ---
-                if (templateBase64) {
+                // Background Image
+                if (templateVal) {
                     try {
-                        let imageData: string | Buffer = templateBase64
-                        let format = 'JPEG'
-                        if (templateBase64.toLowerCase().endsWith('.png')) format = 'PNG'
-                        else if (templateBase64.toLowerCase().endsWith('.webp')) format = 'WEBP'
-
-                        if (templateBase64.startsWith('/uploads/')) {
-                            const filePath = path.join(process.cwd(), 'public', templateBase64)
-                            imageData = await fs.readFile(filePath)
-                            if (templateBase64.toLowerCase().endsWith('.png')) format = 'PNG'
-                        } else if (templateBase64.startsWith('http')) {
-                            const res = await fetch(templateBase64)
-                            const arrayBuffer = await res.arrayBuffer()
-                            imageData = Buffer.from(arrayBuffer)
-                            if (templateBase64.toLowerCase().endsWith('.png')) format = 'PNG'
+                        let imgBytes: Buffer | undefined
+                        if (templateVal.startsWith('/uploads/')) {
+                            imgBytes = await fs.readFile(path.join(process.cwd(), 'public', templateVal))
+                        } else if (templateVal.startsWith('http')) {
+                            const res = await fetch(templateVal)
+                            imgBytes = Buffer.from(await res.arrayBuffer())
                         }
-                        doc.addImage(imageData as any, format, 0, 0, width, height)
+
+                        if (imgBytes) {
+                            let image;
+                            // Simple header check for PNG vs JPG
+                            if (imgBytes[0] === 0x89 && imgBytes[1] === 0x50 && imgBytes[2] === 0x4E && imgBytes[3] === 0x47) {
+                                image = await pdfDoc.embedPng(imgBytes)
+                            } else {
+                                image = await pdfDoc.embedJpg(imgBytes)
+                            }
+                            page.drawImage(image, { x: 0, y: 0, width, height })
+                        }
                     } catch (e) {
-                        console.error('Failed to add background image:', e)
-                        doc.setDrawColor(180, 150, 50)
-                        doc.setLineWidth(1)
-                        doc.rect(5, 5, width - 10, height - 10)
+                        console.error('Failed to embed background image', e)
+                        // Fallback border
+                        page.drawRectangle({ x: 14, y: 14, width: width - 28, height: height - 28, borderColor: rgb(0.7, 0.6, 0.2), borderWidth: 3 })
                     }
                 } else {
-                    doc.setDrawColor(180, 150, 50)
-                    doc.setLineWidth(1.5)
-                    doc.rect(10, 10, width - 20, height - 20)
-                    doc.rect(12, 12, width - 24, height - 24)
+                    page.drawRectangle({ x: 28, y: 28, width: width - 56, height: height - 56, borderColor: rgb(0.7, 0.6, 0.2), borderWidth: 4 })
                 }
 
-                // --- TEXT OVERLAY ---
-                // Heading - Always show
-                doc.setFont('times', 'bold')
-                doc.setFontSize(38)
-                doc.setTextColor(100, 20, 20)
-                doc.text('CERTIFICATE OF MERIT', width / 2, 40, { align: 'center' })
+                // Text Overlay
+                // Y-coordinates converted from mm (from top) to points (from bottom)
+                // Y_pdf = 595.28 - (Y_mm * 2.83465)
 
-                doc.setTextColor(40, 40, 40)
-                doc.setFont('times', 'normal')
-                doc.setFontSize(20)
-                doc.text('This is to certify that', width / 2, 60, { align: 'center' })
+                // Title (40mm ~ 113pt -> 482)
+                drawCenteredText(page, 'CERTIFICATE OF MERIT', 482, timesBold, 38, rgb(0.39, 0.08, 0.08))
 
-                // Student Name
-                doc.setFontSize(32)
-                doc.setFont('times', 'bolditalic')
-                doc.setTextColor(0, 0, 0)
-                doc.text(reg.user.fullName.toUpperCase(), width / 2, 78, { align: 'center' })
+                // Subtitle (60mm ~ 170pt -> 425)
+                drawCenteredText(page, 'This is to certify that', 425, timesFont, 20, rgb(0.16, 0.16, 0.16))
 
-                // Achievement Line (Reduced vertical gap)
-                doc.setFont('times', 'normal')
-                doc.setFontSize(18)
-                doc.setTextColor(40, 40, 40)
+                // Student Name (78mm ~ 221pt -> 374)
+                drawCenteredText(page, reg.user.fullName.toUpperCase(), 374, timesBold, 32, rgb(0, 0, 0))
 
+                // Achievement (92mm ~ 261pt -> 334)
                 const grade = (reg as any).grade
-                let achievementText = (grade && grade !== 'PARTICIPATION')
-                    ? `has secured ${grade.replace(/_/g, ' ')}`
-                    : 'has successfully participated'
+                const achieveText = (grade && grade !== 'PARTICIPATION') ? `has secured ${grade.replace(/_/g, ' ')}` : 'has successfully participated'
+                drawCenteredText(page, `${achieveText} in the event`, 334, timesFont, 18, rgb(0.16, 0.16, 0.16))
 
-                doc.text(`${achievementText} in the event`, width / 2, 92, { align: 'center' })
-
-                // Program Name (Use Malayalam Font if available)
-                if (malayalamFontBase64) {
-                    doc.setFont('NotoSansMalayalam', 'normal')
+                // Program Name
+                const progName = `${reg.program.name} (${reg.program.type})`
+                if (customFont !== timesBold) {
+                    try {
+                        drawCenteredText(page, progName, 300, customFont, 22, rgb(0.59, 0.12, 0.12))
+                    } catch (e) {
+                        console.error('Failed to render program name with custom font', e)
+                    }
                 } else {
-                    doc.setFont('times', 'bold')
+                    // Start checking for Malayalam characters
+                    // Unicode range for Malayalam is 0D00–0D7F
+                    const hasMalayalam = /[\u0D00-\u0D7F]/.test(progName);
+                    if (!hasMalayalam) {
+                        drawCenteredText(page, progName, 300, timesBold, 22, rgb(0.59, 0.12, 0.12))
+                    } else {
+                        console.warn('Skipping program name rendering: Malayalam characters present but custom font failed to load.')
+                    }
                 }
-                doc.setFontSize(22)
-                doc.setTextColor(150, 30, 30)
-                doc.text(`${reg.program.name} (${reg.program.type})`, width / 2, 104, { align: 'center' })
 
-                // Revert font for subsequent text
-                doc.setFont('times', 'italic')
-                doc.setFontSize(16)
-                doc.setTextColor(60, 60, 60)
-                doc.text(`conducted as part of ${festivalName}`, width / 2, 116, { align: 'center' })
+                // Festival (116mm ~ 329pt -> 266)
+                drawCenteredText(page, `conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
 
-                // Date
-                doc.setFont('times', 'normal')
-                doc.setFontSize(13)
-                doc.text(`Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`, width / 2, 128, { align: 'center' })
+                // Date (128mm ~ 363pt -> 232)
+                const dateStr = `Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
+                drawCenteredText(page, dateStr, 232, timesFont, 13, rgb(0, 0, 0))
 
-                const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
+                const pdfBytes = await pdfDoc.save()
+                const pdfBuffer = Buffer.from(pdfBytes)
 
                 // 4. Send Email
                 const emailRes = await sendEmail({
                     to: reg.user.email,
                     subject: `Certificate for ${reg.program.name} - ${festivalName}`,
                     text: `Hello ${reg.user.fullName},\n\nCongratulations! Please find your certificate for ${reg.program.name} attached.\n\nBest regards,\n${festivalName} Committee`,
-                    attachments: [
-                        {
-                            filename: `Certificate_${reg.user.fullName.replace(/\s+/g, '_')}_${reg.program.name.replace(/\s+/g, '_')}.pdf`,
-                            content: pdfBuffer
-                        }
-                    ],
+                    attachments: [{
+                        filename: `Certificate_${reg.user.fullName.replace(/\s+/g, '_')}_${reg.program.name.replace(/\s+/g, '_')}.pdf`,
+                        content: pdfBuffer
+                    }],
                     smtpConfig: smtpConfigObj.user ? smtpConfigObj : undefined
                 })
 
                 if (emailRes.success) {
                     successCount++
-                    // Record certificate generation
                     await prisma.certificate.create({
                         data: {
                             userId: reg.userId,
@@ -188,18 +205,15 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     failCount++
                 }
             } catch (err) {
-                console.error(`Failed to process certificate for ${reg.user.fullName}:`, err)
+                console.error(`Failed to process cert for ${reg.user.fullName}:`, err)
                 failCount++
             }
         }
 
         revalidatePath('/dashboard')
-        return {
-            success: true,
-            message: `Processed ${registrations.length} certificates. ${successCount} sent, ${failCount} failed.`
-        }
+        return { success: true, message: `Processed ${registrations.length}. ${successCount} sent, ${failCount} failed.` }
     } catch (error) {
         console.error('Certificate generation failed:', error)
-        return { success: false, error: 'Main processing failed' }
+        return { success: false, error: 'Processing failed' }
     }
 }
