@@ -8,14 +8,8 @@ import path from 'path'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 
-import { MALAYALAM_FONT_B64 } from '@/lib/fonts'
-
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
-        // Fontkit is now imported at the top level
-        console.log('Starting certificate generation script...');
-
-        // 1. Fetch Registrations
         const registrations = await prisma.registration.findMany({
             where: {
                 id: { in: registrationIds },
@@ -25,21 +19,9 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         })
 
         if (registrations.length === 0) {
-            return { success: false, error: 'No eligible registrations found (students must be present)' }
+            return { success: false, error: 'No eligible registrations found' }
         }
 
-        // 2. Load Fonts
-        let malayalamFontBytes: Buffer | null = null
-        try {
-            // Load from public folder
-            const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
-            malayalamFontBytes = await fs.readFile(fontPath)
-            console.log('✓ Loaded Malayalam font, bytes:', malayalamFontBytes.length)
-        } catch (e) {
-            console.error('✗ Malayalam font loading error:', e)
-        }
-
-        // 3. Fetch Configs
         const configs = await prisma.configuration.findMany({
             where: { key: { in: ['certificateTemplate', 'smtpConfig', 'festivalName'] } }
         })
@@ -54,51 +36,29 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         let successCount = 0
         let failCount = 0
 
-        // Helper to draw centered text
-        const drawCenteredText = (page: any, text: string, y: number, font: any, size: number, color: any, isUnicode = false) => {
-            try {
-                const textWidth = font.widthOfTextAtSize(text, size)
-                const x = (page.getWidth() - textWidth) / 2
-                console.log(`[Draw] text="${text}" x=${x.toFixed(1)} y=${y} width=${textWidth.toFixed(1)}`);
-                page.drawText(text, { x, y, size, font, color })
-            } catch (e: any) {
-                console.error(`[Draw ERROR] text="${text}":`, e.message);
-            }
-        }
-
         for (const reg of registrations) {
             try {
                 const pdfDoc = await PDFDocument.create()
-                if (fontkit) {
-                    pdfDoc.registerFontkit(fontkit.default || fontkit)
-                    console.log('Fontkit registered successfully')
-                } else {
-                    console.error('Fontkit is UNDEFINED')
-                }
+                pdfDoc.registerFontkit(fontkit)
 
-                const page = pdfDoc.addPage([841.89, 595.28]) // A4 Landscape
+                const page = pdfDoc.addPage([841.89, 595.28])
                 const { width, height } = page.getSize()
 
-                // Fonts
+                // Load fonts
                 const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
                 const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold)
                 const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
-                let malayalamFont = timesBold; // Fallback to timesBold
-
-                if (malayalamFontBytes && malayalamFontBytes.length > 1000) {
-                    try {
-                        console.log('Attempting to embed Malayalam font, bytes:', malayalamFontBytes.length);
-                        malayalamFont = await pdfDoc.embedFont(malayalamFontBytes, { subset: true })
-                        console.log('Malayalam font successfully embedded for', reg.user.fullName);
-                    } catch (e: any) {
-                        console.error('CRITICAL: Failed to embed Malayalam font:', e.message);
-                        console.error('Full error:', e);
-                    }
-                } else {
-                    console.warn('NO Malayalam font bytes available to embed');
+                
+                let malayalamFont = timesBold
+                try {
+                    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
+                    const fontBytes = await fs.readFile(fontPath)
+                    malayalamFont = await pdfDoc.embedFont(fontBytes, { subset: true })
+                } catch (e) {
+                    console.error('Malayalam font load failed:', e)
                 }
 
-                // Background Image
+                // Background
                 if (templateVal) {
                     try {
                         let imgBytes: Buffer | undefined
@@ -110,47 +70,44 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                         }
 
                         if (imgBytes) {
-                            let image;
-                            if (imgBytes[0] === 0x89 && imgBytes[1] === 0x50 && imgBytes[2] === 0x4E && imgBytes[3] === 0x47) {
-                                image = await pdfDoc.embedPng(imgBytes)
-                            } else {
-                                image = await pdfDoc.embedJpg(imgBytes)
-                            }
+                            const image = imgBytes[0] === 0x89 && imgBytes[1] === 0x50 
+                                ? await pdfDoc.embedPng(imgBytes)
+                                : await pdfDoc.embedJpg(imgBytes)
                             page.drawImage(image, { x: 0, y: 0, width, height })
                         }
                     } catch (e) {
-                        console.error('Failed to embed background image', e)
                         page.drawRectangle({ x: 14, y: 14, width: width - 28, height: height - 28, borderColor: rgb(0.7, 0.6, 0.2), borderWidth: 3 })
                     }
                 } else {
                     page.drawRectangle({ x: 28, y: 28, width: width - 56, height: height - 56, borderColor: rgb(0.7, 0.6, 0.2), borderWidth: 4 })
                 }
 
-                // Text Overlay
-                drawCenteredText(page, 'CERTIFICATE OF MERIT', 482, timesBold, 38, rgb(0.39, 0.08, 0.08))
-                drawCenteredText(page, 'This is to certify that', 425, timesFont, 20, rgb(0.16, 0.16, 0.16))
-                drawCenteredText(page, reg.user.fullName.toUpperCase(), 374, timesBold, 32, rgb(0, 0, 0))
+                const drawCentered = (text: string, y: number, font: any, size: number, color: any) => {
+                    const w = font.widthOfTextAtSize(text, size)
+                    page.drawText(text, { x: (width - w) / 2, y, size, font, color })
+                }
+
+                // Content
+                drawCentered('CERTIFICATE OF MERIT', 482, timesBold, 38, rgb(0.39, 0.08, 0.08))
+                drawCentered('This is to certify that', 425, timesFont, 20, rgb(0.16, 0.16, 0.16))
+                drawCentered(reg.user.fullName.toUpperCase(), 374, timesBold, 32, rgb(0, 0, 0))
 
                 const grade = (reg as any).grade
                 const achieveText = (grade && grade !== 'PARTICIPATION') ? `has secured ${grade.replace(/_/g, ' ')}` : 'has successfully participated'
-                drawCenteredText(page, `${achieveText} in the event`, 334, timesFont, 18, rgb(0.16, 0.16, 0.16))
+                drawCentered(`${achieveText} in the event`, 334, timesFont, 18, rgb(0.16, 0.16, 0.16))
 
-                // Program Name - Use Malayalam font for program name
+                // Program name with Malayalam support
                 const progName = `${reg.program.name} (${reg.program.type})`
-                // Check if program name contains Malayalam characters
                 const hasMalayalam = /[\u0D00-\u0D7F]/.test(progName)
-                const programFont = hasMalayalam ? malayalamFont : timesBold
-                console.log(`Program name: "${progName}", has Malayalam: ${hasMalayalam}, using font: ${hasMalayalam ? 'Malayalam' : 'Times Bold'}`);
-                drawCenteredText(page, progName, 300, programFont, 24, rgb(0.59, 0.12, 0.12))
+                drawCentered(progName, 300, hasMalayalam ? malayalamFont : timesBold, 24, rgb(0.59, 0.12, 0.12))
 
-                drawCenteredText(page, `conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
+                drawCentered(`conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
                 const dateStr = `Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
-                drawCenteredText(page, dateStr, 232, timesFont, 13, rgb(0, 0, 0))
+                drawCentered(dateStr, 232, timesFont, 13, rgb(0, 0, 0))
 
                 const pdfBytes = await pdfDoc.save()
                 const pdfBuffer = Buffer.from(pdfBytes)
 
-                // 4. Send Email
                 const emailRes = await sendEmail({
                     to: reg.user.email,
                     subject: `Certificate for ${reg.program.name} - ${festivalName}`,
@@ -177,7 +134,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     failCount++
                 }
             } catch (err) {
-                console.error(`Failed to process cert for ${reg.user.fullName}:`, err)
+                console.error(`Failed for ${reg.user.fullName}:`, err)
                 failCount++
             }
         }
