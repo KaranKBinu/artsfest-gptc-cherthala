@@ -50,6 +50,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
     const [description, setDescription] = useState('')
     const [type, setType] = useState<'TEXT' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'FILE'>('TEXT')
     const [jsonError, setJsonError] = useState<string | null>(null)
+    const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
         if (config) {
@@ -102,20 +103,25 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (type === 'JSON' && jsonError) return
 
-        let finalValue = value;
-        if (type === 'JSON' && !jsonError) {
-            finalValue = JSON.stringify(JSON.parse(value))
-        }
+        setIsSaving(true)
+        try {
+            let finalValue = value;
+            if (type === 'JSON' && !jsonError) {
+                finalValue = JSON.stringify(JSON.parse(value))
+            }
 
-        onSave({
-            key,
-            description,
-            value: finalValue
-        })
+            await onSave({
+                key,
+                description,
+                value: finalValue
+            })
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     if (!isOpen) return null
@@ -291,10 +297,33 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                             <button
                                 type="submit"
                                 className={styles.addButton}
-                                disabled={type === 'JSON' && !!jsonError}
-                                style={{ opacity: (type === 'JSON' && !!jsonError) ? 0.5 : 1, cursor: (type === 'JSON' && !!jsonError) ? 'not-allowed' : 'pointer' }}
+                                disabled={(type === 'JSON' && !!jsonError) || isSaving}
+                                style={{
+                                    opacity: ((type === 'JSON' && !!jsonError) || isSaving) ? 0.5 : 1,
+                                    cursor: ((type === 'JSON' && !!jsonError) || isSaving) ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    minWidth: '80px',
+                                    justifyContent: 'center'
+                                }}
                             >
-                                Save
+                                {isSaving ? (
+                                    <>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spin 1s linear infinite' }}>
+                                            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+                                            <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M2 12H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M18 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M4.93 19.07L7.76 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M16.24 7.76L19.07 4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        Saving
+                                    </>
+                                ) : 'Save'}
                             </button>
                         </div>
                     </div>
@@ -1841,9 +1870,11 @@ export default function DashboardPage() {
                                     } else {
                                         await createConfig({ key: data.key, value: data.value, description: data.description })
                                     }
-                                    await refreshConfig() // Refresh app context
+                                    await refreshConfig() // Refresh app context properly
                                     const res = await getConfigs()
-                                    if (res.success && res.data) setConfigs(res.data)
+                                    if (res.success && res.data) {
+                                        setConfigs(res.data)
+                                    }
                                     setConfigModalOpen(false)
                                     setEditingConfig(null)
                                 }}
