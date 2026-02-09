@@ -1,5 +1,7 @@
 'use server'
 
+import 'regenerator-runtime/runtime'
+
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
 import { revalidatePath } from 'next/cache'
@@ -49,7 +51,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
                 const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold)
                 const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
-                
+
                 let malayalamFont = timesBold
                 try {
                     console.log('Starting certificate generation script...')
@@ -74,7 +76,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                         }
 
                         if (imgBytes) {
-                            const image = imgBytes[0] === 0x89 && imgBytes[1] === 0x50 
+                            const image = imgBytes[0] === 0x89 && imgBytes[1] === 0x50
                                 ? await pdfDoc.embedPng(imgBytes)
                                 : await pdfDoc.embedJpg(imgBytes)
                             page.drawImage(image, { x: 0, y: 0, width, height })
@@ -109,7 +111,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 // Program name with Malayalam support
                 const progName = `${reg.program.name} (${reg.program.type})`
                 const hasMalayalam = /[\u0D00-\u0D7F]/.test(progName)
-                
+
                 if (hasMalayalam) {
                     // For Malayalam text, use transliteration or English fallback
                     const englishName = reg.program.name.replace(/[\u0D00-\u0D7F]/g, '').trim() || reg.program.name
