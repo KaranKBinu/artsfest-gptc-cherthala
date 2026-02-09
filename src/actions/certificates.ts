@@ -31,24 +31,12 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         // 2. Load Fonts
         let malayalamFontBytes: Buffer | null = null
         try {
-            // Priority 1: In-code Base64 (Reliable for Vercel)
-            if (MALAYALAM_FONT_B64) {
-                malayalamFontBytes = Buffer.from(MALAYALAM_FONT_B64, 'base64')
-                console.log('Loaded Malayalam font from Base64 constants, byte length:', malayalamFontBytes.length)
-            }
-
-            // Priority 2: Public folder (Local Dev fallback)
-            if (!malayalamFontBytes || malayalamFontBytes.length < 1000) {
-                try {
-                    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
-                    malayalamFontBytes = await fs.readFile(fontPath)
-                    console.log('Loaded Malayalam font from public/fonts fallback')
-                } catch (e) {
-                    console.warn('Failed to load from public/fonts fallback')
-                }
-            }
+            // Load from public folder
+            const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
+            malayalamFontBytes = await fs.readFile(fontPath)
+            console.log('✓ Loaded Malayalam font, bytes:', malayalamFontBytes.length)
         } catch (e) {
-            console.error('CRITICAL: Malayalam font loading error:', e)
+            console.error('✗ Malayalam font loading error:', e)
         }
 
         // 3. Fetch Configs
