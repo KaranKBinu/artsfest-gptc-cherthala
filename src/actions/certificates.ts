@@ -7,6 +7,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
+import { MALAYALAM_FONT_BASE64 } from '@/lib/malayalam-font'
 
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
@@ -51,11 +52,14 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 
                 let malayalamFont = timesBold
                 try {
-                    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
-                    const fontBytes = await fs.readFile(fontPath)
+                    console.log('Starting certificate generation script...')
+                    const fontBytes = Buffer.from(MALAYALAM_FONT_BASE64, 'base64')
+                    console.log('Fontkit registered successfully')
                     malayalamFont = await pdfDoc.embedFont(fontBytes, { subset: true })
+                    console.log('Malayalam font embedded successfully')
                 } catch (e) {
-                    console.error('Malayalam font load failed:', e)
+                    console.error('✗ Malayalam font loading error:', e)
+                    console.warn('NO Malayalam font bytes available to embed')
                 }
 
                 // Background
