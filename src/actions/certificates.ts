@@ -55,7 +55,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     console.log('Starting certificate generation script...')
                     const fontBytes = Buffer.from(MALAYALAM_FONT_BASE64, 'base64')
                     console.log('Fontkit registered successfully')
-                    malayalamFont = await pdfDoc.embedFont(fontBytes, { subset: true })
+                    malayalamFont = await pdfDoc.embedFont(fontBytes)
                     console.log('Malayalam font embedded successfully')
                 } catch (e) {
                     console.error('✗ Malayalam font loading error:', e)
