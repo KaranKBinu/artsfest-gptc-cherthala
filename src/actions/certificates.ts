@@ -6,18 +6,14 @@ import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
 
 import { MALAYALAM_FONT_B64 } from '@/lib/fonts'
 
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
-        // Safe require for fontkit to avoid build issues
-        let fontkit: any;
-        try {
-            fontkit = require('@pdf-lib/fontkit');
-        } catch (e) {
-            console.error('Failed to require fontkit', e);
-        }
+        // Fontkit is now imported at the top level
+        console.log('Starting certificate generation script...');
 
         // 1. Fetch Registrations
         const registrations = await prisma.registration.findMany({
@@ -37,23 +33,22 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         try {
             // Priority 1: In-code Base64 (Reliable for Vercel)
             if (MALAYALAM_FONT_B64) {
-                console.log('MALAYALAM_FONT_B64 length correctly detected:', MALAYALAM_FONT_B64.length);
                 malayalamFontBytes = Buffer.from(MALAYALAM_FONT_B64, 'base64')
                 console.log('Loaded Malayalam font from Base64 constants, byte length:', malayalamFontBytes.length)
             }
 
-            // Priority 2: Public folder (Local Dev)
-            if (!malayalamFontBytes) {
+            // Priority 2: Public folder (Local Dev fallback)
+            if (!malayalamFontBytes || malayalamFontBytes.length < 1000) {
                 try {
                     const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSansMalayalam-Regular.ttf')
                     malayalamFontBytes = await fs.readFile(fontPath)
-                    console.log('Successfully loaded Malayalam font from public/fonts')
+                    console.log('Loaded Malayalam font from public/fonts fallback')
                 } catch (e) {
                     console.warn('Failed to load from public/fonts fallback')
                 }
             }
         } catch (e) {
-            console.error('Malayalam font loading error:', e)
+            console.error('CRITICAL: Malayalam font loading error:', e)
         }
 
         // 3. Fetch Configs
@@ -76,11 +71,10 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
             try {
                 const textWidth = font.widthOfTextAtSize(text, size)
                 const x = (page.getWidth() - textWidth) / 2
+                console.log(`[Draw] text="${text}" x=${x.toFixed(1)} y=${y} width=${textWidth.toFixed(1)}`);
                 page.drawText(text, { x, y, size, font, color })
             } catch (e: any) {
-                console.warn(`Font error for "${text}":`, e.message);
-                // If it fails and it's unicode, we can't do much with standard fonts, 
-                // but let's at least not crash.
+                console.error(`[Draw ERROR] text="${text}":`, e.message);
             }
         }
 
@@ -89,6 +83,9 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 const pdfDoc = await PDFDocument.create()
                 if (fontkit) {
                     pdfDoc.registerFontkit(fontkit.default || fontkit)
+                    console.log('Fontkit registered successfully')
+                } else {
+                    console.error('Fontkit is UNDEFINED')
                 }
 
                 const page = pdfDoc.addPage([841.89, 595.28]) // A4 Landscape
@@ -151,10 +148,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
 
                 // Program Name
                 const progName = `${reg.program.name} (${reg.program.type})`
-                console.log('Rendering Program Name:', progName)
-
-                // If the font is correctly embedded, pdf-lib + fontkit handles the Malayalam shaping
-                drawCenteredText(page, progName, 300, customFont, 22, rgb(0.59, 0.12, 0.12))
+                drawCenteredText(page, progName, 300, customFont, 24, rgb(0.59, 0.12, 0.12))
 
                 drawCenteredText(page, `conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
                 const dateStr = `Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
