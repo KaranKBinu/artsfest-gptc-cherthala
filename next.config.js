@@ -19,6 +19,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   output: 'standalone',
+  transpilePackages: ['pdf-lib', '@pdf-lib/fontkit'],
 }
 
 module.exports = nextConfig
