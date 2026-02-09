@@ -1649,6 +1649,20 @@ export default function DashboardPage() {
                                 </div>
                                 <div className={styles.configGrid}>
                                     {configs.map(c => {
+                                        // 1. Try to parse as JSON Array
+                                        let isJsonArray = false;
+                                        let jsonArray: string[] = [];
+                                        try {
+                                            if (c.value.trim().startsWith('[') && c.value.trim().endsWith(']')) {
+                                                const parsed = JSON.parse(c.value);
+                                                if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+                                                    isJsonArray = true;
+                                                    jsonArray = parsed;
+                                                }
+                                            }
+                                        } catch (e) { }
+
+                                        // 2. Standard Single Value Logic
                                         const isUrl = typeof c.value === 'string' && (c.value.startsWith('http://') || c.value.startsWith('https://'));
                                         const isImage = isUrl && c.value.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i);
                                         const isPdf = isUrl && c.value.match(/\.pdf$/i);
@@ -1660,7 +1674,27 @@ export default function DashboardPage() {
                                                     <div className={styles.configDesc}>{c.description || 'No description provided.'}</div>
                                                 </div>
                                                 <div className={styles.configValueContainer} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
-                                                    {isImage ? (
+                                                    {isJsonArray ? (
+                                                        <div style={{ width: '100%' }}>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                                {jsonArray.map((url, idx) => {
+                                                                    const isItemImage = url.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i);
+                                                                    return (
+                                                                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: '1px solid #eee', position: 'relative' }}>
+                                                                            {isItemImage ? (
+                                                                                <img src={url} alt={`Item ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                            ) : (
+                                                                                <div style={{ width: '100%', height: '100%', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#666' }}>
+                                                                                    FILE
+                                                                                </div>
+                                                                            )}
+                                                                        </a>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{jsonArray.length} items</div>
+                                                        </div>
+                                                    ) : isImage ? (
                                                         <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem', width: '100%' }}>
                                                             <div style={{
                                                                 position: 'relative',
