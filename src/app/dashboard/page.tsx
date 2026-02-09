@@ -1649,7 +1649,10 @@ export default function DashboardPage() {
                                 </div>
                                 <div className={styles.configGrid}>
                                     {configs.map(c => {
-                                        const isImage = (c.key === 'certificateTemplate' || c.key.toLowerCase().includes('image') || (typeof c.value === 'string' && c.value.match(/\.(jpeg|jpg|gif|png|webp)$/i)));
+                                        const isUrl = typeof c.value === 'string' && (c.value.startsWith('http://') || c.value.startsWith('https://'));
+                                        const isImage = isUrl && c.value.match(/\.(jpeg|jpg|gif|png|webp|bmp|svg)$/i);
+                                        const isPdf = isUrl && c.value.match(/\.pdf$/i);
+
                                         return (
                                             <div key={c.id} className={styles.configCard}>
                                                 <div>
@@ -1657,20 +1660,85 @@ export default function DashboardPage() {
                                                     <div className={styles.configDesc}>{c.description || 'No description provided.'}</div>
                                                 </div>
                                                 <div className={styles.configValueContainer} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
-                                                    {isImage && c.value && c.value.startsWith('http') ? (
+                                                    {isImage ? (
                                                         <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem', width: '100%' }}>
-                                                            <img
-                                                                src={c.value}
-                                                                alt={c.key}
-                                                                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', border: '1px solid #444', borderRadius: '4px', backgroundColor: '#f0f0f0' }}
-                                                                onError={(e) => {
-                                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                                    // Fallback to showing link
-                                                                }}
-                                                            />
-                                                            <div style={{ fontSize: '0.75rem', opacity: 0.7, wordBreak: 'break-all', marginTop: '0.25rem' }}>
-                                                                <a href={c.value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-red)', textDecoration: 'underline' }}>View Image</a>
+                                                            <div style={{
+                                                                position: 'relative',
+                                                                width: '100%',
+                                                                height: '200px',
+                                                                borderRadius: '8px',
+                                                                overflow: 'hidden',
+                                                                backgroundColor: '#f5f5f5',
+                                                                border: '1px solid #e0e0e0',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}>
+                                                                <img
+                                                                    src={c.value}
+                                                                    alt={c.key}
+                                                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLImageElement).style.display = 'none';
+                                                                        const parent = (e.target as HTMLImageElement).parentElement;
+                                                                        if (parent) {
+                                                                            parent.innerHTML = '<div style="padding:1rem; text-align:center; color:#666; font-size:0.8rem">Image preview failed</div>';
+                                                                        }
+                                                                    }}
+                                                                />
                                                             </div>
+                                                            <div style={{ fontSize: '0.75rem', opacity: 0.7, wordBreak: 'break-all', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                                                                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '70%' }}>{c.value.split('/').pop()}</span>
+                                                                <a href={c.value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-red)', textDecoration: 'underline', fontWeight: 600 }}>View Image</a>
+                                                            </div>
+                                                        </div>
+                                                    ) : isUrl ? (
+                                                        <div style={{ width: '100%' }}>
+                                                            <a
+                                                                href={c.value}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.75rem',
+                                                                    padding: '0.75rem',
+                                                                    backgroundColor: 'rgba(0,0,0,0.03)',
+                                                                    borderRadius: '6px',
+                                                                    textDecoration: 'none',
+                                                                    color: 'inherit',
+                                                                    border: '1px solid rgba(0,0,0,0.1)',
+                                                                    transition: 'background 0.2s'
+                                                                }}
+                                                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.06)'}
+                                                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.03)'}
+                                                            >
+                                                                {isPdf ? (
+                                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                        <path d="M14 2V8H20" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                        <path d="M16 13H8" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                        <path d="M16 17H8" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                        <path d="M10 9H8" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                                                        <polyline points="13 2 13 9 20 9"></polyline>
+                                                                    </svg>
+                                                                )}
+                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                        {c.value.split('/').pop()}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.8rem', opacity: 0.6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                        {c.value}
+                                                                    </div>
+                                                                </div>
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--primary-red)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                                    {isPdf ? 'View PDF' : 'Open Link'}
+                                                                </span>
+                                                            </a>
                                                         </div>
                                                     ) : (
                                                         <span className={styles.configValue} style={{ wordBreak: 'break-all', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
