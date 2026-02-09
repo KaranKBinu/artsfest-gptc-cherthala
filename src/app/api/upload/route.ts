@@ -62,7 +62,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             addRandomSuffix: true, // Prevent overwrites
         });
 
-        console.log('Upload API: Upload successful:', blob.url);
+        console.log('Upload API: Upload successful. URL:', blob.url);
+        console.log('Upload API: Full blob response:', JSON.stringify(blob));
 
         // Return success: true for existing frontend compatibility
         return NextResponse.json({
