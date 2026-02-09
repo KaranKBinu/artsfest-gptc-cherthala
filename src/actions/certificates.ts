@@ -87,8 +87,14 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 }
 
                 const drawCentered = (text: string, y: number, font: any, size: number, color: any) => {
-                    const w = font.widthOfTextAtSize(text, size)
-                    page.drawText(text, { x: (width - w) / 2, y, size, font, color })
+                    try {
+                        const w = font.widthOfTextAtSize(text, size)
+                        page.drawText(text, { x: (width - w) / 2, y, size, font, color })
+                    } catch (e) {
+                        // Fallback for fonts that don't support widthOfTextAtSize
+                        const estimatedWidth = text.length * size * 0.6
+                        page.drawText(text, { x: (width - estimatedWidth) / 2, y, size, font, color })
+                    }
                 }
 
                 // Content
@@ -103,7 +109,15 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 // Program name with Malayalam support
                 const progName = `${reg.program.name} (${reg.program.type})`
                 const hasMalayalam = /[\u0D00-\u0D7F]/.test(progName)
-                drawCentered(progName, 300, hasMalayalam ? malayalamFont : timesBold, 24, rgb(0.59, 0.12, 0.12))
+                
+                if (hasMalayalam) {
+                    // For Malayalam text, use transliteration or English fallback
+                    const englishName = reg.program.name.replace(/[\u0D00-\u0D7F]/g, '').trim() || reg.program.name
+                    const displayName = `${englishName} (${reg.program.type})`
+                    drawCentered(displayName, 300, timesBold, 24, rgb(0.59, 0.12, 0.12))
+                } else {
+                    drawCentered(progName, 300, timesBold, 24, rgb(0.59, 0.12, 0.12))
+                }
 
                 drawCentered(`conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
                 const dateStr = `Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
