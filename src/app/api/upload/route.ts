@@ -1,41 +1,80 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
-import path from 'path'
+import { put } from '@vercel/blob';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Using Vercel Blob for storage (Free tier: 250MB)
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
+    console.log('Upload API: Request received');
+
+    const { searchParams } = new URL(request.url);
+    const queryFilename = searchParams.get('filename');
+
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        console.error('Upload API: BLOB_READ_WRITE_TOKEN is missing');
+        return NextResponse.json(
+            { success: false, error: 'BLOB_READ_WRITE_TOKEN is not configured in .env' },
+            { status: 500 }
+        );
+    }
+
     try {
-        const data = await request.formData()
-        const file: File | null = data.get('file') as unknown as File
+        let file: File | Blob | ReadableStream | null = null;
+        let filename = queryFilename;
+
+        const contentType = request.headers.get('content-type') || '';
+        console.log('Upload API: Content-Type:', contentType);
+
+        if (contentType.includes('multipart/form-data')) {
+            const formData = await request.formData();
+            const formFile = formData.get('file');
+            if (formFile && formFile instanceof File) {
+                file = formFile;
+                // Use filename from file if not provided in query
+                if (!filename) {
+                    filename = formFile.name;
+                }
+                console.log('Upload API: File found in formData:', filename, 'Size:', formFile.size);
+            } else {
+                console.log('Upload API: No valid file in formData');
+            }
+        } else {
+            // Raw body upload (stream)
+            file = request.body;
+            console.log('Upload API: Using request body as stream');
+        }
 
         if (!file) {
-            return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 })
+            console.error('Upload API: No file uploaded');
+            return NextResponse.json(
+                { success: false, error: 'No file uploaded' },
+                { status: 400 }
+            );
         }
 
-        // Check if token exists
-        if (!process.env.BLOB_READ_WRITE_TOKEN) {
-            return NextResponse.json({
-                success: false,
-                error: 'BLOB_READ_WRITE_TOKEN is not configured in .env'
-            }, { status: 500 })
+        // Default filename if still missing
+        if (!filename) {
+            filename = `upload-${Date.now()}`;
         }
 
-        // 4MB limit for now, though Blob supports up to 500MB
-        if (file.size > 4 * 1024 * 1024) {
-            return NextResponse.json({ success: false, error: 'File too large. Max 4MB allowed.' }, { status: 400 })
-        }
-
-        // Create unique filename in the requested folder
-        const filename = `artsfest2026/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+        console.log('Upload API: Uploading to Vercel Blob:', filename);
 
         // Upload to Vercel Blob
         const blob = await put(filename, file, {
             access: 'public',
-        })
+            addRandomSuffix: true, // Prevent overwrites
+        });
 
-        return NextResponse.json({ success: true, url: blob.url })
+        console.log('Upload API: Upload successful:', blob.url);
+
+        // Return success: true for existing frontend compatibility
+        return NextResponse.json({
+            success: true,
+            ...blob
+        });
+
     } catch (error) {
-        console.error('Upload failed:', error)
-        return NextResponse.json({ success: false, error: 'Upload failed' }, { status: 500 })
+        console.error('Error uploading to Vercel Blob:', error);
+        return NextResponse.json(
+            { success: false, error: 'Upload failed: ' + (error as Error).message },
+            { status: 500 }
+        );
     }
 }

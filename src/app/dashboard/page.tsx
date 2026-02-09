@@ -181,18 +181,29 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                             const file = e.target.files[0]
                                             const formData = new FormData()
                                             formData.append('file', file)
+                                            console.log('Uploading file:', file.name, 'Size:', file.size);
                                             try {
                                                 const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                                                console.log('Upload response status:', res.status);
+
+                                                if (!res.ok) {
+                                                    const text = await res.text();
+                                                    console.error('Upload failed with status:', res.status, text);
+                                                    throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+                                                }
+
                                                 const data = await res.json()
                                                 if (data.success) {
+                                                    console.log('Upload success:', data.url);
                                                     setValue(data.url)
                                                     showToast('File uploaded successfully!', 'success')
                                                 } else {
+                                                    console.error('Upload API returned error:', data.error);
                                                     showToast('Upload failed: ' + data.error, 'error')
                                                 }
                                             } catch (err) {
-                                                console.error(err)
-                                                showToast('Upload failed', 'error')
+                                                console.error('Upload error:', err)
+                                                showToast('Upload failed. Check console for details.', 'error')
                                             }
                                         }
                                     }}
