@@ -20,6 +20,22 @@ const nextConfig = {
   },
   output: 'standalone',
   transpilePackages: ['pdf-lib', '@pdf-lib/fontkit'],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Exclude chrome-aws-lambda from webpack processing
+      config.externals = [...(config.externals || []), 'chrome-aws-lambda', 'puppeteer-core']
+    }
+
+    // Ignore .map files
+    config.module = config.module || {}
+    config.module.rules = config.module.rules || []
+    config.module.rules.push({
+      test: /\.map$/,
+      use: 'ignore-loader'
+    })
+
+    return config
+  },
 }
 
 module.exports = nextConfig
