@@ -206,6 +206,13 @@ export async function updateUser(id: string, data: any) {
         if (cleanedData.department === '') cleanedData.department = null;
         if (cleanedData.semester === '') cleanedData.semester = null;
 
+        // Handle password update: hash if provided, otherwise remove from update
+        if (cleanedData.password && cleanedData.password.trim() !== '') {
+            cleanedData.password = await hash(cleanedData.password, 10);
+        } else {
+            delete cleanedData.password;
+        }
+
         const user = await prisma.user.update({
             where: { id },
             data: cleanedData

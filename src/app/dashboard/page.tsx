@@ -340,6 +340,7 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
         phone: '',
         role: 'STUDENT',
         houseId: '',
+        semester: '',
         department: '',
         studentAdmnNo: '',
         gender: 'MALE',
@@ -491,7 +492,7 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                             />
                         </div>
                         <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Semester</label>
+                            <label className={styles.formLabel}>Year</label>
                             <input
                                 value={formData.semester}
                                 onChange={e => setFormData({ ...formData, semester: e.target.value })}
