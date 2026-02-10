@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma migrate dev && prisma db seed",
+    "test:cert": "tsx test-cert-puppeteer.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
@@ -34,6 +35,7 @@
     "@prisma/client": "^5.22.0",
     "@vercel/blob": "^2.2.0",
     "bcryptjs": "^2.4.3",
+    "canvas": "^3.2.1",
     "clsx": "^2.1.1",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^4.1.0",
@@ -41,6 +43,7 @@
     "next": "^14.2.23",
     "nodemailer": "^8.0.0",
     "pdf-lib": "^1.17.1",
+    "puppeteer": "^24.37.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "regenerator-runtime": "^0.14.1",
