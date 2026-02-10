@@ -12,18 +12,17 @@ import puppeteer from 'puppeteer'
  * This approach renders HTML/CSS to PDF using Chrome's rendering engine
  */
 async function generateCertificatePDF(options: {
-    templatePath: string
+    templateBuffer: Buffer
+    templateMimeType: string
     studentName: string
     programName: string
     grade?: string
     festivalName: string
 }): Promise<Buffer> {
-    const { templatePath, studentName, programName, grade, festivalName } = options
+    const { templateBuffer, templateMimeType, studentName, programName, grade, festivalName } = options
 
-    // Read template as base64 for embedding in HTML
-    const templateBuffer = await fs.readFile(templatePath)
+    // Convert template to base64 for embedding in HTML
     const templateBase64 = templateBuffer.toString('base64')
-    const templateMimeType = templatePath.endsWith('.png') ? 'image/png' : 'image/jpeg'
 
     const achieveText = (grade && grade !== 'PARTICIPATION')
         ? `has secured ${grade.replace(/_/g, ' ')}`
@@ -191,14 +190,22 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
             return { success: false, error: 'Certificate template not configured. Please upload a template in Configuration settings.' }
         }
 
-        // Get template path or URL
-        let templatePath: string
-        let templateBuffer: Buffer | null = null
+        // Load template into buffer
+        let templateBuffer: Buffer
+        let templateMimeType: string
 
         if (templateVal.startsWith('/uploads/') || templateVal.startsWith('/test/')) {
             // Local file in public directory
-            templatePath = path.join(process.cwd(), 'public', templateVal)
-            console.log('Using local template:', templatePath)
+            const templatePath = path.join(process.cwd(), 'public', templateVal)
+            console.log('Loading local template:', templatePath)
+            try {
+                templateBuffer = await fs.readFile(templatePath)
+                templateMimeType = templateVal.endsWith('.png') ? 'image/png' : 'image/jpeg'
+                console.log('Local template loaded successfully')
+            } catch (error: any) {
+                console.error('Error reading local template:', error)
+                return { success: false, error: `Failed to read local template: ${error.message}` }
+            }
         } else if (templateVal.startsWith('http://') || templateVal.startsWith('https://')) {
             // Remote URL (including Vercel Blob Storage)
             console.log('Fetching template from URL:', templateVal)
@@ -208,10 +215,10 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     throw new Error(`Failed to fetch template: ${res.status} ${res.statusText}`)
                 }
                 templateBuffer = Buffer.from(await res.arrayBuffer())
-                // Save temporarily for Puppeteer to access
-                templatePath = path.join(process.cwd(), 'public', 'temp-cert-template.png')
-                await fs.writeFile(templatePath, templateBuffer)
-                console.log('Template downloaded and saved temporarily')
+                // Determine mime type from URL or content-type header
+                const contentType = res.headers.get('content-type')
+                templateMimeType = contentType?.includes('png') ? 'image/png' : 'image/jpeg'
+                console.log('Template fetched successfully from blob storage')
             } catch (error: any) {
                 console.error('Error fetching template from blob storage:', error)
                 return { success: false, error: `Failed to fetch certificate template: ${error.message}` }
@@ -228,7 +235,8 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 console.log(`Generating certificate for ${reg.user.fullName}...`)
 
                 const pdfBuffer = await generateCertificatePDF({
-                    templatePath,
+                    templateBuffer,
+                    templateMimeType,
                     studentName: reg.user.fullName,
                     programName: `${reg.program.name} (${reg.program.type})`,
                     grade: (reg as any).grade,
@@ -264,16 +272,6 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
             } catch (err) {
                 console.error(`Failed to process cert for ${reg.user.fullName}:`, err)
                 failCount++
-            }
-        }
-
-        // Cleanup temporary template file if it was downloaded
-        if (templateBuffer) {
-            try {
-                await fs.unlink(templatePath)
-                console.log('Temporary template file cleaned up')
-            } catch (cleanupError) {
-                console.warn('Failed to cleanup temporary template file:', cleanupError)
             }
         }
 
