@@ -5,7 +5,8 @@ import { sendEmail } from '@/lib/mail'
 import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
-import puppeteer from 'puppeteer'
+import puppeteer from 'puppeteer-core'
+import chromium from '@sparticuz/chromium'
 
 /**
  * Generate certificate using Puppeteer - Full Unicode/Malayalam support
@@ -130,9 +131,18 @@ async function generateCertificatePDF(options: {
     `
 
     // Launch browser and generate PDF
+    // Use chromium binary for serverless (Vercel), fall back to local Chrome for development
+    const isLocal = process.env.NODE_ENV === 'development' || !process.env.VERCEL
+
     const browser = await puppeteer.launch({
+        args: isLocal
+            ? ['--no-sandbox', '--disable-setuid-sandbox']
+            : chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: isLocal
+            ? process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+            : await chromium.executablePath(),
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
 
     try {
