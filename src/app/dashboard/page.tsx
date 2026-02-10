@@ -47,7 +47,7 @@ const isJsonString = (str: string) => {
 
 // Configuration Modal Component
 function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isOpen: boolean, config?: any, onClose: () => void, onSave: (data: { key: string, value: string, description: string }) => void, onDelete?: (key: string) => void }) {
-    const { showToast, confirm: modalConfirm } = useModals()
+    const modals = useModals()
     const [key, setKey] = useState('')
     const [value, setValue] = useState('')
     const [description, setDescription] = useState('')
@@ -205,14 +205,14 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                                 if (data.success) {
                                                     console.log('Upload success:', data.url);
                                                     setValue(data.url)
-                                                    showToast('File uploaded successfully!', 'success')
+                                                    modals.showToast('File uploaded successfully!', 'success')
                                                 } else {
                                                     console.error('Upload API returned error:', data.error);
-                                                    showToast('Upload failed: ' + data.error, 'error')
+                                                    modals.showToast('Upload failed: ' + data.error, 'error')
                                                 }
                                             } catch (err) {
                                                 console.error('Upload error:', err)
-                                                showToast('Upload failed. Check console for details.', 'error')
+                                                modals.showToast('Upload failed. Check console for details.', 'error')
                                             }
                                         }
                                     }}
@@ -281,7 +281,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                             <button
                                 type="button"
                                 onClick={() => {
-                                    modalConfirm({
+                                    modals.confirm({
                                         title: 'Delete Configuration',
                                         message: 'Are you sure you want to delete this configuration? This action cannot be undone.',
                                         confirmText: 'Delete',
@@ -333,7 +333,8 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
     onClose: () => void,
     onSave: (data: any) => Promise<void>
 }) {
-    const { showToast } = useModals()
+    const modals = useModals()
+    const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -441,13 +442,33 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Password {!user && <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Optional, default: Welcome@123)</span>}</label>
-                            <input
-                                type="password"
-                                value={formData.password}
-                                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                className={styles.searchInput}
-                                placeholder={user ? "Leave blank to keep current" : "Set password"}
-                            />
+                            <div className={styles.passwordWrapper}>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={formData.password}
+                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                    className={styles.searchInput}
+                                    placeholder={user ? "Leave blank to keep current" : "Set password"}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.passwordToggle}
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        </svg>
+                                    ) : (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Phone</label>
@@ -513,10 +534,10 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
 }
 
 export default function DashboardPage() {
-    const router = useRouter()
-    const { refreshConfig } = useConfig()
+    const modals = useModals()
     const { setIsLoading } = useLoading()
-    const { showToast, confirm: modalConfirm } = useModals()
+    const { refreshConfig } = useConfig()
+    const router = useRouter()
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
@@ -688,10 +709,10 @@ export default function DashboardPage() {
                     link.download = `${filename}.pdf`
                     link.click()
                 } else {
-                    showToast(res.error || 'Failed to export PDF', 'error')
+                    modals.showToast(res.error || 'Failed to export PDF', 'error')
                 }
             } catch (e) {
-                showToast('An error occurred during PDF generation', 'error')
+                modals.showToast('An error occurred during PDF generation', 'error')
             } finally {
                 setIsLoading(false)
             }
@@ -729,10 +750,10 @@ export default function DashboardPage() {
                 link.download = `registrations_${user.studentAdmnNo}.pdf`
                 link.click()
             } else {
-                showToast(res.error || 'Failed to generate PDF', 'error')
+                modals.showToast(res.error || 'Failed to generate PDF', 'error')
             }
         } catch (e) {
-            showToast('An error occurred during PDF generation', 'error')
+            modals.showToast('An error occurred during PDF generation', 'error')
         } finally {
             setIsLoading(false)
         }
@@ -810,7 +831,7 @@ export default function DashboardPage() {
     }
 
     const handleDeleteProgram = (id: string, name: string) => {
-        modalConfirm({
+        modals.confirm({
             title: 'Delete Program',
             message: `Are you sure you want to delete "${name}"?`,
             confirmText: 'Delete',
@@ -819,10 +840,10 @@ export default function DashboardPage() {
                 try {
                     const res = await deleteProgram(id)
                     if (res.success) {
-                        showToast('Program deleted successfully', 'success')
+                        modals.showToast('Program deleted successfully', 'success')
                         await refreshPrograms()
                     } else {
-                        showToast('Failed to delete program', 'error')
+                        modals.showToast('Failed to delete program', 'error')
                     }
                 } finally {
                     setIsLoading(false)
@@ -914,9 +935,9 @@ export default function DashboardPage() {
                 if (fetchRes.success && fetchRes.data) setAllUsers(fetchRes.data.users)
                 setUserModalOpen(false)
                 setEditingUser(null)
-                showToast(`User ${editingUser ? 'updated' : 'created'} successfully`, 'success')
+                modals.showToast(`User ${editingUser ? 'updated' : 'created'} successfully`, 'success')
             } else {
-                showToast(`Failed to ${editingUser ? 'update' : 'create'} user: ` + res.error, 'error')
+                modals.showToast(`Failed to ${editingUser ? 'update' : 'create'} user: ` + res.error, 'error')
             }
         } finally {
             setIsLoading(false)
@@ -1092,8 +1113,8 @@ export default function DashboardPage() {
                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
                                             <button
                                                 onClick={async () => {
-                                                    if (selectedRegs.length === 0) return showToast('Please select at least one student.', 'info');
-                                                    modalConfirm({
+                                                    if (selectedRegs.length === 0) return modals.showToast('Please select at least one student.', 'info');
+                                                    modals.confirm({
                                                         title: 'Generate Certificates',
                                                         message: `Generate and send certificates for ${selectedRegs.length} selected items? (Requires SMTP config)`,
                                                         confirmText: 'Generate & Send',
@@ -1104,10 +1125,10 @@ export default function DashboardPage() {
                                                                 const { generateAndSendCertificates } = await import('@/actions/certificates');
                                                                 const res = await generateAndSendCertificates(selectedRegs);
                                                                 if (res.success) {
-                                                                    showToast(res.message || 'Certificates processed.', 'success');
+                                                                    modals.showToast(res.message || 'Certificates processed.', 'success');
                                                                     setSelectedRegs([]);
                                                                 } else {
-                                                                    showToast(res.error || 'Failed to process certificates.', 'error');
+                                                                    modals.showToast(res.error || 'Failed to process certificates.', 'error');
                                                                 }
                                                             } finally {
                                                                 setCertLoading(false);
@@ -1181,17 +1202,17 @@ export default function DashboardPage() {
                                                                             onClick={() => {
                                                                                 const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
                                                                                 const nextState = !isPresentNow;
-                                                                                modalConfirm({
+                                                                                modals.confirm({
                                                                                     title: 'Change Attendance',
                                                                                     message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
                                                                                     onConfirm: async () => {
                                                                                         const { markAttendance } = await import('@/actions/volunteer');
                                                                                         const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
                                                                                         if (res.success) {
-                                                                                            showToast(`Attendance updated for ${u.fullName}`, 'success')
+                                                                                            modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
                                                                                             fetchAdminData()
                                                                                         } else {
-                                                                                            showToast('Failed to update attendance.', 'error')
+                                                                                            modals.showToast('Failed to update attendance.', 'error')
                                                                                         }
                                                                                     }
                                                                                 })
@@ -1235,7 +1256,7 @@ export default function DashboardPage() {
                                                                                     const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
                                                                                     const res = await updateRegistrationResult(r.id, e.target.value);
                                                                                     if (res.success) {
-                                                                                        showToast(`Updated result for ${u.fullName}`, 'success');
+                                                                                        modals.showToast(`Updated result for ${u.fullName}`, 'success');
                                                                                         fetchAdminData();
                                                                                         const scoreRes = await getHouseLeaderboard();
                                                                                         if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
@@ -1612,7 +1633,7 @@ export default function DashboardPage() {
                                                             <button
                                                                 className={styles.deleteBtn}
                                                                 onClick={() => {
-                                                                    modalConfirm({
+                                                                    modals.confirm({
                                                                         title: 'Remove Volunteer',
                                                                         message: `Remove volunteer status from ${v.fullName}?`,
                                                                         onConfirm: async () => {
@@ -1620,7 +1641,7 @@ export default function DashboardPage() {
                                                                             try {
                                                                                 const res = await updateUserRole(v.id, 'STUDENT')
                                                                                 if (res.success) {
-                                                                                    showToast('Volunteer removed', 'success')
+                                                                                    modals.showToast('Volunteer removed', 'success')
                                                                                     const vRes = await getVolunteers()
                                                                                     if (vRes.success && vRes.data) setVolunteers(vRes.data)
                                                                                 }
@@ -1656,13 +1677,13 @@ export default function DashboardPage() {
                                                         <button
                                                             className={styles.deleteBtn}
                                                             onClick={() => {
-                                                                modalConfirm({
+                                                                modals.confirm({
                                                                     title: 'Remove Volunteer',
                                                                     message: `Remove volunteer status from ${v.fullName}?`,
                                                                     onConfirm: async () => {
                                                                         const res = await updateUserRole(v.id, 'STUDENT')
                                                                         if (res.success) {
-                                                                            showToast('Volunteer removed', 'success')
+                                                                            modals.showToast('Volunteer removed', 'success')
                                                                             const vRes = await getVolunteers()
                                                                             if (vRes.success && vRes.data) setVolunteers(vRes.data)
                                                                         }
@@ -1897,13 +1918,13 @@ export default function DashboardPage() {
                                                         }
 
                                                         if (newUrls.length < files.length) {
-                                                            showToast(`Uploaded ${newUrls.length} of ${files.length} images. Some failed.`, 'info')
+                                                            modals.showToast(`Uploaded ${newUrls.length} of ${files.length} images. Some failed.`, 'info')
                                                         } else {
-                                                            showToast('All images uploaded successfully', 'success')
+                                                            modals.showToast('All images uploaded successfully', 'success')
                                                         }
                                                     } catch (err) {
                                                         console.error(err)
-                                                        showToast('Upload process failed', 'error')
+                                                        modals.showToast('Upload process failed', 'error')
                                                     } finally {
                                                         setIsLoading(false)
                                                     }
@@ -1933,7 +1954,7 @@ export default function DashboardPage() {
                                                 </div>
                                                 <button
                                                     onClick={() => {
-                                                        modalConfirm({
+                                                        modals.confirm({
                                                             title: 'Delete Image',
                                                             message: 'Are you sure you want to delete this image?',
                                                             confirmText: 'Delete',
@@ -1943,7 +1964,7 @@ export default function DashboardPage() {
                                                                 await updateConfig('galleryImages', JSON.stringify(newImages))
                                                                 const newConfigs = await getConfigs()
                                                                 if (newConfigs.success && newConfigs.data) setConfigs(newConfigs.data)
-                                                                showToast('Image deleted successfully', 'success')
+                                                                modals.showToast('Image deleted successfully', 'success')
                                                                 setIsLoading(false)
                                                             }
                                                         })
@@ -2112,7 +2133,7 @@ export default function DashboardPage() {
                                                         className={styles.addButton}
                                                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                                                         onClick={() => {
-                                                            modalConfirm({
+                                                            modals.confirm({
                                                                 title: 'Promote to Volunteer',
                                                                 message: `Promote ${u.fullName} to Volunteer?`,
                                                                 confirmText: 'Promote',
@@ -2120,7 +2141,7 @@ export default function DashboardPage() {
                                                                     setIsLoading(true, "Promoting to Volunteer")
                                                                     try {
                                                                         await updateUserRole(u.id, 'VOLUNTEER')
-                                                                        showToast(`${u.fullName} promoted to Volunteer`, 'success')
+                                                                        modals.showToast(`${u.fullName} promoted to Volunteer`, 'success')
                                                                         const res = await getVolunteers()
                                                                         if (res.success && res.data) setVolunteers(res.data)
                                                                         setVolunteerModalOpen(false)
@@ -2236,18 +2257,18 @@ export default function DashboardPage() {
                                                         <button
                                                             className={styles.deleteBtn}
                                                             onClick={() => {
-                                                                modalConfirm({
+                                                                modals.confirm({
                                                                     title: 'Delete User',
                                                                     message: `Are you sure you want to delete ${u.fullName}? This action cannot be undone.`,
                                                                     confirmText: 'Delete',
                                                                     onConfirm: async () => {
                                                                         const res = await deleteUser(u.id)
                                                                         if (res.success) {
-                                                                            showToast('User deleted successfully', 'success')
+                                                                            modals.showToast('User deleted successfully', 'success')
                                                                             const fetchRes = await getAllUsers({ query: userSearch, role: userRoleFilter, limit: 50 })
                                                                             if (fetchRes.success && fetchRes.data) setAllUsers(fetchRes.data.users)
                                                                         } else {
-                                                                            showToast('Failed to delete user.', 'error')
+                                                                            modals.showToast('Failed to delete user.', 'error')
                                                                         }
                                                                     }
                                                                 })

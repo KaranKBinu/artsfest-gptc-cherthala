@@ -484,6 +484,33 @@
     color: var(--cream-white);
 }
 
+.passwordWrapper {
+    position: relative;
+    width: 100%;
+}
+
+.passwordToggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--foreground);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    z-index: 5;
+}
+
+.passwordToggle:hover {
+    opacity: 1;
+}
+
 .checkboxLabel {
     display: flex;
     align-items: center;

@@ -19,9 +19,10 @@ async function generateCertificatePDF(options: {
     studentName: string
     programName: string
     grade?: string
+    points?: number
     festivalName: string
 }): Promise<Buffer> {
-    const { templateBuffer, templateMimeType, studentName, programName, grade, festivalName } = options
+    const { templateBuffer, templateMimeType, studentName, programName, grade, points, festivalName } = options
 
     // Convert template to base64 for embedding in HTML
     const templateBase64 = templateBuffer.toString('base64')
@@ -116,6 +117,12 @@ async function generateCertificatePDF(options: {
                 font-size: 13px;
                 color: #000;
             }
+            .points {
+                top: 145mm;
+                font-size: 14px;
+                font-weight: bold;
+                color: #555;
+            }
         </style>
     </head>
     <body>
@@ -127,6 +134,7 @@ async function generateCertificatePDF(options: {
             <div class="content program-name">${programName}</div>
             <div class="content festival">conducted as part of ${festivalName}</div>
             <div class="content date">Dated: ${dateStr}</div>
+            ${points ? `<div class="content points">Grade Points: ${points}</div>` : ''}
         </div>
     </body>
     </html>
@@ -179,6 +187,13 @@ async function generateCertificatePDF(options: {
     } finally {
         await browser.close()
     }
+}
+
+const CERT_SCORE_MAP: Record<string, number> = {
+    'WINNER': 5,
+    'FIRST_RUNNER_UP': 4,
+    'SECOND_RUNNER_UP': 3,
+    'PARTICIPATION': 2
 }
 
 /**
@@ -260,12 +275,16 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
             try {
                 console.log(`Generating certificate for ${reg.user.fullName}...`)
 
+                const regGrade = (reg as any).grade || 'PARTICIPATION'
+                const certPoints = CERT_SCORE_MAP[regGrade] || 2
+
                 const pdfBuffer = await generateCertificatePDF({
                     templateBuffer,
                     templateMimeType,
                     studentName: reg.user.fullName,
                     programName: `${reg.program.name} (${reg.program.type})`,
                     grade: (reg as any).grade,
+                    points: certPoints,
                     festivalName
                 })
 
