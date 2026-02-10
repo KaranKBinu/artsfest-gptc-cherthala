@@ -171,7 +171,7 @@ export async function getHouses() {
     try {
         const houses = await prisma.house.findMany({
             orderBy: { name: 'asc' },
-            select: { id: true, name: true }
+            select: { id: true, name: true, color: true }
         })
         return { success: true, data: houses }
     } catch (error) {

@@ -2359,7 +2359,7 @@ export default function DashboardPage() {
                             <h2 className={`${styles.cardTitle} ${cinzel.className}`}>House Standings</h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
                                 {houseScores.length > 0 ? (
-                                    houseScores.slice(0, 4).map((h, idx) => (
+                                    houseScores.map((h, idx) => (
                                         <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <span style={{ fontWeight: 700, opacity: 0.5, width: '20px' }}>#{idx + 1}</span>
                                             <div style={{ flex: 1 }}>

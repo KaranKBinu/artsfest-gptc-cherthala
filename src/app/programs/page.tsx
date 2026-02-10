@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Cinzel, Inter } from 'next/font/google'
 import styles from './programs.module.css'
-import { getPrograms, registerForProgram } from '@/actions/programs'
-import { getHouseMembers, searchTeamMembers } from '@/actions/users'
+import { getPrograms, registerForProgramsBatch, getUserRegistrations } from '@/actions/programs'
+import { getHouseMembers } from '@/actions/users'
 import { AuthResponse } from '@/types'
-import { Program } from '@prisma/client'
+import { Program, Registration } from '@prisma/client'
 
 type SearchUser = {
     id: string
@@ -19,28 +19,42 @@ type SearchUser = {
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
+// Limit constants
+const LIMITS = {
+    ON_STAGE_SOLO: 4,
+    ON_STAGE_GROUP: 2,
+    OFF_STAGE_TOTAL: 3
+}
+
 export default function ProgramsPage() {
     const router = useRouter()
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [programs, setPrograms] = useState<Program[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<'ALL' | 'ON_STAGE' | 'OFF_STAGE'>('ALL')
+    const [typeFilter, setTypeFilter] = useState<'ALL' | 'SOLO' | 'GROUP'>('ALL')
+    const [existingRegistrations, setExistingRegistrations] = useState<any[]>([])
 
-    // Modal state
-    const [selectedProgram, setSelectedProgram] = useState<Program | null>(null)
-    const [teamName, setTeamName] = useState('')
+    // Batch selection state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [groupConfigs, setGroupConfigs] = useState<Record<string, { groupName: string, memberIds: string[] }>>({})
+
+    // Modal state for fine-tuning group registration
+    const [editingGroupProgram, setEditingGroupProgram] = useState<Program | null>(null)
+    const [tempTeamName, setTempTeamName] = useState('')
+    const [tempSelectedMemberIds, setTempSelectedMemberIds] = useState<Set<string>>(new Set())
+
+    // UI state
     const [registering, setRegistering] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
 
-    // Group members state
+    // Group members state for modal
     const [availableMembers, setAvailableMembers] = useState<SearchUser[]>([])
     const [filteredMembers, setFilteredMembers] = useState<SearchUser[]>([])
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set())
     const [isLoadingMembers, setIsLoadingMembers] = useState(false)
 
     useEffect(() => {
-        // Load user
         const token = localStorage.getItem('token')
         const userStr = localStorage.getItem('user')
 
@@ -52,46 +66,72 @@ export default function ProgramsPage() {
                     return
                 }
                 setUser(userData)
+                loadInitialData(userData.id)
             } catch (e) {
                 console.error('Failed to parse user', e)
             }
+        } else {
+            router.push('/login')
         }
-
-        // Load programs
-        loadPrograms()
     }, [router])
 
-    async function loadPrograms() {
+    async function loadInitialData(userId: string) {
         setLoading(true)
         try {
-            const res = await getPrograms()
-            if (res.success && res.data) {
-                setPrograms(res.data)
-            }
+            const [progRes, regRes] = await Promise.all([
+                getPrograms(),
+                getUserRegistrations(userId)
+            ])
+            if (progRes.success && progRes.data) setPrograms(progRes.data)
+            if (regRes.success && regRes.data) setExistingRegistrations(regRes.data)
         } catch (e) {
-            console.error('Failed to load programs', e)
+            console.error('Failed to load data', e)
         } finally {
             setLoading(false)
         }
     }
 
-    const filteredPrograms = programs.filter(p => {
-        if (filter === 'ALL') return true
-        return p.category === filter
-    })
+    const isRegistered = (programId: string) => existingRegistrations.some(r => r.programId === programId)
 
-    const handleRegisterClick = async (program: Program) => {
-        if (!user) {
-            router.push('/login')
-            return
+    const toggleProgramSelection = (program: Program) => {
+        const newSelectedIds = new Set(selectedIds)
+        if (newSelectedIds.has(program.id)) {
+            newSelectedIds.delete(program.id)
+            if (program.type === 'GROUP') {
+                const newConfigs = { ...groupConfigs }
+                delete newConfigs[program.id]
+                setGroupConfigs(newConfigs)
+            }
+        } else {
+            // Block selection if limit reached
+            const currentCounts = getCounts()
+            if (program.category === 'ON_STAGE') {
+                if (program.type === 'SOLO' && currentCounts.osSolo >= LIMITS.ON_STAGE_SOLO) return
+                if (program.type === 'GROUP' && currentCounts.osGroup >= LIMITS.ON_STAGE_GROUP) return
+            } else {
+                if (currentCounts.offT >= LIMITS.OFF_STAGE_TOTAL) return
+            }
+
+            if (program.type === 'GROUP') {
+                // Open modal for group configuration before adding
+                handleGroupConfigClick(program)
+                return
+            }
+            newSelectedIds.add(program.id)
         }
-        setSelectedProgram(program)
-        setTeamName('')
+        setSelectedIds(newSelectedIds)
+        setMessage(null)
+    }
+
+    const handleGroupConfigClick = async (program: Program) => {
+        setEditingGroupProgram(program)
+        const existingConfig = groupConfigs[program.id]
+        setTempTeamName(existingConfig?.groupName || '')
+        setTempSelectedMemberIds(new Set(existingConfig?.memberIds || []))
         setSearchQuery('')
-        setSelectedMemberIds(new Set())
         setMessage(null)
 
-        if (program.type === 'GROUP' && user.house?.id) {
+        if (user?.house?.id) {
             setIsLoadingMembers(true)
             try {
                 const res = await getHouseMembers(user.house.id, user.id)
@@ -99,81 +139,79 @@ export default function ProgramsPage() {
                     setAvailableMembers(res.data as SearchUser[])
                     setFilteredMembers(res.data as SearchUser[])
                 }
-            } catch (error) {
-                console.error('Failed to load house members', error)
             } finally {
                 setIsLoadingMembers(false)
             }
         }
     }
 
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const query = e.target.value.toLowerCase()
-        setSearchQuery(query)
+    const saveGroupConfig = () => {
+        if (!editingGroupProgram) return
 
-        if (!query) {
-            setFilteredMembers(availableMembers)
-        } else {
-            const filtered = availableMembers.filter(member =>
-                member.fullName.toLowerCase().includes(query) ||
-                member.studentAdmnNo.toLowerCase().includes(query)
-            )
-            setFilteredMembers(filtered)
+        if (!tempTeamName.trim()) {
+            setMessage({ type: 'error', text: 'Team name is required' })
+            return
         }
+
+        const teamSize = 1 + tempSelectedMemberIds.size
+        if (teamSize < editingGroupProgram.minMembers || teamSize > editingGroupProgram.maxMembers) {
+            setMessage({ type: 'error', text: `Requires ${editingGroupProgram.minMembers}-${editingGroupProgram.maxMembers} members.` })
+            return
+        }
+
+        setGroupConfigs({
+            ...groupConfigs,
+            [editingGroupProgram.id]: {
+                groupName: tempTeamName,
+                memberIds: Array.from(tempSelectedMemberIds)
+            }
+        })
+
+        // Verify limit one last time for groups
+        if (!selectedIds.has(editingGroupProgram.id)) {
+            const currentCounts = getCounts()
+            if (editingGroupProgram.category === 'ON_STAGE') {
+                if (currentCounts.osGroup >= LIMITS.ON_STAGE_GROUP) {
+                    setMessage({ type: 'error', text: 'On-Stage Group limit reached!' })
+                    return
+                }
+            } else {
+                if (currentCounts.offT >= LIMITS.OFF_STAGE_TOTAL) {
+                    setMessage({ type: 'error', text: 'Off-Stage limit reached!' })
+                    return
+                }
+            }
+        }
+
+        const newSelectedIds = new Set(selectedIds)
+        newSelectedIds.add(editingGroupProgram.id)
+        setSelectedIds(newSelectedIds)
+        setEditingGroupProgram(null)
     }
 
-    const toggleMember = (memberId: string) => {
-        const newSelected = new Set(selectedMemberIds)
-        if (newSelected.has(memberId)) {
-            newSelected.delete(memberId)
-        } else {
-            newSelected.add(memberId)
-        }
-        setSelectedMemberIds(newSelected)
-    }
-
-    const handleConfirmRegistration = async () => {
-        if (!user || !selectedProgram) return
-
-        if (selectedProgram.type === 'GROUP') {
-            if (!teamName.trim()) {
-                setMessage({ type: 'error', text: 'Please enter a team name for group events.' })
-                return
-            }
-
-            // Validate member count
-            // Total team size = Leader (current user) + selected members
-            const teamSize = 1 + selectedMemberIds.size
-
-            if (teamSize < selectedProgram.minMembers) {
-                setMessage({ type: 'error', text: `You need at least ${selectedProgram.minMembers} members (including yourself).` })
-                return
-            }
-
-            if (teamSize > selectedProgram.maxMembers) {
-                setMessage({ type: 'error', text: `Maximum ${selectedProgram.maxMembers} members allowed.` })
-                return
-            }
-        }
+    const handleBatchRegister = async () => {
+        if (!user || selectedIds.size === 0) return
 
         setRegistering(true)
         setMessage(null)
 
-        try {
-            const res = await registerForProgram(
-                user.id,
-                selectedProgram.id,
-                selectedProgram.type === 'GROUP',
-                teamName,
-                Array.from(selectedMemberIds)
-            )
+        const payload = Array.from(selectedIds).map(id => {
+            const p = programs.find(prog => prog.id === id)!
+            return {
+                programId: id,
+                isGroup: p.type === 'GROUP',
+                groupName: groupConfigs[id]?.groupName,
+                groupMemberIds: groupConfigs[id]?.memberIds
+            }
+        })
 
+        try {
+            const res = await registerForProgramsBatch(user.id, payload)
             if (res.success) {
-                setMessage({ type: 'success', text: 'Successfully registered!' })
-                setTimeout(() => {
-                    setSelectedProgram(null)
-                    router.refresh() // Refresh to update dashboard data if cached
-                }, 1500)
+                setMessage({ type: 'success', text: 'Successfully registered for all selected items!' })
+                setSelectedIds(new Set())
+                setGroupConfigs({})
+                loadInitialData(user.id)
             } else {
                 setMessage({ type: 'error', text: res.error || 'Registration failed' })
             }
@@ -184,173 +222,193 @@ export default function ProgramsPage() {
         }
     }
 
-    if (loading) {
-        return (
-            <div className={`${styles.container} ${inter.className}`}>
-                <p>Loading programs...</p>
-            </div>
-        )
+    // Limit calculations
+    const getCounts = () => {
+        let osSolo = 0, osGroup = 0, offT = 0
+
+        // Count existing
+        existingRegistrations.forEach(r => {
+            if (r.program.category === 'ON_STAGE') {
+                if (r.program.type === 'SOLO') osSolo++
+                else osGroup++
+            } else offT++
+        })
+
+        // Add pending selection
+        selectedIds.forEach(id => {
+            const p = programs.find(prog => prog.id === id)
+            if (!p) return
+            if (p.category === 'ON_STAGE') {
+                if (p.type === 'SOLO') osSolo++
+                else osGroup++
+            } else offT++
+        })
+
+        return { osSolo, osGroup, offT }
     }
+
+    const counts = getCounts()
+    const filteredPrograms = programs.filter(p => {
+        const categoryMatch = filter === 'ALL' || p.category === filter
+        const typeMatch = typeFilter === 'ALL' || p.type === typeFilter
+        return categoryMatch && typeMatch
+    })
+
+    if (loading) return <div className={styles.container}><p>Loading items...</p></div>
 
     return (
         <div className={`${styles.container} ${inter.className}`}>
             <header className={styles.header}>
                 <div>
-                    <h1 className={`${styles.title} ${cinzel.className}`}>Browse Programs</h1>
-                    {user && (
-                        <button
-                            onClick={() => router.push('/dashboard')}
-                            style={{ background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', color: 'var(--foreground)' }}
-                        >
-                            &larr; Back to Dashboard
-                        </button>
-                    )}
+                    <h1 className={`${styles.title} ${cinzel.className}`}>Program Selection</h1>
+                    <button onClick={() => router.push('/dashboard')} className={styles.backButton}>
+                        &larr; Back to Dashboard
+                    </button>
                 </div>
-                <div className={styles.filters}>
-                    <button
-                        className={`${styles.filterButton} ${filter === 'ALL' ? styles.active : ''}`}
-                        onClick={() => setFilter('ALL')}
-                    >
-                        All
-                    </button>
-                    <button
-                        className={`${styles.filterButton} ${filter === 'ON_STAGE' ? styles.active : ''}`}
-                        onClick={() => setFilter('ON_STAGE')}
-                    >
-                        On Stage
-                    </button>
-                    <button
-                        className={`${styles.filterButton} ${filter === 'OFF_STAGE' ? styles.active : ''}`}
-                        onClick={() => setFilter('OFF_STAGE')}
-                    >
-                        Off Stage
-                    </button>
+                <div className={styles.limitGrid}>
+                    <div className={styles.limitItem}>On-Stage Solo: {counts.osSolo}/{LIMITS.ON_STAGE_SOLO}</div>
+                    <div className={styles.limitItem}>On-Stage Group: {counts.osGroup}/{LIMITS.ON_STAGE_GROUP}</div>
+                    <div className={styles.limitItem}>Off-Stage Total: {counts.offT}/{LIMITS.OFF_STAGE_TOTAL}</div>
                 </div>
             </header>
 
-            <div className={styles.grid}>
-                {filteredPrograms.map(program => (
-                    <div key={program.id} className={styles.card}>
-                        <div className={styles.cardHeader}>
-                            <h3 className={`${styles.programName} ${cinzel.className}`}>{program.name}</h3>
-                            <span className={styles.programType}>{program.type}</span>
-                        </div>
-                        <p className={styles.description}>{program.description || 'No description available.'}</p>
-                        <div className={styles.meta}>
-                            <span>{(program.minMembers === 0 && program.maxMembers === 0) ? 'No limit' : `Min: ${program.minMembers} | Max: ${program.maxMembers}`}</span>
-                            <span>{program.category.replace('_', ' ')}</span>
-                        </div>
-                        <button
-                            className={styles.registerButton}
-                            onClick={() => handleRegisterClick(program)}
-                        >
-                            Register
-                        </button>
+            <div className={styles.filterSection}>
+                <div className={styles.filterRow}>
+                    <span className={styles.filterLabel}>Category:</span>
+                    <div className={styles.filters}>
+                        {['ALL', 'ON_STAGE', 'OFF_STAGE'].map(f => (
+                            <button key={f}
+                                className={`${styles.filterButton} ${filter === f ? styles.active : ''}`}
+                                onClick={() => setFilter(f as any)}>{f.replace('_', ' ')}</button>
+                        ))}
                     </div>
-                ))}
+                </div>
+
+                <div className={styles.filterRow}>
+                    <span className={styles.filterLabel}>Type:</span>
+                    <div className={styles.filters}>
+                        {['ALL', 'SOLO', 'GROUP'].map(f => (
+                            <button key={f}
+                                className={`${styles.filterButton} ${typeFilter === f ? styles.active : ''}`}
+                                onClick={() => setTypeFilter(f as any)}>{f}</button>
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            {/* Registration Modal */}
-            {selectedProgram && (
+            <div className={styles.grid}>
+                {filteredPrograms.map(program => {
+                    const registered = isRegistered(program.id)
+                    const selected = selectedIds.has(program.id)
+
+                    const isLimitReached = () => {
+                        if (program.category === 'ON_STAGE') {
+                            return program.type === 'SOLO' ? counts.osSolo >= LIMITS.ON_STAGE_SOLO : counts.osGroup >= LIMITS.ON_STAGE_GROUP
+                        }
+                        return counts.offT >= LIMITS.OFF_STAGE_TOTAL
+                    }
+                    const limitReached = isLimitReached()
+
+                    return (
+                        <div key={program.id} className={`${styles.card} ${selected ? styles.selectedCard : ''} ${registered ? styles.registeredCard : ''}`}>
+                            <div className={styles.cardHeader}>
+                                <h3 className={`${styles.programName} ${cinzel.className}`}>{program.name}</h3>
+                                <div className={styles.badgeRow}>
+                                    <span className={styles.programType}>{program.type}</span>
+                                    {registered && <span className={styles.registeredBadge}>Registered</span>}
+                                </div>
+                            </div>
+                            <p className={styles.description}>{program.description || 'Participate and score points for your house!'}</p>
+
+                            <div className={styles.cardFooter}>
+                                <div className={styles.meta}>
+                                    {program.type === 'GROUP' && <span>{program.minMembers}-{program.maxMembers} members</span>}
+                                </div>
+
+                                {!registered && (
+                                    <div className={styles.selectionZone}>
+                                        {program.type === 'GROUP' && selected && (
+                                            <button className={styles.configBtn} onClick={() => handleGroupConfigClick(program)}>⚙ Edit Team</button>
+                                        )}
+                                        <button
+                                            className={`${styles.selectBtn} ${selected ? styles.selectedBtn : ''}`}
+                                            onClick={() => toggleProgramSelection(program)}
+                                            disabled={!selected && limitReached}
+                                        >
+                                            {selected ? 'Added' : limitReached ? 'Limit Reached' : (program.type === 'GROUP' ? 'Setup Team' : 'Select')}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+            {selectedIds.size > 0 && (
+                <div className={styles.floatingBar}>
+                    <div className={styles.selectionSummary}>
+                        <strong>{selectedIds.size}</strong> items selected
+                    </div>
+                    <button className={styles.batchRegisterBtn} onClick={handleBatchRegister} disabled={registering}>
+                        {registering ? 'Processing...' : 'Register Selected Items'}
+                    </button>
+                </div>
+            )}
+
+            {message && (
+                <div className={`${styles.messageToast} ${styles[message.type]}`}>
+                    {message.text}
+                </div>
+            )}
+
+            {/* Group Configuration Modal */}
+            {editingGroupProgram && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>
-                        <h2 className={`${styles.modalTitle} ${cinzel.className}`}>
-                            Register for {selectedProgram.name}
-                        </h2>
+                        <h2 className={cinzel.className}>Team Configuration: {editingGroupProgram.name}</h2>
+                        {message?.type === 'error' && <p className={styles.errorMessage}>{message.text}</p>}
 
-                        {message && (
-                            <p className={message.type === 'error' ? styles.errorMessage : styles.successMessage}>
-                                {message.text}
-                            </p>
-                        )}
+                        <div className={styles.inputGroup}>
+                            <label className={styles.inputLabel}>Team Name</label>
+                            <input type="text" className={styles.input} value={tempTeamName} onChange={e => setTempTeamName(e.target.value)} placeholder="Eagle Squad..." />
+                        </div>
 
-                        {selectedProgram.type === 'GROUP' && (
-                            <>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Team Name</label>
-                                    <input
-                                        type="text"
-                                        className={styles.input}
-                                        placeholder="Enter your team name"
-                                        value={teamName}
-                                        onChange={(e) => setTeamName(e.target.value)}
-                                    />
-                                </div>
+                        <div className={styles.inputGroup}>
+                            <label className={styles.inputLabel}>Select Members ({tempSelectedMemberIds.size} selected)</label>
+                            <input type="text" className={styles.input} placeholder="Search members..." value={searchQuery} onChange={e => {
+                                const q = e.target.value.toLowerCase()
+                                setSearchQuery(q)
+                                setFilteredMembers(availableMembers.filter(m => m.fullName.toLowerCase().includes(q) || m.studentAdmnNo.toLowerCase().includes(q)))
+                            }} />
 
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Select Team Members ({selectedMemberIds.size} selected)</label>
-
-                                    <input
-                                        type="text"
-                                        className={styles.input}
-                                        placeholder="Filter by name..."
-                                        value={searchQuery}
-                                        onChange={handleSearch}
-                                        style={{ marginBottom: '1rem' }}
-                                    />
-
-                                    {isLoadingMembers ? (
-                                        <div style={{ textAlign: 'center', padding: '1rem' }}>Loading members...</div>
-                                    ) : (
-                                        <div className={styles.membersList}>
-                                            {filteredMembers.length > 0 ? (
-                                                filteredMembers.map(member => (
-                                                    <div key={member.id} className={styles.memberCheckboxItem}>
-                                                        <label className={styles.checkboxLabel}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedMemberIds.has(member.id)}
-                                                                onChange={() => toggleMember(member.id)}
-                                                                className={styles.checkbox}
-                                                            />
-                                                            <div className={styles.memberInfo}>
-                                                                <span className={styles.memberName}>{member.fullName}</span>
-                                                                <span className={styles.memberDetails}>{member.studentAdmnNo} - {member.department}</span>
-                                                            </div>
-                                                        </label>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div style={{ padding: '1rem', textAlign: 'center', opacity: 0.7 }}>
-                                                    {availableMembers.length === 0 ? 'No other members found in your house.' : 'No matching members found.'}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.7 }}>
-                                        Requirement: {(selectedProgram.minMembers === 0 && selectedProgram.maxMembers === 0) ? 'No limit' : `${selectedProgram.minMembers} - ${selectedProgram.maxMembers} members.`}
-                                    </p>
-                                </div>
-
-                            </>
-                        )}
-
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.5' }}>
-                            Are you sure you want to register for this <b>{selectedProgram.category.replace('_', ' ').toLowerCase()}</b> event?
-                            This will count towards your registration limits.
-                        </p>
+                            <div className={styles.membersList}>
+                                {isLoadingMembers ? <p>Loading members...</p> :
+                                    filteredMembers.map(member => (
+                                        <label key={member.id} className={styles.checkboxLabel}>
+                                            <input type="checkbox" checked={tempSelectedMemberIds.has(member.id)}
+                                                onChange={() => {
+                                                    const newSet = new Set(tempSelectedMemberIds)
+                                                    newSet.has(member.id) ? newSet.delete(member.id) : newSet.add(member.id)
+                                                    setTempSelectedMemberIds(newSet)
+                                                }} />
+                                            <div className={styles.memberInfo}>
+                                                <span className={styles.memberName}>{member.fullName}</span>
+                                                <span className={styles.memberDetails}>{member.studentAdmnNo}</span>
+                                            </div>
+                                        </label>
+                                    ))}
+                            </div>
+                            <p className={styles.meta}>Requirement: {editingGroupProgram.minMembers}-{editingGroupProgram.maxMembers} (incl. you)</p>
+                        </div>
 
                         <div className={styles.modalButtons}>
-                            <button
-                                className={styles.cancelButton}
-                                onClick={() => setSelectedProgram(null)}
-                                disabled={registering}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className={styles.confirmButton}
-                                onClick={handleConfirmRegistration}
-                                disabled={registering}
-                            >
-                                {registering ? 'Registering...' : 'Confirm Registration'}
-                            </button>
+                            <button className={styles.cancelButton} onClick={() => setEditingGroupProgram(null)}>Cancel</button>
+                            <button className={styles.confirmButton} onClick={saveGroupConfig}>Done</button>
                         </div>
                     </div>
-                </div >
-            )
-            }
-        </div >
+                </div>
+            )}
+        </div>
     )
 }

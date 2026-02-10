@@ -7,7 +7,7 @@ const SCORE_MAP: Record<string, number> = {
     'WINNER': 5,
     'FIRST_RUNNER_UP': 4,
     'SECOND_RUNNER_UP': 3,
-    'PARTICIPATION': 2
+    'PARTICIPATION': 0
 }
 
 export async function updateRegistrationResult(registrationId: string, grade: string | null) {
@@ -35,6 +35,11 @@ export async function getHouseLeaderboard() {
         const houses = await prisma.house.findMany({
             include: {
                 registrations: {
+                    where: {
+                        grade: {
+                            not: 'PARTICIPATION'
+                        }
+                    },
                     select: {
                         score: true
                     }

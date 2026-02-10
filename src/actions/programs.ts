@@ -196,3 +196,116 @@ export async function registerForProgram(
         return { success: false, error: 'Registration failed. Please try again.' }
     }
 }
+
+export async function getUserRegistrations(userId: string) {
+    try {
+        const registrations = await prisma.registration.findMany({
+            where: { userId, status: { not: 'CANCELLED' } },
+            include: { program: true }
+        })
+        return { success: true, data: registrations }
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch registrations' }
+    }
+}
+
+export async function registerForProgramsBatch(
+    userId: string,
+    registrations: {
+        programId: string
+        isGroup: boolean
+        groupName?: string
+        groupMemberIds?: string[]
+    }[]
+) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { registrations: { include: { program: true }, where: { status: { not: 'CANCELLED' } } } }
+        })
+
+        if (!user) return { success: false, error: 'User not found' }
+        if (!user.houseId) return { success: false, error: 'House not assigned' }
+
+        // Get limits from config
+        const configs = await prisma.configuration.findMany({
+            where: { key: { in: ['maxOnStageSolo', 'maxOnStageGroup', 'maxOffStageTotal'] } }
+        })
+        const limits = { maxOnStageSolo: 0, maxOnStageGroup: 0, maxOffStageTotal: 0 }
+        configs.forEach(c => {
+            if (c.key === 'maxOnStageSolo') limits.maxOnStageSolo = parseInt(c.value)
+            if (c.key === 'maxOnStageGroup') limits.maxOnStageGroup = parseInt(c.value)
+            if (c.key === 'maxOffStageTotal') limits.maxOffStageTotal = parseInt(c.value)
+        })
+
+        // Current counts
+        let onStageSolo = 0
+        let onStageGroup = 0
+        let offStageTotal = 0
+        user.registrations.forEach(r => {
+            if (r.program.category === 'ON_STAGE') {
+                if (r.program.type === 'SOLO') onStageSolo++
+                if (r.program.type === 'GROUP') onStageGroup++
+            } else { offStageTotal++ }
+        })
+
+        // Get all programs in batch
+        const programIds = registrations.map(r => r.programId)
+        const programs = await prisma.program.findMany({ where: { id: { in: programIds } } })
+
+        // Validate limits before starting transaction
+        for (const reg of registrations) {
+            const program = programs.find(p => p.id === reg.programId)
+            if (!program) continue
+
+            if (program.category === 'ON_STAGE') {
+                if (program.type === 'SOLO') {
+                    onStageSolo++
+                    if (onStageSolo > limits.maxOnStageSolo) return { success: false, error: `Limit exceeded for On Stage Solo (Max: ${limits.maxOnStageSolo})` }
+                } else {
+                    onStageGroup++
+                    if (onStageGroup > limits.maxOnStageGroup) return { success: false, error: `Limit exceeded for On Stage Group (Max: ${limits.maxOnStageGroup})` }
+                }
+            } else {
+                offStageTotal++
+                if (offStageTotal > limits.maxOffStageTotal) return { success: false, error: `Limit exceeded for Off Stage (Max: ${limits.maxOffStageTotal})` }
+            }
+        }
+
+        // Transactional creation
+        await prisma.$transaction(async (tx) => {
+            for (const reg of registrations) {
+                const program = programs.find(p => p.id === reg.programId)
+                if (!program) continue
+
+                const newReg = await tx.registration.create({
+                    data: {
+                        userId,
+                        programId: reg.programId,
+                        houseId: user.houseId!,
+                        category: program.category,
+                        isGroup: reg.isGroup,
+                        groupName: reg.isGroup ? reg.groupName : null,
+                        status: 'CONFIRMED'
+                    }
+                })
+
+                if (reg.isGroup && reg.groupMemberIds && reg.groupMemberIds.length > 0) {
+                    await tx.groupMember.createMany({
+                        data: reg.groupMemberIds.map(mid => ({
+                            registrationId: newReg.id,
+                            userId: mid
+                        }))
+                    })
+                }
+            }
+        })
+
+        revalidatePath('/dashboard')
+        revalidatePath('/programs')
+        return { success: true }
+    } catch (e: any) {
+        console.error('Batch registration failed:', e)
+        return { success: false, error: e.message || 'Batch registration failed' }
+    }
+}
