@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation'
 import { Cinzel, Inter } from 'next/font/google'
 import styles from './dashboard.module.css'
 import { AuthResponse } from '@/types'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import writeXlsxFile from 'write-excel-file'
 import LoadingOverlay from '@/components/LoadingOverlay'
 
@@ -17,6 +15,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 import { getDashboardData, DashboardData } from '@/actions/dashboard'
 import { getUsersForAdmin, getHouses, getVolunteers, updateUserRole } from '@/actions/users'
+import { generateStudentRegistrationsPDF, generateAdminExportPDF } from '@/actions/pdf-generator'
 import { useConfig } from '@/context/ConfigContext'
 import { useModals } from '@/context/ModalContext'
 import {
@@ -520,6 +519,7 @@ export default function DashboardPage() {
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [pdfLoading, setPdfLoading] = useState(false)
 
     // Admin State - Navigation
     const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'results'>('users')
@@ -676,14 +676,22 @@ export default function DashboardPage() {
             link.setAttribute('download', `${filename}.csv`)
             link.click()
         } else if (type === 'pdf') {
-            const doc = new jsPDF()
-            doc.text('Student List', 14, 15)
-            autoTable(doc, {
-                head: [headers],
-                body: dataAoA,
-                startY: 20
-            })
-            doc.save(`${filename}.pdf`)
+            setPdfLoading(true)
+            try {
+                const res = await generateAdminExportPDF(adminUsers)
+                if (res.success && res.pdf) {
+                    const link = document.createElement('a')
+                    link.href = `data:application/pdf;base64,${res.pdf}`
+                    link.download = `${filename}.pdf`
+                    link.click()
+                } else {
+                    showToast(res.error || 'Failed to export PDF', 'error')
+                }
+            } catch (e) {
+                showToast('An error occurred during PDF generation', 'error')
+            } finally {
+                setPdfLoading(false)
+            }
         } else if (type === 'excel') {
             const schema = [
                 { column: 'Name', type: String, value: (student: any) => student.fullName },
@@ -707,53 +715,24 @@ export default function DashboardPage() {
         }
     }
 
-    const downloadMyRegistrations = () => {
+    const downloadMyRegistrations = async () => {
         if (!user || !dashboardData) return
-
-        const doc = new jsPDF()
-        const filename = `registrations_${user.studentAdmnNo}`
-
-        // Header
-        doc.setFontSize(22)
-        doc.setTextColor(139, 0, 0) // var(--primary-red)
-        doc.text('ARTS FESTIVAL 2024', 105, 20, { align: 'center' })
-
-        doc.setFontSize(14)
-        doc.setTextColor(0, 0, 0)
-        doc.text('Registration Summary', 105, 30, { align: 'center' })
-
-        // Student Info
-        doc.setFontSize(10)
-        doc.text(`Name: ${user.fullName}`, 14, 45)
-        doc.text(`Admission No: ${user.studentAdmnNo}`, 14, 52)
-        doc.text(`Department: ${user.department || 'N/A'}`, 14, 59)
-        doc.text(`House: ${user.house?.name || 'N/A'}`, 14, 66)
-        doc.text(`Date of Download: ${new Date().toLocaleDateString()}`, 14, 73)
-
-        // Registration Table
-        const tableBody = dashboardData.registrations.map((reg: any) => [
-            reg.program.name,
-            reg.program.category.replace('_', ' '),
-            reg.program.type,
-            reg.status
-        ])
-
-        autoTable(doc, {
-            head: [['Program', 'Category', 'Type', 'Status']],
-            body: tableBody,
-            startY: 80,
-            theme: 'striped',
-            headStyles: { fillColor: [139, 0, 0] }
-        })
-
-        // Footer / Disclaimer
-        const finalY = (doc as any).lastAutoTable.finalY || 100
-        doc.setFontSize(9)
-        doc.setFont('helvetica', 'italic')
-        doc.text('Note: This is an automatically generated receipt of your registrations.', 14, finalY + 15)
-        doc.text('Please carry this for any attendance verification if required.', 14, finalY + 22)
-
-        doc.save(`${filename}.pdf`)
+        setPdfLoading(true)
+        try {
+            const res = await generateStudentRegistrationsPDF(user.id)
+            if (res.success && res.pdf) {
+                const link = document.createElement('a')
+                link.href = `data:application/pdf;base64,${res.pdf}`
+                link.download = `registrations_${user.studentAdmnNo}.pdf`
+                link.click()
+            } else {
+                showToast(res.error || 'Failed to generate PDF', 'error')
+            }
+        } catch (e) {
+            showToast('An error occurred during PDF generation', 'error')
+        } finally {
+            setPdfLoading(false)
+        }
     }
 
     // Fetch Data on Tab Change
@@ -2474,6 +2453,7 @@ export default function DashboardPage() {
             {loading && <LoadingOverlay message="Loading Dashboard..." />}
             {loadingAdmin && <LoadingOverlay message="Fetching Admin Data..." />}
             {certLoading && <LoadingOverlay message="Generating & Sending Certificates... This may take a while." />}
+            {pdfLoading && <LoadingOverlay message="Generating Unicode PDF... Please wait." />}
         </div >
     )
 }
