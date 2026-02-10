@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
 import puppeteer from 'puppeteer-core'
+// @ts-expect-error - Chromium types can be tricky in certain environments
 import chromium from '@sparticuz/chromium'
 
 /**
@@ -108,6 +109,7 @@ async function generateCertificatePDF(options: {
                 font-size: 16px;
                 font-style: italic;
                 color: #3D3D3D;
+                font-family: 'Noto Sans Malayalam', 'Noto Serif', serif;
             }
             .date {
                 top: 135mm;

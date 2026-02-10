@@ -135,7 +135,7 @@ export async function generateStudentRegistrationsPDF(userId: string) {
         </head>
         <body>
             <div class="header">
-                <h1 class="festival-name">${festivalName}</h1>
+                <h1 class="festival-name malayalam">${festivalName}</h1>
                 <div class="title">Official Registration Summary</div>
             </div>
 
@@ -143,7 +143,7 @@ export async function generateStudentRegistrationsPDF(userId: string) {
                 <div class="info-item"><b>Name:</b> ${user.fullName}</div>
                 <div class="info-item"><b>Admission No:</b> ${user.studentAdmnNo}</div>
                 <div class="info-item"><b>Department:</b> ${user.department || 'N/A'}</div>
-                <div class="info-item"><b>House:</b> ${user.house?.name || 'N/A'}</div>
+                <div class="info-item"><b>House:</b> <span class="malayalam">${user.house?.name || 'N/A'}</span></div>
                 <div class="info-item"><b>Download Date:</b> ${dateStr}</div>
             </div>
 
@@ -225,7 +225,7 @@ export async function generateAdminExportPDF(usersData: any[]) {
             </style>
         </head>
         <body>
-            <h1>${festivalName} - Student Participants List</h1>
+            <h1 class="malayalam">${festivalName} - Student Participants List</h1>
             <table>
                 <thead>
                     <tr>
@@ -242,7 +242,7 @@ export async function generateAdminExportPDF(usersData: any[]) {
                             <td>${u.fullName}</td>
                             <td>${u.studentAdmnNo}</td>
                             <td>${u.department || ''}</td>
-                            <td>${u.house?.name || ''}</td>
+                            <td class="malayalam">${u.house?.name || ''}</td>
                             <td>
                                 ${u.registrations.map((r: any) => {
             let status = 'Absent'
