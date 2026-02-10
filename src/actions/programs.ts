@@ -247,6 +247,7 @@ export async function registerForProgramsBatch(
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: {
+                house: true,
                 registrations: {
                     where: { status: { not: RegistrationStatus.CANCELLED } },
                     include: { program: true }
@@ -377,70 +378,111 @@ export async function registerForProgramsBatch(
             let smtpConfigObj: any = {}
             try { smtpConfigObj = JSON.parse(smtpStr) } catch (e) { }
 
+            // Get all unique user IDs to notify (Leader + all teammates)
+            const allMemberIds = new Set<string>([userId])
+            newRegistrations.forEach(reg => {
+                if (reg.groupMemberIds) {
+                    reg.groupMemberIds.forEach(id => allMemberIds.add(id))
+                }
+            })
+
+            // Fetch info for everyone
+            const usersToNotify = await prisma.user.findMany({
+                where: { id: { in: Array.from(allMemberIds) } },
+                include: { house: true }
+            })
+
             const registeredPrograms = newRegistrations.map(reg => {
                 const p = programs.find(prog => prog.id === reg.programId)
                 return {
                     name: p?.name || 'Unknown Program',
                     category: p?.category?.replace('_', ' ') || '',
-                    type: p?.type || ''
+                    type: p?.type || '',
+                    isGroup: reg.isGroup,
+                    groupName: reg.groupName,
+                    leaderId: userId
                 }
             })
 
-            const rowsHtml = registeredPrograms.map(p => `
-                <tr>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${p.name}</td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${p.category}</td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">${p.type}</td>
-                </tr>
-            `).join('')
-
             const dashboardUrl = `${process.env.NEXTAUTH_URL || ''}/dashboard`
 
-            const htmlContent = `
-                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e1e1e1; border-radius: 12px; color: #333;">
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <h1 style="color: #8b0000; margin: 0; font-size: 28px;">Registration Confirmed!</h1>
-                        <p style="color: #666; font-size: 16px;">${festivalName}</p>
-                    </div>
-                    
-                    <p>Hello <strong>${user.fullName}</strong>,</p>
-                    <p>Success! Your registration for the following programs has been confirmed. We're excited to see you perform!</p>
-                    
-                    <div style="margin: 25px 0;">
-                        <table style="width: 100%; border-collapse: collapse; background-color: #fff;">
-                            <thead>
-                                <tr style="background-color: #8b0000; color: white;">
-                                    <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Program</th>
-                                    <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Category</th>
-                                    <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rowsHtml}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <p style="line-height: 1.6;">You can view your full registration schedule, team details, and download your registration slip directly from your dashboard.</p>
-                    
-                    <div style="text-align: center; margin-top: 35px;">
-                        <a href="${dashboardUrl}" style="background-color: #8b0000; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(139, 0, 0, 0.2);">Go to My Dashboard</a>
-                    </div>
-                    
-                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; text-align: center;">
-                        <p>This is an automated confirmation of your registrations.</p>
-                        <p>&copy; ${new Date().getFullYear()} ${festivalName} Organizing Committee</p>
-                    </div>
-                </div>
-            `
+            // Notify everyone
+            for (const recipient of usersToNotify) {
+                // Filter programs relevant to this user
+                const userPrograms = registeredPrograms.filter(p => {
+                    if (recipient.id === userId) return true // Leader gets everything
+                    // Teammates only get group programs they are part of
+                    const reg = newRegistrations.find(nr =>
+                        nr.isGroup &&
+                        nr.programId === programs.find(prog => prog.name === p.name)?.id &&
+                        nr.groupMemberIds?.includes(recipient.id)
+                    )
+                    return !!reg
+                })
 
-            await sendEmail({
-                to: user.email,
-                subject: `Registration Confirmed: ${festivalName}`,
-                text: `Hello ${user.fullName}, your registration for the programs in ${festivalName} has been confirmed. View details on your dashboard.`,
-                html: htmlContent,
-                smtpConfig: smtpConfigObj.user ? smtpConfigObj : undefined
-            })
+                if (userPrograms.length === 0) continue
+
+                const rowsHtml = userPrograms.map(p => `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${p.name}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${p.category}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${p.type}${p.groupName ? ` (Team: ${p.groupName})` : ''}</td>
+                    </tr>
+                `).join('')
+
+                const isLeader = recipient.id === userId
+                const helloText = isLeader
+                    ? `Success! Your registration for the following programs has been confirmed.`
+                    : `You have been registered for the following group programs by <strong>${user.fullName}</strong>.`
+
+                const htmlContent = `
+                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e1e1e1; border-radius: 12px; color: #333;">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <h1 style="color: #8b0000; margin: 0; font-size: 28px;">Registration Confirmed!</h1>
+                            <p style="color: #666; font-size: 16px;">${festivalName}</p>
+                        </div>
+                        
+                        <p>Hello <strong>${recipient.fullName}</strong>,</p>
+                        <p style="color: #555; font-size: 14px; margin-top: -10px;">House: ${recipient.house?.name || 'N/A'}</p>
+                        
+                        <p>${helloText}</p>
+                        
+                        <div style="margin: 25px 0;">
+                            <table style="width: 100%; border-collapse: collapse; background-color: #fff;">
+                                <thead>
+                                    <tr style="background-color: #8b0000; color: white;">
+                                        <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Program</th>
+                                        <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Category</th>
+                                        <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <p style="line-height: 1.6;">You can view your full registration schedule, team details, and download your registration slip directly from your dashboard.</p>
+                        
+                        <div style="text-align: center; margin-top: 35px;">
+                            <a href="${dashboardUrl}" style="background-color: #8b0000; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(139, 0, 0, 0.2);">Go to My Dashboard</a>
+                        </div>
+                        
+                        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; text-align: center;">
+                            <p>This is an automated confirmation of your registrations.</p>
+                            <p>&copy; ${new Date().getFullYear()} ${festivalName} Organizing Committee</p>
+                        </div>
+                    </div>
+                `
+
+                await sendEmail({
+                    to: recipient.email,
+                    subject: `Registration Confirmed: ${festivalName}`,
+                    text: `Hello ${recipient.fullName}, your registration for the programs in ${festivalName} has been confirmed.`,
+                    html: htmlContent,
+                    smtpConfig: smtpConfigObj.user ? smtpConfigObj : undefined
+                })
+            }
         } catch (emailErr) {
             console.error('Failed to send registration confirmation email:', emailErr)
             // We don't fail the registration if only the email fails

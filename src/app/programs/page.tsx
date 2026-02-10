@@ -41,6 +41,7 @@ export default function ProgramsPage() {
 
     // Modal state for fine-tuning group registration
     const [editingGroupProgram, setEditingGroupProgram] = useState<Program | null>(null)
+    const [showConfirmModal, setShowConfirmModal] = useState(false)
     const [tempTeamName, setTempTeamName] = useState('')
     const [tempSelectedMemberIds, setTempSelectedMemberIds] = useState<Set<string>>(new Set())
 
@@ -189,11 +190,17 @@ export default function ProgramsPage() {
         setEditingGroupProgram(null)
     }
 
-    const handleBatchRegister = async () => {
+    const handleBatchRegister = () => {
+        if (!user || selectedIds.size === 0) return
+        setShowConfirmModal(true)
+    }
+
+    const confirmRegistration = async () => {
         if (!user || selectedIds.size === 0) return
 
         setRegistering(true)
         setMessage(null)
+        setShowConfirmModal(false)
 
         const payload = Array.from(selectedIds).map(id => {
             const p = programs.find(prog => prog.id === id)!
@@ -405,6 +412,51 @@ export default function ProgramsPage() {
                         <div className={styles.modalButtons}>
                             <button className={styles.cancelButton} onClick={() => setEditingGroupProgram(null)}>Cancel</button>
                             <button className={styles.confirmButton} onClick={saveGroupConfig}>Done</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Registration Confirmation Modal */}
+            {showConfirmModal && user && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <h2 className={cinzel.className}>Confirm Registration</h2>
+
+                        <div className={styles.studentInfo}>
+                            <p className={styles.studentDetail}>Name: <strong>{user.fullName}</strong></p>
+                            <p className={styles.studentDetail}>House: <strong>{user.house?.name}</strong></p>
+                            <p className={styles.studentDetail}>Items: <strong>{selectedIds.size}</strong></p>
+                        </div>
+
+                        <p>You are about to register for the following programs:</p>
+
+                        <div className={styles.regSummary}>
+                            {Array.from(selectedIds).map(id => {
+                                const p = programs.find(prog => prog.id === id)
+                                if (!p) return null
+                                const config = groupConfigs[id]
+                                return (
+                                    <div key={id} className={styles.summaryItem}>
+                                        <span className={styles.summaryName}>{p.name}</span>
+                                        {p.type === 'GROUP' && config && (
+                                            <span className={styles.summaryTeam}>Team: {config.groupName}</span>
+                                        )}
+                                        {p.type === 'SOLO' && (
+                                            <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>Solo</span>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        <p style={{ fontSize: '0.85rem', color: 'var(--primary-red)', fontWeight: 500 }}>
+                            Note: Registration limits are strictly enforced. Please ensure your selection is correct.
+                        </p>
+
+                        <div className={styles.modalButtons}>
+                            <button className={styles.cancelButton} onClick={() => setShowConfirmModal(false)}>Wait, let me check</button>
+                            <button className={styles.confirmButton} onClick={confirmRegistration}>Confirm & Register</button>
                         </div>
                     </div>
                 </div>
