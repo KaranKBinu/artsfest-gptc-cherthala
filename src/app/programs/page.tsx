@@ -8,7 +8,6 @@ import { getPrograms, registerForProgramsBatch, getUserRegistrations } from '@/a
 import { getHouseMembers } from '@/actions/users'
 import { AuthResponse } from '@/types'
 import { Program, Registration } from '@prisma/client'
-import { Program, Registration } from '@prisma/client'
 import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
