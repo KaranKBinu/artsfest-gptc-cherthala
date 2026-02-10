@@ -991,6 +991,7 @@
 .formGrid .selectInput {
     width: 100%;
 }
+
 .exportButton:hover {
     filter: brightness(0.9);
     transform: translateY(-2px);
@@ -1038,16 +1039,16 @@
     gap: 0.5rem;
     margin-bottom: 2.5rem;
     padding: 0.5rem;
-    background: rgba(0,0,0,0.03);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 100px;
     width: fit-content;
-    margin-left: 0; 
+    margin-left: 0;
     border: 1px solid var(--border-color);
 }
 
 @media (prefers-color-scheme: dark) {
     .viewToggleContainer {
-        background: rgba(255,255,255,0.03);
+        background: rgba(255, 255, 255, 0.03);
     }
 }
 
@@ -1088,13 +1089,13 @@
 }
 
 .viewToggleBtn:hover:not(.active) {
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
     color: var(--primary-red);
 }
 
 @media (prefers-color-scheme: dark) {
     .viewToggleBtn:hover:not(.active) {
-        background: rgba(255,255,255,0.05);
+        background: rgba(255, 255, 255, 0.05);
         color: #ff6b6b;
     }
 }
@@ -1104,12 +1105,12 @@
 }
 
 .tableRowHover:hover {
-    background-color: rgba(0,0,0,0.02);
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 @media (prefers-color-scheme: dark) {
     .tableRowHover:hover {
-        background-color: rgba(255,255,255,0.02);
+        background-color: rgba(255, 255, 255, 0.02);
     }
 }
 
@@ -1125,7 +1126,7 @@
     padding: 1rem;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1175,7 +1176,7 @@
     .userTable {
         display: none;
     }
-    
+
     .mobileCardList {
         display: flex;
     }
@@ -1249,4 +1250,28 @@
 .roleBadge_STUDENT {
     background-color: #f3f4f6;
     color: #4b5563;
+}
+
+.badgeRow {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.roleBadge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.roleLeader {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.roleMember {
+    background-color: #e0e7ff;
+    color: #4338ca;
 }

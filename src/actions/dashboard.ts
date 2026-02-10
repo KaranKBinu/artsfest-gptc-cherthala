@@ -20,9 +20,20 @@ export async function getDashboardData(userId: string): Promise<{ success: boole
     try {
         const [registrations, configs] = await Promise.all([
             prisma.registration.findMany({
-                where: { userId },
+                where: {
+                    OR: [
+                        { userId },
+                        { groupMembers: { some: { userId } } }
+                    ],
+                    status: { not: 'CANCELLED' }
+                },
                 include: {
                     program: true,
+                    user: {
+                        select: {
+                            fullName: true
+                        }
+                    },
                     groupMembers: {
                         include: {
                             user: {

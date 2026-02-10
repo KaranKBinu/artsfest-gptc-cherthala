@@ -706,6 +706,56 @@ export default function DashboardPage() {
         }
     }
 
+    const downloadMyRegistrations = () => {
+        if (!user || !dashboardData) return
+
+        const doc = new jsPDF()
+        const filename = `registrations_${user.studentAdmnNo}`
+
+        // Header
+        doc.setFontSize(22)
+        doc.setTextColor(139, 0, 0) // var(--primary-red)
+        doc.text('ARTS FESTIVAL 2024', 105, 20, { align: 'center' })
+
+        doc.setFontSize(14)
+        doc.setTextColor(0, 0, 0)
+        doc.text('Registration Summary', 105, 30, { align: 'center' })
+
+        // Student Info
+        doc.setFontSize(10)
+        doc.text(`Name: ${user.fullName}`, 14, 45)
+        doc.text(`Admission No: ${user.studentAdmnNo}`, 14, 52)
+        doc.text(`Department: ${user.department || 'N/A'}`, 14, 59)
+        doc.text(`House: ${user.house?.name || 'N/A'}`, 14, 66)
+        doc.text(`Date of Download: ${new Date().toLocaleDateString()}`, 14, 73)
+
+        // Registration Table
+        const tableBody = dashboardData.registrations.map((reg: any) => [
+            reg.program.name,
+            reg.program.category.replace('_', ' '),
+            reg.program.type,
+            reg.isGroup ? (reg.userId === user.id ? 'Leader' : 'Member') : 'Solo',
+            reg.status
+        ])
+
+        autoTable(doc, {
+            head: [['Program', 'Category', 'Type', 'Role', 'Status']],
+            body: tableBody,
+            startY: 80,
+            theme: 'striped',
+            headStyles: { fillColor: [139, 0, 0] }
+        })
+
+        // Footer / Disclaimer
+        const finalY = (doc as any).lastAutoTable.finalY || 100
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'italic')
+        doc.text('Note: This is an automatically generated receipt of your registrations.', 14, finalY + 15)
+        doc.text('Please carry this for any attendance verification if required.', 14, finalY + 22)
+
+        doc.save(`${filename}.pdf`)
+    }
+
     // Fetch Data on Tab Change
     useEffect(() => {
         // Fetch house scores for everyone (for leaderboard display)
@@ -1210,7 +1260,7 @@ export default function DashboardPage() {
                                                                                     cursor: 'pointer'
                                                                                 }}
                                                                             >
-                                                                                <option value="PARTICIPATION">Participant (2)</option>
+                                                                                <option value="PARTICIPATION">Participant (0)</option>
                                                                                 <option value="WINNER">Winner (5)</option>
                                                                                 <option value="FIRST_RUNNER_UP">1st Runner (4)</option>
                                                                                 <option value="SECOND_RUNNER_UP">2nd Runner (3)</option>
@@ -1299,7 +1349,7 @@ export default function DashboardPage() {
                                         { label: 'Winner (1st)', points: 5, color: '#ffd700' },
                                         { label: 'First Runner Up (2nd)', points: 4, color: '#c0c0c0' },
                                         { label: 'Second Runner Up (3rd)', points: 3, color: '#cd7f32' },
-                                        { label: 'Participation', points: 2, color: 'var(--color-success)' }
+                                        { label: 'Participation', points: 0, color: 'var(--color-success)' }
                                     ].map((rule, i) => (
                                         <div key={i} style={{
                                             display: 'flex',
@@ -1338,7 +1388,8 @@ export default function DashboardPage() {
                                         <ul style={{ margin: '0.5rem 0 0 1.2rem' }}>
                                             <li>Points are awarded per program.</li>
                                             <li>A student must be marked <strong>Present</strong> to receive any points.</li>
-                                            <li>Only the highest awarded point per program counts for a student.</li>
+                                            <li>Group events earn points as a single entry for the House.</li>
+                                            <li>Participation points (0) do not contribute to the total score.</li>
                                             <li>House scores are updated in real-time as results are assigned.</li>
                                         </ul>
                                     </div>
@@ -2306,21 +2357,40 @@ export default function DashboardPage() {
                         {/* Registered Programs List */}
                         {dashboardData && (
                             <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
-                                <h2 className={`${styles.cardTitle} ${cinzel.className}`}>My Registrations</h2>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                                    <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0 }}>My Registrations</h2>
+                                    {dashboardData.registrations.length > 0 && (
+                                        <button onClick={downloadMyRegistrations} className={styles.exportButton} style={{ backgroundColor: 'var(--primary-red)' }}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            Download PDF
+                                        </button>
+                                    )}
+                                </div>
                                 {dashboardData.registrations.length > 0 ? (
                                     <div className={styles.registrationsList}>
                                         {dashboardData.registrations.map(reg => (
                                             <div key={reg.id} className={styles.regItem}>
                                                 <div className={styles.regHeader}>
                                                     <span className={styles.programName}>{reg.program.name}</span>
-                                                    <span className={`${styles.statusBadge} ${styles[reg.status.toLowerCase()]}`}>
-                                                        {reg.status}
-                                                    </span>
-                                                    {reg.grade && (
-                                                        <span className={styles.statusBadge} style={{ backgroundColor: 'var(--color-success)', color: 'white' }}>
-                                                            {reg.grade.replace(/_/g, ' ')}
+                                                    <div className={styles.badgeRow}>
+                                                        {reg.isGroup && (
+                                                            <span className={`${styles.roleBadge} ${reg.userId === user.id ? styles.roleLeader : styles.roleMember}`}>
+                                                                {reg.userId === user.id ? 'Leader' : 'Member'}
+                                                            </span>
+                                                        )}
+                                                        <span className={`${styles.statusBadge} ${styles[reg.status.toLowerCase()]}`}>
+                                                            {reg.status}
                                                         </span>
-                                                    )}
+                                                        {reg.grade && (
+                                                            <span className={styles.statusBadge} style={{ backgroundColor: 'var(--color-success)', color: 'white' }}>
+                                                                {reg.grade.replace(/_/g, ' ')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className={styles.regMeta}>
                                                     <span>{reg.program.category.replace('_', ' ')}</span>
@@ -2330,6 +2400,12 @@ export default function DashboardPage() {
                                                         <>
                                                             <span>•</span>
                                                             <span>Team: {reg.groupName}</span>
+                                                        </>
+                                                    )}
+                                                    {reg.isGroup && reg.userId !== user.id && reg.user && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span>Member</span>
                                                         </>
                                                     )}
                                                 </div>

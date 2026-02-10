@@ -1,8 +1,9 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { Program, ProgramCategory, ProgramType } from '@prisma/client'
+import { Program, ProgramCategory, ProgramType, RegistrationStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { sendEmail } from '@/lib/mail'
 
 export async function getPrograms(filters?: { category?: ProgramCategory }) {
     try {
@@ -200,11 +201,35 @@ export async function registerForProgram(
 export async function getUserRegistrations(userId: string) {
     try {
         const registrations = await prisma.registration.findMany({
-            where: { userId, status: { not: 'CANCELLED' } },
-            include: { program: true }
+            where: {
+                OR: [
+                    { userId: userId },
+                    { groupMembers: { some: { userId: userId } } }
+                ],
+                status: { not: 'CANCELLED' }
+            },
+            include: {
+                program: true,
+                user: {
+                    select: {
+                        fullName: true
+                    }
+                },
+                groupMembers: {
+                    include: {
+                        user: {
+                            select: {
+                                fullName: true,
+                                id: true
+                            }
+                        }
+                    }
+                }
+            }
         })
         return { success: true, data: registrations }
     } catch (error) {
+        console.error('Failed to fetch user registrations:', error)
         return { success: false, error: 'Failed to fetch registrations' }
     }
 }
@@ -221,7 +246,19 @@ export async function registerForProgramsBatch(
     try {
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            include: { registrations: { include: { program: true }, where: { status: { not: 'CANCELLED' } } } }
+            include: {
+                registrations: {
+                    where: { status: { not: RegistrationStatus.CANCELLED } },
+                    include: { program: true }
+                },
+                groupMemberships: {
+                    include: {
+                        registration: {
+                            include: { program: true }
+                        }
+                    }
+                }
+            }
         })
 
         if (!user) return { success: false, error: 'User not found' }
@@ -242,9 +279,21 @@ export async function registerForProgramsBatch(
         let onStageSolo = 0
         let onStageGroup = 0
         let offStageTotal = 0
-        user.registrations.forEach(r => {
+
+        // Count registrations where user is the lead
+        user.registrations.forEach((r: any) => {
             if (r.program.category === 'ON_STAGE') {
                 if (r.program.type === 'SOLO') onStageSolo++
+                if (r.program.type === 'GROUP') onStageGroup++
+            } else { offStageTotal++ }
+        })
+
+        // Count registrations where user is a group member
+        user.groupMemberships.forEach((m: any) => {
+            const r = m.registration;
+            if (!r || r.status === RegistrationStatus.CANCELLED) return;
+
+            if (r.program.category === 'ON_STAGE') {
                 if (r.program.type === 'GROUP') onStageGroup++
             } else { offStageTotal++ }
         })
@@ -253,8 +302,20 @@ export async function registerForProgramsBatch(
         const programIds = registrations.map(r => r.programId)
         const programs = await prisma.program.findMany({ where: { id: { in: programIds } } })
 
+        // Check for already registered programs to prevent duplicates
+        const existingProgramIds = new Set([
+            ...user.registrations.map(r => r.programId),
+            ...user.groupMemberships.map(m => m.registration?.programId).filter(Boolean)
+        ])
+
+        const newRegistrations = registrations.filter(r => !existingProgramIds.has(r.programId))
+
+        if (newRegistrations.length === 0) {
+            return { success: false, error: 'You are already registered for all selected programs.' }
+        }
+
         // Validate limits before starting transaction
-        for (const reg of registrations) {
+        for (const reg of newRegistrations) {
             const program = programs.find(p => p.id === reg.programId)
             if (!program) continue
 
@@ -274,7 +335,7 @@ export async function registerForProgramsBatch(
 
         // Transactional creation
         await prisma.$transaction(async (tx) => {
-            for (const reg of registrations) {
+            for (const reg of newRegistrations) {
                 const program = programs.find(p => p.id === reg.programId)
                 if (!program) continue
 
@@ -303,6 +364,88 @@ export async function registerForProgramsBatch(
 
         revalidatePath('/dashboard')
         revalidatePath('/programs')
+
+        // Send Email Notification
+        try {
+            const [configs, festivalNameConfig] = await Promise.all([
+                prisma.configuration.findUnique({ where: { key: 'smtpConfig' } }),
+                prisma.configuration.findUnique({ where: { key: 'festivalName' } })
+            ])
+
+            const festivalName = festivalNameConfig?.value || 'ArtsFest GPTC'
+            const smtpStr = configs?.value || '{}'
+            let smtpConfigObj: any = {}
+            try { smtpConfigObj = JSON.parse(smtpStr) } catch (e) { }
+
+            const registeredPrograms = newRegistrations.map(reg => {
+                const p = programs.find(prog => prog.id === reg.programId)
+                return {
+                    name: p?.name || 'Unknown Program',
+                    category: p?.category?.replace('_', ' ') || '',
+                    type: p?.type || ''
+                }
+            })
+
+            const rowsHtml = registeredPrograms.map(p => `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${p.name}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${p.category}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${p.type}</td>
+                </tr>
+            `).join('')
+
+            const dashboardUrl = `${process.env.NEXTAUTH_URL || ''}/dashboard`
+
+            const htmlContent = `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e1e1e1; border-radius: 12px; color: #333;">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h1 style="color: #8b0000; margin: 0; font-size: 28px;">Registration Confirmed!</h1>
+                        <p style="color: #666; font-size: 16px;">${festivalName}</p>
+                    </div>
+                    
+                    <p>Hello <strong>${user.fullName}</strong>,</p>
+                    <p>Success! Your registration for the following programs has been confirmed. We're excited to see you perform!</p>
+                    
+                    <div style="margin: 25px 0;">
+                        <table style="width: 100%; border-collapse: collapse; background-color: #fff;">
+                            <thead>
+                                <tr style="background-color: #8b0000; color: white;">
+                                    <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Program</th>
+                                    <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Category</th>
+                                    <th style="padding: 12px; border: 1px solid #8b0000; text-align: left;">Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <p style="line-height: 1.6;">You can view your full registration schedule, team details, and download your registration slip directly from your dashboard.</p>
+                    
+                    <div style="text-align: center; margin-top: 35px;">
+                        <a href="${dashboardUrl}" style="background-color: #8b0000; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(139, 0, 0, 0.2);">Go to My Dashboard</a>
+                    </div>
+                    
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; text-align: center;">
+                        <p>This is an automated confirmation of your registrations.</p>
+                        <p>&copy; ${new Date().getFullYear()} ${festivalName} Organizing Committee</p>
+                    </div>
+                </div>
+            `
+
+            await sendEmail({
+                to: user.email,
+                subject: `Registration Confirmed: ${festivalName}`,
+                text: `Hello ${user.fullName}, your registration for the programs in ${festivalName} has been confirmed. View details on your dashboard.`,
+                html: htmlContent,
+                smtpConfig: smtpConfigObj.user ? smtpConfigObj : undefined
+            })
+        } catch (emailErr) {
+            console.error('Failed to send registration confirmation email:', emailErr)
+            // We don't fail the registration if only the email fails
+        }
+
         return { success: true }
     } catch (e: any) {
         console.error('Batch registration failed:', e)
