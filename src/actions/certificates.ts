@@ -186,18 +186,38 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         let smtpConfigObj: any = {}
         try { smtpConfigObj = JSON.parse(smtpStr) } catch (e) { }
 
-        // Get template path
+        // Validate template configuration
+        if (!templateVal) {
+            return { success: false, error: 'Certificate template not configured. Please upload a template in Configuration settings.' }
+        }
+
+        // Get template path or URL
         let templatePath: string
+        let templateBuffer: Buffer | null = null
+
         if (templateVal.startsWith('/uploads/') || templateVal.startsWith('/test/')) {
+            // Local file in public directory
             templatePath = path.join(process.cwd(), 'public', templateVal)
-        } else if (templateVal.startsWith('http')) {
-            // Download remote template
-            const res = await fetch(templateVal)
-            const buffer = Buffer.from(await res.arrayBuffer())
-            templatePath = path.join(process.cwd(), 'public', 'temp-template.png')
-            await fs.writeFile(templatePath, buffer)
+            console.log('Using local template:', templatePath)
+        } else if (templateVal.startsWith('http://') || templateVal.startsWith('https://')) {
+            // Remote URL (including Vercel Blob Storage)
+            console.log('Fetching template from URL:', templateVal)
+            try {
+                const res = await fetch(templateVal)
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch template: ${res.status} ${res.statusText}`)
+                }
+                templateBuffer = Buffer.from(await res.arrayBuffer())
+                // Save temporarily for Puppeteer to access
+                templatePath = path.join(process.cwd(), 'public', 'temp-cert-template.png')
+                await fs.writeFile(templatePath, templateBuffer)
+                console.log('Template downloaded and saved temporarily')
+            } catch (error: any) {
+                console.error('Error fetching template from blob storage:', error)
+                return { success: false, error: `Failed to fetch certificate template: ${error.message}` }
+            }
         } else {
-            throw new Error('Invalid template configuration')
+            return { success: false, error: 'Invalid template configuration. Please configure a valid template URL or path.' }
         }
 
         let successCount = 0
@@ -247,10 +267,20 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
             }
         }
 
+        // Cleanup temporary template file if it was downloaded
+        if (templateBuffer) {
+            try {
+                await fs.unlink(templatePath)
+                console.log('Temporary template file cleaned up')
+            } catch (cleanupError) {
+                console.warn('Failed to cleanup temporary template file:', cleanupError)
+            }
+        }
+
         revalidatePath('/dashboard')
         return { success: true, message: `Processed ${registrations.length}. ${successCount} sent, ${failCount} failed.` }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Certificate generation failed:', error)
-        return { success: false, error: 'Processing failed' }
+        return { success: false, error: error?.message || 'Processing failed' }
     }
 }
