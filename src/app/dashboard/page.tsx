@@ -516,6 +516,7 @@ export default function DashboardPage() {
     const router = useRouter()
     const { refreshConfig } = useConfig()
     const { setIsLoading } = useLoading()
+    const { showToast, confirm: modalConfirm } = useModals()
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
