@@ -12,7 +12,6 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma migrate dev && prisma db seed",
-    "test:cert": "tsx test-cert-puppeteer.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
