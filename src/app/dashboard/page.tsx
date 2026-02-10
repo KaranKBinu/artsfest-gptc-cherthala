@@ -734,12 +734,11 @@ export default function DashboardPage() {
             reg.program.name,
             reg.program.category.replace('_', ' '),
             reg.program.type,
-            reg.isGroup ? (reg.userId === user.id ? 'Leader' : 'Member') : 'Solo',
             reg.status
         ])
 
         autoTable(doc, {
-            head: [['Program', 'Category', 'Type', 'Role', 'Status']],
+            head: [['Program', 'Category', 'Type', 'Status']],
             body: tableBody,
             startY: 80,
             theme: 'striped',
