@@ -10,6 +10,7 @@ import { AuthResponse } from '@/types'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import writeXlsxFile from 'write-excel-file'
+import LoadingOverlay from '@/components/LoadingOverlay'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -2470,6 +2471,9 @@ export default function DashboardPage() {
                 </>
             )
             }
+            {loading && <LoadingOverlay message="Loading Dashboard..." />}
+            {loadingAdmin && <LoadingOverlay message="Fetching Admin Data..." />}
+            {certLoading && <LoadingOverlay message="Generating & Sending Certificates... This may take a while." />}
         </div >
     )
 }

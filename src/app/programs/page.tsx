@@ -8,6 +8,8 @@ import { getPrograms, registerForProgramsBatch, getUserRegistrations } from '@/a
 import { getHouseMembers } from '@/actions/users'
 import { AuthResponse } from '@/types'
 import { Program, Registration } from '@prisma/client'
+import LoadingOverlay from '@/components/LoadingOverlay'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 type SearchUser = {
     id: string
@@ -261,7 +263,7 @@ export default function ProgramsPage() {
         return categoryMatch && typeMatch
     })
 
-    if (loading) return <div className={styles.container}><p>Loading items...</p></div>
+    if (loading) return <LoadingOverlay message="Fetching programs" />
 
     return (
         <div className={`${styles.container} ${inter.className}`}>
@@ -304,7 +306,7 @@ export default function ProgramsPage() {
             </div>
 
             <div className={styles.grid}>
-                {filteredPrograms.map(program => {
+                {filteredPrograms.map((program, index) => {
                     const registered = isRegistered(program.id)
                     const selected = selectedIds.has(program.id)
 
@@ -317,7 +319,7 @@ export default function ProgramsPage() {
                     const limitReached = isLimitReached()
 
                     return (
-                        <div key={program.id} className={`${styles.card} ${selected ? styles.selectedCard : ''} ${registered ? styles.registeredCard : ''}`}>
+                        <div key={program.id} className={`${styles.card} ${selected ? styles.selectedCard : ''} ${registered ? styles.registeredCard : ''} animate-fade-in`} style={{ animationDelay: `${index * 50}ms` }}>
                             <div className={styles.cardHeader}>
                                 <h3 className={`${styles.programName} ${cinzel.className}`}>{program.name}</h3>
                                 <div className={styles.badgeRow}>
@@ -461,6 +463,8 @@ export default function ProgramsPage() {
                     </div>
                 </div>
             )}
+
+            {registering && <LoadingOverlay message="Processing batch registration" />}
         </div>
     )
 }

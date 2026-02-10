@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import styles from '../auth.module.css'
 import { Cinzel, Inter } from 'next/font/google'
+import LoadingOverlay from '@/components/LoadingOverlay'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -132,7 +134,7 @@ export default function RegisterPage() {
 
     return (
         <div className={`${styles.container} ${inter.className}`}>
-            <div className={styles.authCard}>
+            <div className={`${styles.authCard} animate-scale-up`} style={{ maxWidth: '600px', margin: '2rem auto' }}>
                 <h1 className={`${styles.title} ${cinzel.className}`}>Create Account</h1>
                 <p className={styles.subtitle}>Join the ArtsFest celebration</p>
 
@@ -219,7 +221,9 @@ export default function RegisterPage() {
                             Department
                         </label>
                         {configLoading ? (
-                            <div className={styles.input} style={{ color: '#999' }}>Loading departments...</div>
+                            <div className={styles.input} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#999' }}>
+                                <LoadingSpinner size="16px" color="#999" /> Loading departments...
+                            </div>
                         ) : (
                             <select
                                 id="department"
@@ -292,8 +296,9 @@ export default function RegisterPage() {
                         type="submit"
                         className={styles.submitButton}
                         disabled={loading}
+                        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}
                     >
-                        {loading ? 'Creating Account...' : 'Register'}
+                        {loading ? <><LoadingSpinner size="20px" /> Creating Your Account...</> : 'Register'}
                     </button>
                 </form>
 
@@ -304,6 +309,7 @@ export default function RegisterPage() {
                     </Link>
                 </div>
             </div>
+            {loading && <LoadingOverlay message="Setting up your account" />}
         </div>
     )
 }

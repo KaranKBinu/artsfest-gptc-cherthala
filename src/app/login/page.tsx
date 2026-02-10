@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import styles from '../auth.module.css'
 import { Cinzel, Inter } from 'next/font/google'
+import LoadingOverlay from '@/components/LoadingOverlay'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -71,7 +73,7 @@ export default function LoginPage() {
 
     return (
         <div className={`${styles.container} ${inter.className}`}>
-            <div className={styles.authCard}>
+            <div className={`${styles.authCard} animate-scale-up`}>
                 <h1 className={`${styles.title} ${cinzel.className}`}>Welcome Back</h1>
                 <p className={styles.subtitle}>Sign in to continue to ArtsFest</p>
 
@@ -112,8 +114,9 @@ export default function LoginPage() {
                         type="submit"
                         className={styles.submitButton}
                         disabled={loading}
+                        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? <><LoadingSpinner size="20px" /> Validating...</> : 'Sign In'}
                     </button>
                 </form>
 
@@ -124,6 +127,7 @@ export default function LoginPage() {
                     </Link>
                 </div>
             </div>
+            {loading && <LoadingOverlay message="Authenticating" />}
         </div>
     )
 }
