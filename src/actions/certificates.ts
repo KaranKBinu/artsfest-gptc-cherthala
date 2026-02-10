@@ -1,18 +1,167 @@
 'use server'
 
-import 'regenerator-runtime/runtime'
-
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
 import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
-import fontkit from '@pdf-lib/fontkit'
-import { MALAYALAM_FONT_BASE64 } from '@/lib/malayalam-font'
+import puppeteer from 'puppeteer'
 
+/**
+ * Generate certificate using Puppeteer - Full Unicode/Malayalam support
+ * This approach renders HTML/CSS to PDF using Chrome's rendering engine
+ */
+async function generateCertificatePDF(options: {
+    templatePath: string
+    studentName: string
+    programName: string
+    grade?: string
+    festivalName: string
+}): Promise<Buffer> {
+    const { templatePath, studentName, programName, grade, festivalName } = options
+
+    // Read template as base64 for embedding in HTML
+    const templateBuffer = await fs.readFile(templatePath)
+    const templateBase64 = templateBuffer.toString('base64')
+    const templateMimeType = templatePath.endsWith('.png') ? 'image/png' : 'image/jpeg'
+
+    const achieveText = (grade && grade !== 'PARTICIPATION')
+        ? `has secured ${grade.replace(/_/g, ' ')}`
+        : 'has successfully participated'
+
+    const dateStr = new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    })
+
+    // Create HTML with embedded CSS and content - Full Unicode support
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                width: 297mm;
+                height: 210mm;
+                margin: 0;
+                padding: 0;
+                position: relative;
+            }
+            .certificate {
+                width: 297mm;
+                height: 210mm;
+                position: relative;
+                background-image: url('data:${templateMimeType};base64,${templateBase64}');
+                background-size: cover;
+                background-position: center;
+                font-family: 'Noto Serif', serif;
+            }
+            .content {
+                position: absolute;
+                width: 100%;
+                text-align: center;
+                color: #000;
+            }
+            .title {
+                top: 48mm;
+                font-size: 38px;
+                font-weight: bold;
+                color: #641414;
+                font-family: 'Noto Serif', serif;
+            }
+            .subtitle {
+                top: 65mm;
+                font-size: 20px;
+                color: #292929;
+            }
+            .student-name {
+                top: 80mm;
+                font-size: 32px;
+                font-weight: bold;
+                color: #000;
+                text-transform: uppercase;
+            }
+            .achievement {
+                top: 95mm;
+                font-size: 18px;
+                color: #292929;
+            }
+            .program-name {
+                top: 108mm;
+                font-size: 22px;
+                font-weight: bold;
+                color: #971F1F;
+                font-family: 'Noto Sans Malayalam', 'Noto Serif', serif;
+            }
+            .festival {
+                top: 122mm;
+                font-size: 16px;
+                font-style: italic;
+                color: #3D3D3D;
+            }
+            .date {
+                top: 135mm;
+                font-size: 13px;
+                color: #000;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="certificate">
+            <div class="content title">CERTIFICATE OF MERIT</div>
+            <div class="content subtitle">This is to certify that</div>
+            <div class="content student-name">${studentName}</div>
+            <div class="content achievement">${achieveText} in the event</div>
+            <div class="content program-name">${programName}</div>
+            <div class="content festival">conducted as part of ${festivalName}</div>
+            <div class="content date">Dated: ${dateStr}</div>
+        </div>
+    </body>
+    </html>
+    `
+
+    // Launch browser and generate PDF
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    })
+
+    try {
+        const page = await browser.newPage()
+        await page.setContent(html, { waitUntil: 'networkidle0' })
+
+        // Wait for fonts to load
+        await page.evaluateHandle('document.fonts.ready')
+
+        const pdfBytes = await page.pdf({
+            width: '297mm',
+            height: '210mm',
+            printBackground: true,
+            preferCSSPageSize: true
+        })
+
+        return Buffer.from(pdfBytes)
+    } finally {
+        await browser.close()
+    }
+}
+
+/**
+ * Production certificate generation with Puppeteer
+ */
 export async function generateAndSendCertificates(registrationIds: string[]) {
     try {
+        // 1. Fetch Registrations
         const registrations = await prisma.registration.findMany({
             where: {
                 id: { in: registrationIds },
@@ -22,9 +171,10 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         })
 
         if (registrations.length === 0) {
-            return { success: false, error: 'No eligible registrations found' }
+            return { success: false, error: 'No eligible registrations found (students must be present)' }
         }
 
+        // 2. Fetch Configs
         const configs = await prisma.configuration.findMany({
             where: { key: { in: ['certificateTemplate', 'smtpConfig', 'festivalName'] } }
         })
@@ -36,98 +186,36 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         let smtpConfigObj: any = {}
         try { smtpConfigObj = JSON.parse(smtpStr) } catch (e) { }
 
+        // Get template path
+        let templatePath: string
+        if (templateVal.startsWith('/uploads/') || templateVal.startsWith('/test/')) {
+            templatePath = path.join(process.cwd(), 'public', templateVal)
+        } else if (templateVal.startsWith('http')) {
+            // Download remote template
+            const res = await fetch(templateVal)
+            const buffer = Buffer.from(await res.arrayBuffer())
+            templatePath = path.join(process.cwd(), 'public', 'temp-template.png')
+            await fs.writeFile(templatePath, buffer)
+        } else {
+            throw new Error('Invalid template configuration')
+        }
+
         let successCount = 0
         let failCount = 0
 
         for (const reg of registrations) {
             try {
-                const pdfDoc = await PDFDocument.create()
-                pdfDoc.registerFontkit(fontkit)
+                console.log(`Generating certificate for ${reg.user.fullName}...`)
 
-                const page = pdfDoc.addPage([841.89, 595.28])
-                const { width, height } = page.getSize()
+                const pdfBuffer = await generateCertificatePDF({
+                    templatePath,
+                    studentName: reg.user.fullName,
+                    programName: `${reg.program.name} (${reg.program.type})`,
+                    grade: (reg as any).grade,
+                    festivalName
+                })
 
-                // Load fonts
-                const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
-                const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold)
-                const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
-
-                let malayalamFont = timesBold
-                try {
-                    console.log('Starting certificate generation script...')
-                    const fontBytes = Buffer.from(MALAYALAM_FONT_BASE64, 'base64')
-                    console.log('Fontkit registered successfully')
-                    malayalamFont = await pdfDoc.embedFont(fontBytes)
-                    console.log('Malayalam font embedded successfully')
-                } catch (e) {
-                    console.error('✗ Malayalam font loading error:', e)
-                    console.warn('NO Malayalam font bytes available to embed')
-                }
-
-                // Background
-                if (templateVal) {
-                    try {
-                        let imgBytes: Buffer | undefined
-                        if (templateVal.startsWith('/uploads/')) {
-                            imgBytes = await fs.readFile(path.join(process.cwd(), 'public', templateVal))
-                        } else if (templateVal.startsWith('http')) {
-                            const res = await fetch(templateVal)
-                            imgBytes = Buffer.from(await res.arrayBuffer())
-                        }
-
-                        if (imgBytes) {
-                            const image = imgBytes[0] === 0x89 && imgBytes[1] === 0x50
-                                ? await pdfDoc.embedPng(imgBytes)
-                                : await pdfDoc.embedJpg(imgBytes)
-                            page.drawImage(image, { x: 0, y: 0, width, height })
-                        }
-                    } catch (e) {
-                        page.drawRectangle({ x: 14, y: 14, width: width - 28, height: height - 28, borderColor: rgb(0.7, 0.6, 0.2), borderWidth: 3 })
-                    }
-                } else {
-                    page.drawRectangle({ x: 28, y: 28, width: width - 56, height: height - 56, borderColor: rgb(0.7, 0.6, 0.2), borderWidth: 4 })
-                }
-
-                const drawCentered = (text: string, y: number, font: any, size: number, color: any) => {
-                    try {
-                        const w = font.widthOfTextAtSize(text, size)
-                        page.drawText(text, { x: (width - w) / 2, y, size, font, color })
-                    } catch (e) {
-                        // Fallback for fonts that don't support widthOfTextAtSize
-                        const estimatedWidth = text.length * size * 0.6
-                        page.drawText(text, { x: (width - estimatedWidth) / 2, y, size, font, color })
-                    }
-                }
-
-                // Content
-                drawCentered('CERTIFICATE OF MERIT', 482, timesBold, 38, rgb(0.39, 0.08, 0.08))
-                drawCentered('This is to certify that', 425, timesFont, 20, rgb(0.16, 0.16, 0.16))
-                drawCentered(reg.user.fullName.toUpperCase(), 374, timesBold, 32, rgb(0, 0, 0))
-
-                const grade = (reg as any).grade
-                const achieveText = (grade && grade !== 'PARTICIPATION') ? `has secured ${grade.replace(/_/g, ' ')}` : 'has successfully participated'
-                drawCentered(`${achieveText} in the event`, 334, timesFont, 18, rgb(0.16, 0.16, 0.16))
-
-                // Program name with Malayalam support
-                const progName = `${reg.program.name} (${reg.program.type})`
-                const hasMalayalam = /[\u0D00-\u0D7F]/.test(progName)
-
-                if (hasMalayalam) {
-                    // For Malayalam text, use transliteration or English fallback
-                    const englishName = reg.program.name.replace(/[\u0D00-\u0D7F]/g, '').trim() || reg.program.name
-                    const displayName = `${englishName} (${reg.program.type})`
-                    drawCentered(displayName, 300, timesBold, 24, rgb(0.59, 0.12, 0.12))
-                } else {
-                    drawCentered(progName, 300, timesBold, 24, rgb(0.59, 0.12, 0.12))
-                }
-
-                drawCentered(`conducted as part of ${festivalName}`, 266, timesItalic, 16, rgb(0.24, 0.24, 0.24))
-                const dateStr = `Dated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
-                drawCentered(dateStr, 232, timesFont, 13, rgb(0, 0, 0))
-
-                const pdfBytes = await pdfDoc.save()
-                const pdfBuffer = Buffer.from(pdfBytes)
-
+                // Send Email
                 const emailRes = await sendEmail({
                     to: reg.user.email,
                     subject: `Certificate for ${reg.program.name} - ${festivalName}`,
@@ -154,7 +242,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     failCount++
                 }
             } catch (err) {
-                console.error(`Failed for ${reg.user.fullName}:`, err)
+                console.error(`Failed to process cert for ${reg.user.fullName}:`, err)
                 failCount++
             }
         }
