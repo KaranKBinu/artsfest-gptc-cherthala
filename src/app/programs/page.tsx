@@ -55,6 +55,7 @@ export default function ProgramsPage() {
     const [filteredMembers, setFilteredMembers] = useState<SearchUser[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [isLoadingMembers, setIsLoadingMembers] = useState(false)
+    const [registering, setRegistering] = useState(false)
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -214,6 +215,7 @@ export default function ProgramsPage() {
         })
 
         try {
+            setRegistering(true)
             const res = await registerForProgramsBatch(user.id, payload)
             if (res.success) {
                 setMessage({ type: 'success', text: 'Successfully registered for all selected items!' })
@@ -227,6 +229,7 @@ export default function ProgramsPage() {
             setMessage({ type: 'error', text: 'An unexpected error occurred.' })
         } finally {
             setIsLoading(false)
+            setRegistering(false)
         }
     }
 

@@ -531,6 +531,8 @@ export default function DashboardPage() {
     const [adminUsers, setAdminUsers] = useState<any[]>([])
     const [houses, setHouses] = useState<any[]>([])
     const [selectedRegs, setSelectedRegs] = useState<string[]>([])
+    const [certLoading, setCertLoading] = useState(false)
+    const [loadingAdmin, setLoadingAdmin] = useState(false)
     // New state for split view
     const [viewMode, setViewMode] = useState<'ADMIN' | 'STUDENT'>('ADMIN')
 
@@ -2298,7 +2300,7 @@ export default function DashboardPage() {
                                 <span className={styles.value}>{user.department || '-'}</span>
                             </div>
                             <div className={styles.infoRow}>
-                                <span className={styles.label}>Semester</span>
+                                <span className={styles.label}>Year</span>
                                 <span className={styles.value}>{user.semester || '-'}</span>
                             </div>
                             {user.house && (
