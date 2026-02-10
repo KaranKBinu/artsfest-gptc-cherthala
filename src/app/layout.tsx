@@ -10,8 +10,35 @@ import { LoadingProvider } from '@/context/LoadingContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ArtsFest GPTC Cherthala',
-  description: 'Arts Festival for GPTC Cherthala',
+  title: 'ArtsFest | GPTC Cherthala Arts Program',
+  description: 'The official digital platform for the Arts Festival at Government Polytechnic College Cherthala. Register for events, track house scores, and celebrate cultural heritage.',
+  keywords: ['ArtsFest', 'GPTC Cherthala', 'Arts Festival', 'Polytechnic', 'Kerala Culture', 'Student Competition', 'Program Registration'],
+  authors: [{ name: 'GPTC Cherthala' }],
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
+  openGraph: {
+    title: 'ArtsFest | GPTC Cherthala',
+    description: 'Celebrating Culture & Creativity at GPTC Cherthala Arts Festival.',
+    url: 'https://artsfest-gptc.vercel.app', // Placeholder or actual URL if known
+    siteName: 'ArtsFest GPTC',
+    images: [
+      {
+        url: '/favicon.png',
+        width: 512,
+        height: 512,
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ArtsFest | GPTC Cherthala',
+    description: 'Official portal for GPTC Cherthala Arts Festival.',
+    images: ['/favicon.png'],
+  },
 }
 
 export default function RootLayout({
