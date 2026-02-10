@@ -146,6 +146,9 @@ export default function LoginPage() {
                 </form>
 
                 <div className={styles.links}>
+                    <Link href="/forgot-password" className={styles.link} style={{ display: 'block', marginBottom: '1rem' }}>
+                        Forgot Password?
+                    </Link>
                     Don't have an account?
                     <Link href="/register" className={styles.link}>
                         Register
