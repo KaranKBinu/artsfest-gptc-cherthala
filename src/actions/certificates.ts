@@ -131,18 +131,26 @@ async function generateCertificatePDF(options: {
     `
 
 
+
     // Launch browser and generate PDF
     // Use chrome-aws-lambda for serverless (Vercel), fall back to local Chrome for development
     const isLocal = process.env.NODE_ENV === 'development' || !process.env.VERCEL
+
+    console.log('[Certificate] Environment check:', { isLocal, NODE_ENV: process.env.NODE_ENV, VERCEL: process.env.VERCEL })
+
+    // Get executable path (chrome-aws-lambda returns Promise<string>)
+    const execPath = isLocal
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : await chromium.executablePath
+
+    console.log('[Certificate] Using executable path:', execPath)
 
     const browser = await puppeteer.launch({
         args: isLocal
             ? ['--no-sandbox', '--disable-setuid-sandbox']
             : chromium.args,
         defaultViewport: chromium.defaultViewport,
-        executablePath: isLocal
-            ? process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-            : await chromium.executablePath,  // Note: executablePath is a property, not a function in chrome-aws-lambda
+        executablePath: execPath,
         headless: chromium.headless,
     })
 
