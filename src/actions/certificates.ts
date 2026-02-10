@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
 import puppeteer from 'puppeteer-core'
-import chromium from '@sparticuz/chromium'
+import chromium from 'chrome-aws-lambda'
 
 /**
  * Generate certificate using Puppeteer - Full Unicode/Malayalam support
@@ -130,8 +130,9 @@ async function generateCertificatePDF(options: {
     </html>
     `
 
+
     // Launch browser and generate PDF
-    // Use chromium binary for serverless (Vercel), fall back to local Chrome for development
+    // Use chrome-aws-lambda for serverless (Vercel), fall back to local Chrome for development
     const isLocal = process.env.NODE_ENV === 'development' || !process.env.VERCEL
 
     const browser = await puppeteer.launch({
@@ -141,8 +142,8 @@ async function generateCertificatePDF(options: {
         defaultViewport: chromium.defaultViewport,
         executablePath: isLocal
             ? process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-            : await chromium.executablePath(),
-        headless: true,
+            : await chromium.executablePath,  // Note: executablePath is a property, not a function in chrome-aws-lambda
+        headless: chromium.headless,
     })
 
     try {
