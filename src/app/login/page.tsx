@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import styles from '../auth.module.css'
 import { Cinzel, Inter } from 'next/font/google'
-import LoadingOverlay from '@/components/LoadingOverlay'
+import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
@@ -17,6 +17,7 @@ export default function LoginPage() {
         studentAdmnNo: '',
         password: ''
     })
+    const { setIsLoading } = useLoading()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -30,12 +31,14 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        setIsLoading(true, "Authenticating")
         setError('')
 
         // Basic validation
         if (!formData.studentAdmnNo || !formData.password) {
             setError('Please fill in all fields')
             setLoading(false)
+            setIsLoading(false)
             return
         }
 
@@ -68,6 +71,7 @@ export default function LoginPage() {
             setError(err.message || 'Invalid credentials. Please try again.')
         } finally {
             setLoading(false)
+            setIsLoading(false)
         }
     }
 
@@ -127,7 +131,6 @@ export default function LoginPage() {
                     </Link>
                 </div>
             </div>
-            {loading && <LoadingOverlay message="Authenticating" />}
         </div>
     )
 }

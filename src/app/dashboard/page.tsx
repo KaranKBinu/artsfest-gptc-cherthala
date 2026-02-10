@@ -8,7 +8,8 @@ import { Cinzel, Inter } from 'next/font/google'
 import styles from './dashboard.module.css'
 import { AuthResponse } from '@/types'
 import writeXlsxFile from 'write-excel-file'
-import LoadingOverlay from '@/components/LoadingOverlay'
+import { useLoading } from '@/context/LoadingContext'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -312,17 +313,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                             >
                                 {isSaving ? (
                                     <>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spin 1s linear infinite' }}>
-                                            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-                                            <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M2 12H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M18 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M4.93 19.07L7.76 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M16.24 7.76L19.07 4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
+                                        <LoadingSpinner size="18px" />
                                         Saving
                                     </>
                                 ) : 'Save'}
@@ -354,6 +345,7 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
         gender: 'MALE',
         password: ''
     })
+    const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
         if (user) {
@@ -389,7 +381,12 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        await onSave(formData)
+        setIsSaving(true)
+        try {
+            await onSave(formData)
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     return (
@@ -503,8 +500,10 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
-                        <button type="button" onClick={onClose} className={styles.cancelButton}>Cancel</button>
-                        <button type="submit" className={styles.addButton}>Save User</button>
+                        <button type="button" onClick={onClose} className={styles.cancelButton} disabled={isSaving}>Cancel</button>
+                        <button type="submit" className={styles.addButton} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '100px', justifyContent: 'center' }}>
+                            {isSaving ? <><LoadingSpinner size="18px" /> Saving...</> : (user ? 'Save Changes' : 'Create User')}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -515,11 +514,10 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
 export default function DashboardPage() {
     const router = useRouter()
     const { refreshConfig } = useConfig()
-    const { showToast, confirm: modalConfirm } = useModals()
+    const { setIsLoading } = useLoading()
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
-    const [pdfLoading, setPdfLoading] = useState(false)
 
     // Admin State - Navigation
     const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'results'>('users')
@@ -532,9 +530,7 @@ export default function DashboardPage() {
     const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'>('ALL')
     const [adminUsers, setAdminUsers] = useState<any[]>([])
     const [houses, setHouses] = useState<any[]>([])
-    const [loadingAdmin, setLoadingAdmin] = useState(false)
     const [selectedRegs, setSelectedRegs] = useState<string[]>([])
-    const [certLoading, setCertLoading] = useState(false)
     // New state for split view
     const [viewMode, setViewMode] = useState<'ADMIN' | 'STUDENT'>('ADMIN')
 
@@ -579,6 +575,7 @@ export default function DashboardPage() {
 
             if (userData.role === 'ADMIN' || userData.role === 'MASTER' || userData.role === 'VOLUNTEER') {
                 // Fetch Admin Data
+                setIsLoading(true, "Loading Dashboard")
                 fetchAdminData(userData)
                 getHouses().then(res => {
                     if (res.success && res.data) setHouses(res.data)
@@ -589,12 +586,14 @@ export default function DashboardPage() {
                 })
             } else {
                 // Fetch Student Data
+                setIsLoading(true, "Loading Dashboard")
                 getDashboardData(userData.id).then(res => {
                     if (res.success && res.data) {
                         setDashboardData(res.data)
                     }
                 }).finally(() => {
                     setLoading(false)
+                    setIsLoading(false)
                 })
             }
 
@@ -613,7 +612,7 @@ export default function DashboardPage() {
 
     const fetchAdminData = async (currentUser?: any) => {
         const targetUser = currentUser || user
-        setLoadingAdmin(true)
+        setIsLoading(true, "Fetching User Data")
         try {
             const res = await getUsersForAdmin({
                 query: adminSearch,
@@ -631,7 +630,7 @@ export default function DashboardPage() {
             console.error('Failed to fetch users', e)
         } finally {
             setLoading(false)
-            setLoadingAdmin(false)
+            setIsLoading(false)
         }
     }
 
@@ -676,7 +675,7 @@ export default function DashboardPage() {
             link.setAttribute('download', `${filename}.csv`)
             link.click()
         } else if (type === 'pdf') {
-            setPdfLoading(true)
+            setIsLoading(true, "Generating Participant PDF")
             try {
                 const res = await generateAdminExportPDF(adminUsers)
                 if (res.success && res.pdf) {
@@ -690,7 +689,7 @@ export default function DashboardPage() {
             } catch (e) {
                 showToast('An error occurred during PDF generation', 'error')
             } finally {
-                setPdfLoading(false)
+                setIsLoading(false)
             }
         } else if (type === 'excel') {
             const schema = [
@@ -717,7 +716,7 @@ export default function DashboardPage() {
 
     const downloadMyRegistrations = async () => {
         if (!user || !dashboardData) return
-        setPdfLoading(true)
+        setIsLoading(true, "Generating PDF Summary")
         try {
             const res = await generateStudentRegistrationsPDF(user.id)
             if (res.success && res.pdf) {
@@ -731,7 +730,7 @@ export default function DashboardPage() {
         } catch (e) {
             showToast('An error occurred during PDF generation', 'error')
         } finally {
-            setPdfLoading(false)
+            setIsLoading(false)
         }
     }
 
@@ -745,25 +744,25 @@ export default function DashboardPage() {
         if (user?.role !== 'ADMIN' && user?.role !== 'MASTER' && user?.role !== 'VOLUNTEER') return
 
         if (activeTab === 'programs') {
-            setLoadingAdmin(true)
+            setIsLoading(true, "Loading Programs")
             getPrograms().then(res => {
                 if (res.success && res.data) setAdminPrograms(res.data)
-                setLoadingAdmin(false)
+                setIsLoading(false)
             })
             getVolunteers().then(res => {
                 if (res.success && res.data) setVolunteers(res.data)
             })
         } else if (activeTab === 'results') {
-            setLoadingAdmin(true)
+            setIsLoading(true, "Loading Leaderboard")
             import('@/actions/results').then(m => m.getHouseLeaderboard()).then(res => {
                 if (res.success && res.data) setHouseScores(res.data)
-                setLoadingAdmin(false)
+                setIsLoading(false)
             })
         } else if (activeTab === 'settings') {
-            setLoadingAdmin(true)
+            setIsLoading(true, "Loading Settings")
             getConfigs().then(res => {
                 if (res.success && res.data) setConfigs(res.data)
-                setLoadingAdmin(false)
+                setIsLoading(false)
             })
         }
     }, [activeTab, user?.role, volunteerModalOpen, userModalOpen])
@@ -771,6 +770,7 @@ export default function DashboardPage() {
     // --- Program Handlers ---
     const handleSaveProgram = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setIsLoading(true, "Saving Program")
         const formData = new FormData(e.currentTarget)
         const data = {
             name: formData.get('name') as string,
@@ -782,17 +782,21 @@ export default function DashboardPage() {
             volunteerIds: formData.getAll('volunteerIds') as string[],
         }
 
-        if (editingProgram) {
-            await updateProgram(editingProgram.id, data)
-        } else {
-            await createProgram(data)
-        }
+        try {
+            if (editingProgram) {
+                await updateProgram(editingProgram.id, data)
+            } else {
+                await createProgram(data)
+            }
 
-        // Refresh
-        const res = await getPrograms()
-        if (res.success && res.data) setAdminPrograms(res.data)
-        setProgramModalOpen(false)
-        setEditingProgram(null)
+            // Refresh
+            const res = await getPrograms()
+            if (res.success && res.data) setAdminPrograms(res.data)
+            setProgramModalOpen(false)
+            setEditingProgram(null)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     // Helper to refresh programs
@@ -807,12 +811,17 @@ export default function DashboardPage() {
             message: `Are you sure you want to delete "${name}"?`,
             confirmText: 'Delete',
             onConfirm: async () => {
-                const res = await deleteProgram(id)
-                if (res.success) {
-                    showToast('Program deleted successfully', 'success')
-                    await refreshPrograms()
-                } else {
-                    showToast('Failed to delete program', 'error')
+                setIsLoading(true, "Deleting Program")
+                try {
+                    const res = await deleteProgram(id)
+                    if (res.success) {
+                        showToast('Program deleted successfully', 'success')
+                        await refreshPrograms()
+                    } else {
+                        showToast('Failed to delete program', 'error')
+                    }
+                } finally {
+                    setIsLoading(false)
                 }
             }
         })
@@ -888,7 +897,7 @@ export default function DashboardPage() {
 
     const handleSaveUser = async (data: any) => {
         try {
-            setLoadingAdmin(true)
+            setIsLoading(true, editingUser ? "Updating User" : "Creating User")
             let res;
             if (editingUser) {
                 res = await updateUser(editingUser.id, data)
@@ -906,7 +915,7 @@ export default function DashboardPage() {
                 showToast(`Failed to ${editingUser ? 'update' : 'create'} user: ` + res.error, 'error')
             }
         } finally {
-            setLoadingAdmin(false)
+            setIsLoading(false)
         }
     }
 
@@ -917,13 +926,7 @@ export default function DashboardPage() {
         router.push('/login')
     }
 
-    if (loading) {
-        return (
-            <div className={`${styles.container} ${inter.className}`}>
-                <p>Loading...</p>
-            </div>
-        )
-    }
+    if (loading) return null
 
     if (!user) return null
 
@@ -1092,23 +1095,28 @@ export default function DashboardPage() {
                                                         confirmText: 'Generate & Send',
                                                         onConfirm: async () => {
                                                             setCertLoading(true);
-                                                            const { generateAndSendCertificates } = await import('@/actions/certificates');
-                                                            const res = await generateAndSendCertificates(selectedRegs);
-                                                            setCertLoading(false);
-                                                            if (res.success) {
-                                                                showToast(res.message || 'Certificates processed.', 'success');
-                                                                setSelectedRegs([]);
-                                                            } else {
-                                                                showToast(res.error || 'Failed to process certificates.', 'error');
+                                                            setIsLoading(true, "Mailing Certificates")
+                                                            try {
+                                                                const { generateAndSendCertificates } = await import('@/actions/certificates');
+                                                                const res = await generateAndSendCertificates(selectedRegs);
+                                                                if (res.success) {
+                                                                    showToast(res.message || 'Certificates processed.', 'success');
+                                                                    setSelectedRegs([]);
+                                                                } else {
+                                                                    showToast(res.error || 'Failed to process certificates.', 'error');
+                                                                }
+                                                            } finally {
+                                                                setCertLoading(false);
+                                                                setIsLoading(false);
                                                             }
                                                         }
                                                     })
                                                 }}
                                                 className={styles.exportButton}
-                                                style={{ backgroundColor: 'var(--color-success)', color: 'white', opacity: certLoading ? 0.5 : 1 }}
+                                                style={{ backgroundColor: 'var(--color-success)', color: 'white', opacity: certLoading ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
                                                 disabled={certLoading}
                                             >
-                                                {certLoading ? 'Processing...' : `Send Certificates (${selectedRegs.length})`}
+                                                {certLoading ? <><LoadingSpinner size="18px" /> Processing...</> : `Send Certificates (${selectedRegs.length})`}
                                             </button>
                                         )}
                                     </div>
@@ -1604,11 +1612,16 @@ export default function DashboardPage() {
                                                                         title: 'Remove Volunteer',
                                                                         message: `Remove volunteer status from ${v.fullName}?`,
                                                                         onConfirm: async () => {
-                                                                            const res = await updateUserRole(v.id, 'STUDENT')
-                                                                            if (res.success) {
-                                                                                showToast('Volunteer removed', 'success')
-                                                                                const vRes = await getVolunteers()
-                                                                                if (vRes.success && vRes.data) setVolunteers(vRes.data)
+                                                                            setIsLoading(true, "Removing Volunteer Badge")
+                                                                            try {
+                                                                                const res = await updateUserRole(v.id, 'STUDENT')
+                                                                                if (res.success) {
+                                                                                    showToast('Volunteer removed', 'success')
+                                                                                    const vRes = await getVolunteers()
+                                                                                    if (vRes.success && vRes.data) setVolunteers(vRes.data)
+                                                                                }
+                                                                            } finally {
+                                                                                setIsLoading(false)
                                                                             }
                                                                         }
                                                                     })
@@ -1841,7 +1854,7 @@ export default function DashboardPage() {
                                                     const files = Array.from(e.target.files)
 
                                                     try {
-                                                        setLoadingAdmin(true)
+                                                        setIsLoading(true, "Uploading images...")
 
                                                         // Upload all files concurrently
                                                         const uploadPromises = files.map(async (file) => {
@@ -1888,7 +1901,7 @@ export default function DashboardPage() {
                                                         console.error(err)
                                                         showToast('Upload process failed', 'error')
                                                     } finally {
-                                                        setLoadingAdmin(false)
+                                                        setIsLoading(false)
                                                     }
                                                 }
                                             }}
@@ -1922,12 +1935,12 @@ export default function DashboardPage() {
                                                             confirmText: 'Delete',
                                                             onConfirm: async () => {
                                                                 const newImages = images.filter((_, i) => i !== idx)
-                                                                setLoadingAdmin(true)
+                                                                setIsLoading(true, "Deleting Image")
                                                                 await updateConfig('galleryImages', JSON.stringify(newImages))
                                                                 const newConfigs = await getConfigs()
                                                                 if (newConfigs.success && newConfigs.data) setConfigs(newConfigs.data)
                                                                 showToast('Image deleted successfully', 'success')
-                                                                setLoadingAdmin(false)
+                                                                setIsLoading(false)
                                                             }
                                                         })
                                                     }}
@@ -2005,7 +2018,10 @@ export default function DashboardPage() {
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
                                             <button type="button" onClick={() => setProgramModalOpen(false)} className={styles.cancelButton}>Cancel</button>
-                                            <button type="submit" className={styles.addButton}>Save Program</button>
+                                            <button type="submit" className={styles.addButton} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {/* Button content handled by parent state for simplicity or just plain text if fast */}
+                                                Save Program
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
@@ -2035,12 +2051,17 @@ export default function DashboardPage() {
                                     setEditingConfig(null)
                                 }}
                                 onDelete={user?.role === 'MASTER' ? async (key) => {
-                                    await deleteConfig(key)
-                                    await refreshConfig()
-                                    const res = await getConfigs()
-                                    if (res.success && res.data) setConfigs(res.data)
-                                    setConfigModalOpen(false)
-                                    setEditingConfig(null)
+                                    setIsLoading(true, "Deleting Configuration")
+                                    try {
+                                        await deleteConfig(key)
+                                        await refreshConfig()
+                                        const res = await getConfigs()
+                                        if (res.success && res.data) setConfigs(res.data)
+                                        setConfigModalOpen(false)
+                                        setEditingConfig(null)
+                                    } finally {
+                                        setIsLoading(false)
+                                    }
                                 } : undefined}
                             />
                         )
@@ -2092,11 +2113,16 @@ export default function DashboardPage() {
                                                                 message: `Promote ${u.fullName} to Volunteer?`,
                                                                 confirmText: 'Promote',
                                                                 onConfirm: async () => {
-                                                                    await updateUserRole(u.id, 'VOLUNTEER')
-                                                                    showToast(`${u.fullName} promoted to Volunteer`, 'success')
-                                                                    const res = await getVolunteers()
-                                                                    if (res.success && res.data) setVolunteers(res.data)
-                                                                    setVolunteerModalOpen(false)
+                                                                    setIsLoading(true, "Promoting to Volunteer")
+                                                                    try {
+                                                                        await updateUserRole(u.id, 'VOLUNTEER')
+                                                                        showToast(`${u.fullName} promoted to Volunteer`, 'success')
+                                                                        const res = await getVolunteers()
+                                                                        if (res.success && res.data) setVolunteers(res.data)
+                                                                        setVolunteerModalOpen(false)
+                                                                    } finally {
+                                                                        setIsLoading(false)
+                                                                    }
                                                                 }
                                                             })
                                                         }}
@@ -2450,10 +2476,6 @@ export default function DashboardPage() {
                 </>
             )
             }
-            {loading && <LoadingOverlay message="Loading Dashboard..." />}
-            {loadingAdmin && <LoadingOverlay message="Fetching Admin Data..." />}
-            {certLoading && <LoadingOverlay message="Generating & Sending Certificates... This may take a while." />}
-            {pdfLoading && <LoadingOverlay message="Generating Unicode PDF... Please wait." />}
         </div >
     )
 }

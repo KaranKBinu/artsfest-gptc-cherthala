@@ -10,12 +10,13 @@ const cinzel = Cinzel({ subsets: ['latin'] })
 
 import { ProgramWithStats } from '@/types'
 import { useConfig } from '@/context/ConfigContext'
+import { useLoading } from '@/context/LoadingContext'
 
 export default function Home() {
   const { config } = useConfig()
+  const { setIsLoading } = useLoading()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [programs, setPrograms] = useState<ProgramWithStats[]>([])
-  const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   // Chunk images into layouts
   const [slides, setSlides] = useState<string[][]>([])
@@ -55,6 +56,7 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch programs
+    setIsLoading(true, "Fetching Events")
     fetch('/api/programs')
       .then(res => res.json())
       .then(data => {
@@ -63,7 +65,7 @@ export default function Home() {
         }
       })
       .catch(err => console.error('Failed to load programs', err))
-      .finally(() => setLoading(false))
+      .finally(() => setIsLoading(false))
 
     // Check login status
     const token = localStorage.getItem('token')
@@ -182,30 +184,26 @@ export default function Home() {
           <h2 className={`${styles.sectionTitle} ${cinzel.className}`}>
             Event List
           </h2>
-          {loading ? (
-            <p style={{ textAlign: 'center' }}>Loading events...</p>
-          ) : (
-            <div className={styles.grid}>
-              {programs.length > 0 ? (
-                programs.map(program => (
-                  <div key={program.id} className={styles.card}>
-                    <h3>{program.name}</h3>
-                    <div className={styles.cardMeta}>
-                      <span className={`${styles.badge} ${styles.badgeCategory}`}>
-                        {program.category.replace('_', ' ')}
-                      </span>
-                      <span className={`${styles.badge} ${styles.badgeType}`}>
-                        {program.type}
-                      </span>
-                    </div>
-                    <p>{program.description || 'No description available.'}</p>
+          <div className={styles.grid}>
+            {programs.length > 0 ? (
+              programs.map(program => (
+                <div key={program.id} className={styles.card}>
+                  <h3>{program.name}</h3>
+                  <div className={styles.cardMeta}>
+                    <span className={`${styles.badge} ${styles.badgeCategory}`}>
+                      {program.category.replace('_', ' ')}
+                    </span>
+                    <span className={`${styles.badge} ${styles.badgeType}`}>
+                      {program.type}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <p style={{ textAlign: 'center', gridColumn: '1/-1' }}>No events scheduled yet.</p>
-              )}
-            </div>
-          )}
+                  <p>{program.description || 'No description available.'}</p>
+                </div>
+              ))
+            ) : (
+              <p style={{ textAlign: 'center', gridColumn: '1/-1' }}>No events scheduled yet.</p>
+            )}
+          </div>
         </section>
       </main>
 

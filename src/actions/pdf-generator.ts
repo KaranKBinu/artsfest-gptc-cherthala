@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import puppeteer from 'puppeteer-core'
+// @ts-expect-error - Chromium types can be tricky in certain environments
 import chromium from '@sparticuz/chromium'
 
 /**

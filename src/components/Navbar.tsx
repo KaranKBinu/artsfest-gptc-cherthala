@@ -10,11 +10,13 @@ const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
 import { useConfig } from '@/context/ConfigContext'
+import { useLoading } from '@/context/LoadingContext'
 
 export default function Navbar() {
     const pathname = usePathname()
     const router = useRouter()
     const { config } = useConfig()
+    const { setIsLoading } = useLoading()
 
     // Auth state //
     const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -64,6 +66,7 @@ export default function Navbar() {
     }, [pathname])
 
     const handleLogout = () => {
+        setIsLoading(true, "Signing out...")
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'

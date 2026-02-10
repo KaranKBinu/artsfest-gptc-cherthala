@@ -5,6 +5,7 @@ import ContactFloat from '@/components/ContactFloat'
 import './globals.css'
 import { ConfigProvider } from '@/context/ConfigContext'
 import { ModalProvider } from '@/context/ModalContext'
+import { LoadingProvider } from '@/context/LoadingContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,11 +23,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ConfigProvider>
-          <ModalProvider>
-            <Navbar />
-            {children}
-            <ContactFloat />
-          </ModalProvider>
+          <LoadingProvider>
+            <ModalProvider>
+              <Navbar />
+              {children}
+              <ContactFloat />
+            </ModalProvider>
+          </LoadingProvider>
         </ConfigProvider>
       </body>
     </html>

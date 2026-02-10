@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import styles from '../auth.module.css'
 import { Cinzel, Inter } from 'next/font/google'
-import LoadingOverlay from '@/components/LoadingOverlay'
+import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
@@ -26,6 +26,7 @@ export default function RegisterPage() {
         confirmPassword: ''
     })
     const [departments, setDepartments] = useState<{ code: string; name: string }[]>([])
+    const { setIsLoading } = useLoading()
     const [loading, setLoading] = useState(false)
     const [configLoading, setConfigLoading] = useState(true)
     const [error, setError] = useState('')
@@ -62,6 +63,7 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        setIsLoading(true, "Setting up your account")
         setError('')
 
         // Basic validation
@@ -77,18 +79,21 @@ export default function RegisterPage() {
         ) {
             setError('Please fill in all fields')
             setLoading(false)
+            setIsLoading(false)
             return
         }
 
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match')
             setLoading(false)
+            setIsLoading(false)
             return
         }
 
         if (formData.studentAdmnNo.length < 1) {
             setError('Student Admission Number is required')
             setLoading(false)
+            setIsLoading(false)
             return
         }
 
@@ -129,6 +134,7 @@ export default function RegisterPage() {
             setError(err.message || 'Registration failed. Please try again.')
         } finally {
             setLoading(false)
+            setIsLoading(false)
         }
     }
 
@@ -309,7 +315,6 @@ export default function RegisterPage() {
                     </Link>
                 </div>
             </div>
-            {loading && <LoadingOverlay message="Setting up your account" />}
         </div>
     )
 }

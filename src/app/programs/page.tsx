@@ -8,7 +8,8 @@ import { getPrograms, registerForProgramsBatch, getUserRegistrations } from '@/a
 import { getHouseMembers } from '@/actions/users'
 import { AuthResponse } from '@/types'
 import { Program, Registration } from '@prisma/client'
-import LoadingOverlay from '@/components/LoadingOverlay'
+import { Program, Registration } from '@prisma/client'
+import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 type SearchUser = {
@@ -32,7 +33,7 @@ export default function ProgramsPage() {
     const router = useRouter()
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [programs, setPrograms] = useState<Program[]>([])
-    const [loading, setLoading] = useState(true)
+    const { setIsLoading } = useLoading()
     const [filter, setFilter] = useState<'ALL' | 'ON_STAGE' | 'OFF_STAGE'>('ALL')
     const [typeFilter, setTypeFilter] = useState<'ALL' | 'SOLO' | 'GROUP'>('ALL')
     const [existingRegistrations, setExistingRegistrations] = useState<any[]>([])
@@ -48,7 +49,6 @@ export default function ProgramsPage() {
     const [tempSelectedMemberIds, setTempSelectedMemberIds] = useState<Set<string>>(new Set())
 
     // UI state
-    const [registering, setRegistering] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
 
     // Group members state for modal
@@ -79,7 +79,7 @@ export default function ProgramsPage() {
     }, [router])
 
     async function loadInitialData(userId: string) {
-        setLoading(true)
+        setIsLoading(true, "Fetching programs")
         try {
             const [progRes, regRes] = await Promise.all([
                 getPrograms(),
@@ -90,7 +90,7 @@ export default function ProgramsPage() {
         } catch (e) {
             console.error('Failed to load data', e)
         } finally {
-            setLoading(false)
+            setIsLoading(false)
         }
     }
 
@@ -200,7 +200,7 @@ export default function ProgramsPage() {
     const confirmRegistration = async () => {
         if (!user || selectedIds.size === 0) return
 
-        setRegistering(true)
+        setIsLoading(true, "Processing batch registration")
         setMessage(null)
         setShowConfirmModal(false)
 
@@ -227,7 +227,7 @@ export default function ProgramsPage() {
         } catch (e) {
             setMessage({ type: 'error', text: 'An unexpected error occurred.' })
         } finally {
-            setRegistering(false)
+            setIsLoading(false)
         }
     }
 
@@ -263,7 +263,7 @@ export default function ProgramsPage() {
         return categoryMatch && typeMatch
     })
 
-    if (loading) return <LoadingOverlay message="Fetching programs" />
+    if (programs.length === 0) return null
 
     return (
         <div className={`${styles.container} ${inter.className}`}>
@@ -463,8 +463,6 @@ export default function ProgramsPage() {
                     </div>
                 </div>
             )}
-
-            {registering && <LoadingOverlay message="Processing batch registration" />}
         </div>
     )
 }

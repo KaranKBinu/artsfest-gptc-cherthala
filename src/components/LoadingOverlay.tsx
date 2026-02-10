@@ -7,86 +7,101 @@ const inter = Inter({ subsets: ['latin'] });
 const cinzel = Cinzel({ subsets: ['latin'] });
 
 interface LoadingOverlayProps {
-    message?: string;
+  message?: string;
 }
 
 export default function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) {
-    return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(10, 10, 10, 0.85)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999,
-            animation: 'fadeIn 0.3s ease-out'
-        }} className={inter.className}>
-            <style jsx>{`
-        @keyframes fadeIn {
+  return (
+    <div className="overlay-container">
+      <style jsx>{`
+        .overlay-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: var(--overlay-bg, rgba(255, 255, 255, 0.9));
+          backdrop-filter: blur(5px);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          z-index: 99999;
+          animation: overlayFadeIn 0.3s ease-out forwards;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          .overlay-container {
+            --overlay-bg: rgba(10, 10, 10, 0.9);
+          }
+        }
+
+        @keyframes overlayFadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+
+        .pinterest-loader {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 1.5rem;
         }
 
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(0.95); }
-        }
-
-        .spinner {
-          width: 60px;
-          height: 60px;
-          border: 4px solid rgba(212, 175, 55, 0.1);
-          border-top: 4px solid #D4AF37; /* Gold */
+        .dot {
+          width: 14px;
+          height: 14px;
+          background: var(--primary-red);
           border-radius: 50%;
-          animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-          margin-bottom: 2rem;
-          position: relative;
+          animation: bounce 0.6s infinite alternate;
         }
 
-        .spinner::after {
-          content: '';
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          right: 10px;
-          bottom: 10px;
-          border: 2px solid rgba(139, 0, 0, 0.1);
-          border-top: 2px solid #8B0000; /* Red */
-          border-radius: 50%;
-          animation: spin 1.5s linear infinite reverse;
+        .dot:nth-child(2) {
+          animation-delay: 0.2s;
+          opacity: 0.8;
         }
 
-        .text {
-          color: #FAF9F6;
-          font-size: 1.2rem;
-          font-weight: 500;
-          letter-spacing: 2px;
+        .dot:nth-child(3) {
+          animation-delay: 0.4s;
+          opacity: 0.6;
+        }
+
+        @keyframes bounce {
+          from {
+            transform: translateY(0);
+          }
+          to {
+            transform: translateY(-16px);
+          }
+        }
+
+        .message {
+          font-family: ${cinzel.style.fontFamily}, serif;
+          font-size: 1rem;
+          font-weight: 700;
+          color: var(--foreground);
           text-transform: uppercase;
-          animation: pulse 2s ease-in-out infinite;
+          letter-spacing: 3px;
+          text-align: center;
+          margin-top: 10px;
         }
 
         .sub-text {
-          color: rgba(250, 249, 246, 0.6);
-          font-size: 0.8rem;
-          margin-top: 0.5rem;
+          font-family: ${inter.style.fontFamily}, sans-serif;
+          font-size: 0.75rem;
+          color: var(--color-text-muted);
+          margin-top: 8px;
           letter-spacing: 1px;
         }
       `}</style>
 
-            <div className="spinner"></div>
-            <div className={`${cinzel.className} text`}>{message}</div>
-            <div className="sub-text">Please Wait...</div>
-        </div>
-    );
+      <div className="pinterest-loader">
+        <div className="dot"></div>
+        <div className="dot"></div>
+        <div className="dot"></div>
+      </div>
+
+      <div className="message">{message}</div>
+      <div className="sub-text">Please Wait</div>
+    </div>
+  );
 }
