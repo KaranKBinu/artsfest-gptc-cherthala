@@ -299,3 +299,12 @@
     font-size: 0.8rem;
     opacity: 0.6;
 }
+
+.versionDisplay {
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.7rem;
+    opacity: 0.3;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.5rem;
+}

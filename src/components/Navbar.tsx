@@ -11,6 +11,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 import { useConfig } from '@/context/ConfigContext'
 import { useLoading } from '@/context/LoadingContext'
+import { APP_VERSION } from '@/utils/version'
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -130,6 +131,7 @@ export default function Navbar() {
                                     </a>
                                 </div>
                             )}
+                            <div className={styles.versionDisplay}>v{APP_VERSION}</div>
                         </div>
                     )}
                 </div>
@@ -216,6 +218,7 @@ export default function Navbar() {
                                     </a>
                                 </div>
                             )}
+                            <div className={styles.versionDisplay}>v{APP_VERSION}</div>
                         </div>
                     )}
                 </div>

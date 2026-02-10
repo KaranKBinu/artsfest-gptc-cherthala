@@ -10,6 +10,7 @@ import { AuthResponse } from '@/types'
 import writeXlsxFile from 'write-excel-file'
 import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { APP_VERSION } from '@/utils/version'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -2501,6 +2502,9 @@ export default function DashboardPage() {
                 </>
             )
             }
+            <div style={{ textAlign: 'center', padding: '2rem 0', opacity: 0.5, fontSize: '0.8rem' }}>
+                ArtsFest v{APP_VERSION}
+            </div>
         </div >
     )
 }
