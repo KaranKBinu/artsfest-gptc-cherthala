@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
 import puppeteer from 'puppeteer-core'
-import chromium from 'chrome-aws-lambda'
+import chromium from '@sparticuz/chromium'
 
 /**
  * Generate certificate using Puppeteer - Full Unicode/Malayalam support
@@ -133,25 +133,30 @@ async function generateCertificatePDF(options: {
 
 
     // Launch browser and generate PDF
-    // Use chrome-aws-lambda for serverless (Vercel), fall back to local Chrome for development
+    // Use @sparticuz/chromium for serverless (Vercel), fall back to local Chrome for development
     const isLocal = process.env.NODE_ENV === 'development' || !process.env.VERCEL
 
     console.log('[Certificate] Environment check:', { isLocal, NODE_ENV: process.env.NODE_ENV, VERCEL: process.env.VERCEL })
 
-    // Get executable path (chrome-aws-lambda returns Promise<string>)
+    // Configure chromium for Vercel (avoid brotli decompression)
+    if (!isLocal) {
+        chromium.setGraphicsMode = false
+    }
+
+    // Get executable path (@sparticuz/chromium.executablePath is a FUNCTION)
     const execPath = isLocal
         ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : await chromium.executablePath
+        : await chromium.executablePath()  // Note: It's a function call, not a property
 
     console.log('[Certificate] Using executable path:', execPath)
 
     const browser = await puppeteer.launch({
         args: isLocal
             ? ['--no-sandbox', '--disable-setuid-sandbox']
-            : chromium.args,
+            : [...chromium.args, '--disable-gpu'],
         defaultViewport: chromium.defaultViewport,
         executablePath: execPath,
-        headless: chromium.headless,
+        headless: true,
     })
 
     try {

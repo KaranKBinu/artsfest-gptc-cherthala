@@ -22,8 +22,8 @@ const nextConfig = {
   transpilePackages: ['pdf-lib', '@pdf-lib/fontkit'],
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Exclude chrome-aws-lambda from webpack processing
-      config.externals = [...(config.externals || []), 'chrome-aws-lambda', 'puppeteer-core']
+      // Exclude @sparticuz/chromium from webpack processing
+      config.externals = [...(config.externals || []), '@sparticuz/chromium', 'puppeteer-core']
     }
 
     // Ignore .map files
