@@ -65,13 +65,14 @@ export async function getUsersForAdmin(params: {
     query?: string
     houseId?: string
     department?: string
+    programId?: string
     hasRegistrations?: boolean
     page?: number
     limit?: number
     volunteerId?: string
     attendanceStatus?: 'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'
 }) {
-    const { query, houseId, department, hasRegistrations, page = 1, limit = 20, volunteerId, attendanceStatus } = params
+    const { query, houseId, department, programId, hasRegistrations, page = 1, limit = 20, volunteerId, attendanceStatus } = params
     const skip = (page - 1) * limit
 
     try {
@@ -112,6 +113,10 @@ export async function getUsersForAdmin(params: {
 
         if (volunteerId) {
             registrationWhere = { programId: { in: assignedProgramIds } }
+        }
+
+        if (programId && programId !== 'ALL') {
+            registrationWhere = { ...registrationWhere, programId: programId }
         }
 
         if (attendanceStatus && attendanceStatus !== 'ALL') {

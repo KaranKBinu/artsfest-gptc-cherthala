@@ -550,6 +550,7 @@ export default function DashboardPage() {
     const [adminSearch, setAdminSearch] = useState('')
     const [adminHouse, setAdminHouse] = useState('ALL')
     const [adminDept, setAdminDept] = useState('ALL')
+    const [adminProgram, setAdminProgram] = useState('ALL')
     const [onlyRegistered, setOnlyRegistered] = useState(false)
     const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'>('ALL')
     const [adminUsers, setAdminUsers] = useState<any[]>([])
@@ -638,12 +639,13 @@ export default function DashboardPage() {
 
     const fetchAdminData = async (currentUser?: any) => {
         const targetUser = currentUser || user
-        setIsLoading(true, "Fetching User Data")
+        setLoadingAdmin(true)
         try {
             const res = await getUsersForAdmin({
                 query: adminSearch,
                 houseId: adminHouse,
                 department: adminDept,
+                programId: adminProgram,
                 hasRegistrations: onlyRegistered,
                 limit: 50,
                 volunteerId: targetUser?.role === 'VOLUNTEER' ? targetUser.id : undefined,
@@ -656,6 +658,7 @@ export default function DashboardPage() {
             console.error('Failed to fetch users', e)
         } finally {
             setLoading(false)
+            setLoadingAdmin(false)
             setIsLoading(false)
         }
     }
@@ -769,14 +772,17 @@ export default function DashboardPage() {
 
         if (user?.role !== 'ADMIN' && user?.role !== 'MASTER' && user?.role !== 'VOLUNTEER') return
 
-        if (activeTab === 'programs') {
-            setIsLoading(true, "Loading Programs")
+        if (activeTab === 'programs' || activeTab === 'users') {
             getPrograms().then(res => {
                 if (res.success && res.data) setAdminPrograms(res.data)
-                setIsLoading(false)
             })
+        }
+
+        if (activeTab === 'programs') {
+            setIsLoading(true, "Loading Programs")
             getVolunteers().then(res => {
                 if (res.success && res.data) setVolunteers(res.data)
+                setIsLoading(false)
             })
         } else if (activeTab === 'results') {
             setIsLoading(true, "Loading Leaderboard")
@@ -876,7 +882,7 @@ export default function DashboardPage() {
             }, 500)
             return () => clearTimeout(timer)
         }
-    }, [adminSearch, adminHouse, adminDept, onlyRegistered, activeTab, attendanceFilter])
+    }, [adminSearch, adminHouse, adminDept, adminProgram, onlyRegistered, activeTab, attendanceFilter])
 
     // Search for potential volunteers
     useEffect(() => {
@@ -1118,6 +1124,18 @@ export default function DashboardPage() {
                                         </select>
                                     )}
                                     {user.role !== 'VOLUNTEER' && (
+                                        <select
+                                            className={styles.selectInput}
+                                            value={adminProgram}
+                                            onChange={(e) => setAdminProgram(e.target.value)}
+                                        >
+                                            <option value="ALL">All Programs</option>
+                                            {adminPrograms.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    {user.role !== 'VOLUNTEER' && (
                                         <label className={styles.checkboxLabel}>
                                             <input
                                                 type="checkbox"
@@ -1281,8 +1299,23 @@ export default function DashboardPage() {
                                                                             <select
                                                                                 value={r.grade || 'PARTICIPATION'}
                                                                                 onChange={async (e) => {
+                                                                                    const newGrade = e.target.value;
+                                                                                    // Optimistic update
+                                                                                    setAdminUsers(prev => prev.map(userItem => {
+                                                                                        if (userItem.id === u.id) {
+                                                                                            return {
+                                                                                                ...userItem,
+                                                                                                registrations: userItem.registrations.map((reg: any) => {
+                                                                                                    if (reg.id === r.id) return { ...reg, grade: newGrade };
+                                                                                                    return reg;
+                                                                                                })
+                                                                                            };
+                                                                                        }
+                                                                                        return userItem;
+                                                                                    }));
+
                                                                                     const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
-                                                                                    const res = await updateRegistrationResult(r.id, e.target.value);
+                                                                                    const res = await updateRegistrationResult(r.id, newGrade);
                                                                                     if (res.success) {
                                                                                         modals.showToast(`Updated result for ${u.fullName}`, 'success');
                                                                                         fetchAdminData();
