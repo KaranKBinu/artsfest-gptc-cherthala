@@ -64,16 +64,29 @@ export default function ContactPage() {
                                     if (!value || typeof value !== 'string') return null;
 
                                     const k = key.toLowerCase();
+                                    const isEmail = k.includes('email') || k.includes('mail');
+                                    const isPhone = k.includes('phone') || k.includes('tel') || k.includes('mobile') || k.includes('contact');
+
                                     let icon = '📍';
-                                    if (k.includes('email') || k.includes('mail')) icon = '✉️';
-                                    else if (k.includes('phone') || k.includes('tel') || k.includes('mobile') || k.includes('contact')) icon = '📞';
+                                    let href = '';
+                                    if (isEmail) {
+                                        icon = '✉️';
+                                        href = `mailto:${value}`;
+                                    } else if (isPhone) {
+                                        icon = '📞';
+                                        href = `tel:${value.replace(/[^0-9+]/g, '')}`;
+                                    }
 
                                     return (
                                         <div key={key} className={styles.infoItem}>
                                             <div className={styles.iconWrapper}>{icon}</div>
                                             <div className={styles.infoText}>
                                                 <h3 style={{ textTransform: 'capitalize' }}>{key}</h3>
-                                                <p>{value}</p>
+                                                {href ? (
+                                                    <a href={href} className={styles.contactLink}>{value}</a>
+                                                ) : (
+                                                    <p>{value}</p>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -91,7 +104,7 @@ export default function ContactPage() {
                                             <div className={styles.iconWrapper}>✉️</div>
                                             <div className={styles.infoText}>
                                                 <h3>Email</h3>
-                                                <p>artsfest@gptccala.com</p>
+                                                <a href="mailto:artsfest@gptccala.com" className={styles.contactLink}>artsfest@gptccala.com</a>
                                             </div>
                                         </div>
                                     </>

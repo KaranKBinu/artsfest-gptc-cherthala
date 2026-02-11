@@ -150,6 +150,21 @@
     line-height: 1.5;
 }
 
+.contactLink {
+    text-decoration: none;
+    color: var(--foreground);
+    opacity: 0.85;
+    transition: all 0.2s ease;
+    display: block;
+    font-size: 1.05rem;
+}
+
+.contactLink:hover {
+    color: var(--primary-gold);
+    opacity: 1;
+    transform: translateX(5px);
+}
+
 .socialBox h3 {
     font-size: 1.1rem;
     text-transform: uppercase;
