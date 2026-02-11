@@ -1779,55 +1779,7 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    {activeTab === 'feedbacks' && (
-                        <div className={styles.tableCard}>
-                            <h2 className={`${styles.cardTitle} ${cinzel.className}`}>Student Feedbacks & Contact Messages</h2>
-                            <div className={styles.tableWrapper} style={{ marginTop: '2rem' }}>
-                                <table className={styles.table}>
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Sender</th>
-                                            <th>Category</th>
-                                            <th>Subject & Message</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loadingFeedbacks ? (
-                                            <tr><td colSpan={4} style={{ textAlign: 'center', padding: '3rem' }}>Loading feedbacks...</td></tr>
-                                        ) : feedbacks.length > 0 ? (
-                                            feedbacks.map((f) => (
-                                                <tr key={f.id}>
-                                                    <td style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                                                        {new Date(f.createdAt).toLocaleDateString()}
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ fontWeight: 600 }}>{f.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{f.email}</div>
-                                                    </td>
-                                                    <td>
-                                                        <span className={styles.badge} style={{
-                                                            backgroundColor: f.category === 'CONTACT' ? 'var(--primary-gold)' : 'var(--primary-red)',
-                                                            color: 'white',
-                                                            fontSize: '0.7rem'
-                                                        }}>
-                                                            {f.category}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ fontWeight: 600, color: 'var(--primary-gold)', marginBottom: '0.2rem' }}>{f.subject}</div>
-                                                        <div style={{ fontSize: '0.9rem', opacity: 0.8, whiteSpace: 'pre-wrap' }}>{f.message}</div>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr><td colSpan={4} style={{ textAlign: 'center', padding: '3rem', opacity: 0.5 }}>No feedbacks received yet.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
+
 
                     {activeTab === 'programs' && (
                         <>
