@@ -75,53 +75,58 @@ async function generateCertificatePDF(options: {
                 color: #000;
             }
             .title {
-                top: 48mm;
+                top: 38mm;
                 font-size: 38px;
                 font-weight: bold;
                 color: #641414;
                 font-family: 'Noto Serif', serif;
             }
             .subtitle {
-                top: 65mm;
+                top: 55mm;
                 font-size: 20px;
                 color: #292929;
             }
             .student-name {
-                top: 80mm;
+                top: 70mm;
                 font-size: 32px;
                 font-weight: bold;
                 color: #000;
                 text-transform: uppercase;
             }
             .achievement {
-                top: 95mm;
+                top: 85mm;
                 font-size: 18px;
                 color: #292929;
             }
             .program-name {
-                top: 108mm;
+                top: 98mm;
                 font-size: 22px;
                 font-weight: bold;
                 color: #971F1F;
                 font-family: 'Noto Sans Malayalam', 'Noto Serif', serif;
             }
             .festival {
-                top: 122mm;
+                top: 112mm;
                 font-size: 16px;
                 font-style: italic;
                 color: #3D3D3D;
                 font-family: 'Noto Sans Malayalam', 'Noto Serif', serif;
             }
             .date {
-                top: 135mm;
+                bottom: 25mm;
+                left: 35mm;
+                width: auto;
+                text-align: left;
                 font-size: 13px;
                 color: #000;
+                font-family: 'Noto Serif', serif;
             }
             .points {
-                top: 145mm;
-                font-size: 14px;
-                font-weight: bold;
-                color: #555;
+                top: 125mm;
+                font-size: 18px;
+                font-weight: 800;
+                color: #D4AF37;
+                text-shadow: 0.5px 0.5px 0px rgba(0,0,0,0.1);
             }
         </style>
     </head>
@@ -133,7 +138,7 @@ async function generateCertificatePDF(options: {
             <div class="content achievement">${achieveText} in the event</div>
             <div class="content program-name">${programName}</div>
             <div class="content festival">conducted as part of ${festivalName}</div>
-            <div class="content date">Dated: ${dateStr}</div>
+            <div class="date">Dated: ${dateStr}</div>
             ${points ? `<div class="content points">Grade Points: ${points}</div>` : ''}
         </div>
     </body>
