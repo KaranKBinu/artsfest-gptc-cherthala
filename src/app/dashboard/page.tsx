@@ -49,6 +49,7 @@ const isJsonString = (str: string) => {
 function TeamMembersEditor({ value, onChange }: { value: string, onChange: (val: string) => void }) {
     const modals = useModals()
     const [members, setMembers] = useState<any[]>([])
+    const [uploadingIdx, setUploadingIdx] = useState<number | null>(null)
 
     useEffect(() => {
         try {
@@ -81,42 +82,90 @@ function TeamMembersEditor({ value, onChange }: { value: string, onChange: (val:
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {members.map((m, idx) => (
-                <div key={idx} style={{ padding: '1rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
-                        <h4 style={{ fontSize: '0.9rem', opacity: 0.8 }}>Member #{idx + 1}</h4>
-                        <button type="button" onClick={() => removeMember(idx)} style={{ color: 'var(--color-danger)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Remove</button>
+                <div key={idx} style={{ padding: '1.2rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary-gold)' }}>Member #{idx + 1}</h4>
+                        <button
+                            type="button"
+                            onClick={() => removeMember(idx)}
+                            style={{ color: 'var(--color-danger)', background: 'rgba(var(--color-danger-rgb), 0.1)', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '4px 12px', borderRadius: '4px', transition: 'all 0.2s' }}
+                        >
+                            Remove
+                        </button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Name</label>
-                            <input value={m.name} onChange={(e) => handleMemberChange(idx, 'name', e.target.value)} className={styles.searchInput} />
+                            <input value={m.name} onChange={(e) => handleMemberChange(idx, 'name', e.target.value)} className={styles.searchInput} placeholder="Full Name" />
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Role</label>
-                            <input value={m.role} onChange={(e) => handleMemberChange(idx, 'role', e.target.value)} className={styles.searchInput} />
+                            <input value={m.role} onChange={(e) => handleMemberChange(idx, 'role', e.target.value)} className={styles.searchInput} placeholder="e.g. Lead Developer" />
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Email</label>
-                            <input value={m.email} onChange={(e) => handleMemberChange(idx, 'email', e.target.value)} className={styles.searchInput} />
+                            <input value={m.email} onChange={(e) => handleMemberChange(idx, 'email', e.target.value)} className={styles.searchInput} placeholder="email@example.com" />
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Photo URL</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                                <input value={m.photo} onChange={(e) => handleMemberChange(idx, 'photo', e.target.value)} className={styles.searchInput} placeholder="https://..." />
-                                <div style={{ position: 'relative', overflow: 'hidden' }}>
-                                    <button type="button" className={styles.editBtn} style={{ padding: '8px' }}>U</button>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                    value={m.photo}
+                                    onChange={(e) => handleMemberChange(idx, 'photo', e.target.value)}
+                                    className={styles.searchInput}
+                                    placeholder="https://..."
+                                    style={{ flex: 1 }}
+                                />
+                                <div style={{ position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                                    <button
+                                        type="button"
+                                        className={styles.editBtn}
+                                        style={{
+                                            padding: '10px',
+                                            width: '42px',
+                                            height: '42px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: uploadingIdx === idx ? 'var(--color-warning)' : undefined
+                                        }}
+                                        disabled={uploadingIdx === idx}
+                                    >
+                                        {uploadingIdx === idx ? (
+                                            <span className={styles.spinner}></span>
+                                        ) : (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="17 8 12 3 7 8" />
+                                                <line x1="12" y1="3" x2="12" y2="15" />
+                                            </svg>
+                                        )}
+                                    </button>
                                     <input
                                         type="file"
+                                        accept="image/*"
                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                                         onChange={async (e) => {
                                             if (e.target.files?.[0]) {
-                                                const formData = new FormData()
-                                                formData.append('file', e.target.files[0])
-                                                const res = await fetch('/api/upload', { method: 'POST', body: formData })
-                                                const data = await res.json()
-                                                if (data.success) handleMemberChange(idx, 'photo', data.url)
+                                                setUploadingIdx(idx)
+                                                try {
+                                                    const formData = new FormData()
+                                                    formData.append('file', e.target.files[0])
+                                                    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                                                    const data = await res.json()
+                                                    if (data.success) {
+                                                        handleMemberChange(idx, 'photo', data.url)
+                                                        modals.showToast('Photo uploaded!', 'success')
+                                                    } else {
+                                                        modals.showToast(data.error || 'Upload failed', 'error')
+                                                    }
+                                                } catch (err) {
+                                                    modals.showToast('Upload error', 'error')
+                                                } finally {
+                                                    setUploadingIdx(null)
+                                                }
                                             }
                                         }}
                                     />
@@ -126,7 +175,13 @@ function TeamMembersEditor({ value, onChange }: { value: string, onChange: (val:
                     </div>
                 </div>
             ))}
-            <button type="button" onClick={addMember} className={styles.addButton} style={{ padding: '0.6rem', fontSize: '0.85rem' }}>+ Add Team Member</button>
+            <button type="button" onClick={addMember} className={styles.addButton} style={{ padding: '0.8rem', fontSize: '0.9rem', borderRadius: '10px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add Team Member
+            </button>
         </div>
     )
 }
@@ -2758,6 +2813,32 @@ export default function DashboardPage() {
                                         )}
                                     </tbody>
                                 </table>
+
+                                {/* Mobile Card View for Feedback */}
+                                <div className={styles.mobileCardList}>
+                                    {feedbacks.length > 0 ? (
+                                        feedbacks.map(f => (
+                                            <div key={f.id} className={styles.mobileCard}>
+                                                <div className={styles.mobileCardHeader}>
+                                                    <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(f.createdAt).toLocaleDateString()}</div>
+                                                    <span className={styles.roleBadge} style={{ backgroundColor: f.category === 'CONTACT' ? 'var(--color-info)' : 'var(--color-warning)' }}>
+                                                        {f.category}
+                                                    </span>
+                                                </div>
+                                                <div style={{ margin: '0.8rem 0' }}>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{f.subject}</div>
+                                                    <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '0.3rem' }}>{f.message}</div>
+                                                </div>
+                                                <div style={{ paddingTop: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem' }}>
+                                                    <div style={{ fontWeight: 600 }}>{f.name}</div>
+                                                    <div style={{ opacity: 0.6 }}>{f.email}</div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.6 }}>No feedbacks received yet.</div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
