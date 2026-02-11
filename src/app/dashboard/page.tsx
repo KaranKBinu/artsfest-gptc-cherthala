@@ -837,8 +837,8 @@ export default function DashboardPage() {
             const registrationsStr = u.registrations.map((r: any) => {
                 let status = 'Absent'
                 if (r.attendances?.some((a: any) => a.isPresent)) status = 'Present'
-
-                return `${r.program.name} (${r.program.type}) - ${status}`
+                let certStatus = r.certificates?.some((c: any) => c.emailSent) ? ' [Cert Sent]' : ''
+                return `${r.program.name} (${r.program.type}) - ${status}${certStatus}`
             }).join('; ')
 
             return [
@@ -891,7 +891,8 @@ export default function DashboardPage() {
                     column: 'Registrations', type: String, value: (student: any) => student.registrations.map((r: any) => {
                         let status = 'Absent'
                         if (r.attendances?.some((a: any) => a.isPresent)) status = 'Present'
-                        return `${r.program.name} (${r.program.type}) - ${status}`
+                        let certStatus = r.certificates?.some((c: any) => c.emailSent) ? ' [Cert Sent]' : ''
+                        return `${r.program.name} (${r.program.type}) - ${status}${certStatus}`
                     }).join('; ')
                 }
             ]
@@ -1414,6 +1415,7 @@ export default function DashboardPage() {
                                                                     {u.registrations.map((r: any) => (
                                                                         <span key={r.id} className={styles.miniTag}>
                                                                             {r.program.name} ({r.program.type === 'GROUP' ? 'G' : 'S'})
+                                                                            {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
                                                                         </span>
                                                                     ))}
                                                                 </div>
@@ -1425,7 +1427,10 @@ export default function DashboardPage() {
                                                             <td>
                                                                 {u.registrations.map((r: any) => (
                                                                     <div key={r.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{r.program.name}:</span>
+                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>
+                                                                            {r.program.name}:
+                                                                            {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
+                                                                        </span>
                                                                         <button
                                                                             onClick={() => {
                                                                                 const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
@@ -1565,7 +1570,10 @@ export default function DashboardPage() {
                                                                     border: '1px solid rgba(255,255,255,0.05)'
                                                                 }}>
                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{r.program.name}</span>
+                                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                                                                            {r.program.name}
+                                                                            {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '8px' }} title="Certificate Sent">✓</span>}
+                                                                        </span>
                                                                         <span className={styles.miniTag}>{r.program.type === 'GROUP' ? 'Group' : 'Solo'}</span>
                                                                     </div>
 
