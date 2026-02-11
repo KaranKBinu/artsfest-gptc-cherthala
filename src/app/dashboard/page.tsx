@@ -637,9 +637,9 @@ export default function DashboardPage() {
         }
     }, [router])
 
-    const fetchAdminData = async (currentUser?: any) => {
+    const fetchAdminData = async (currentUser?: any, showLoading = true) => {
         const targetUser = currentUser || user
-        setLoadingAdmin(true)
+        if (showLoading) setLoadingAdmin(true)
         try {
             const res = await getUsersForAdmin({
                 query: adminSearch,
@@ -1318,7 +1318,7 @@ export default function DashboardPage() {
                                                                                     const res = await updateRegistrationResult(r.id, newGrade);
                                                                                     if (res.success) {
                                                                                         modals.showToast(`Updated result for ${u.fullName}`, 'success');
-                                                                                        fetchAdminData();
+                                                                                        fetchAdminData(undefined, false);
                                                                                         const scoreRes = await getHouseLeaderboard();
                                                                                         if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
                                                                                     }
@@ -1427,11 +1427,26 @@ export default function DashboardPage() {
                                                                                 <select
                                                                                     value={r.grade || 'PARTICIPATION'}
                                                                                     onChange={async (e) => {
+                                                                                        const newGrade = e.target.value;
+                                                                                        // Optimistic update
+                                                                                        setAdminUsers(prev => prev.map(userItem => {
+                                                                                            if (userItem.id === u.id) {
+                                                                                                return {
+                                                                                                    ...userItem,
+                                                                                                    registrations: userItem.registrations.map((reg: any) => {
+                                                                                                        if (reg.id === r.id) return { ...reg, grade: newGrade };
+                                                                                                        return reg;
+                                                                                                    })
+                                                                                                };
+                                                                                            }
+                                                                                            return userItem;
+                                                                                        }));
+
                                                                                         const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
-                                                                                        const res = await updateRegistrationResult(r.id, e.target.value);
+                                                                                        const res = await updateRegistrationResult(r.id, newGrade);
                                                                                         if (res.success) {
                                                                                             modals.showToast(`Updated result for ${u.fullName}`, 'success');
-                                                                                            fetchAdminData();
+                                                                                            fetchAdminData(undefined, false);
                                                                                             const scoreRes = await getHouseLeaderboard();
                                                                                             if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
                                                                                         }
