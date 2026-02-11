@@ -71,8 +71,9 @@ export async function getUsersForAdmin(params: {
     limit?: number
     volunteerId?: string
     attendanceStatus?: 'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'
+    certStatus?: 'ALL' | 'SENT' | 'NOT_SENT'
 }) {
-    const { query, houseId, department, programId, hasRegistrations, page = 1, limit = 20, volunteerId, attendanceStatus } = params
+    const { query, houseId, department, programId, hasRegistrations, page = 1, limit = 20, volunteerId, attendanceStatus, certStatus } = params
     const skip = (page - 1) * limit
 
     try {
@@ -124,10 +125,22 @@ export async function getUsersForAdmin(params: {
             if (attendanceStatus === 'PRESENT') {
                 registrationWhere.attendances = { some: { isPresent: true } }
             } else if (attendanceStatus === 'ABSENT') {
-                // "Absent" now means "Not Present" (either explicitly marked false or not marked at all)
                 registrationWhere.NOT = {
                     attendances: {
                         some: { isPresent: true }
+                    }
+                }
+            }
+        }
+
+        if (certStatus && certStatus !== 'ALL') {
+            registrationWhere = registrationWhere || {}
+            if (certStatus === 'SENT') {
+                registrationWhere.certificates = { some: { emailSent: true } }
+            } else if (certStatus === 'NOT_SENT') {
+                registrationWhere.NOT = {
+                    certificates: {
+                        some: { emailSent: true }
                     }
                 }
             }
@@ -157,6 +170,9 @@ export async function getUsersForAdmin(params: {
                             },
                             attendances: {
                                 select: { isPresent: true }
+                            },
+                            certificates: {
+                                select: { emailSent: true }
                             }
                         }
                     }

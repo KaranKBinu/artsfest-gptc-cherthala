@@ -695,6 +695,7 @@ export default function DashboardPage() {
     const [adminProgram, setAdminProgram] = useState('ALL')
     const [onlyRegistered, setOnlyRegistered] = useState(false)
     const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'>('ALL')
+    const [certStatusFilter, setCertStatusFilter] = useState<'ALL' | 'SENT' | 'NOT_SENT'>('ALL')
     const [adminUsers, setAdminUsers] = useState<any[]>([])
     const [houses, setHouses] = useState<any[]>([])
     const [selectedRegs, setSelectedRegs] = useState<string[]>([])
@@ -807,7 +808,8 @@ export default function DashboardPage() {
                 hasRegistrations: onlyRegistered,
                 limit: 50,
                 volunteerId: targetUser?.role === 'VOLUNTEER' ? targetUser.id : undefined,
-                attendanceStatus: attendanceFilter as any
+                attendanceStatus: attendanceFilter as any,
+                certStatus: certStatusFilter
             })
             if (res.success && res.data) {
                 setAdminUsers(res.data.users)
@@ -1042,7 +1044,7 @@ export default function DashboardPage() {
             }, 500)
             return () => clearTimeout(timer)
         }
-    }, [adminSearch, adminHouse, adminDept, adminProgram, onlyRegistered, activeTab, attendanceFilter])
+    }, [adminSearch, adminHouse, adminDept, adminProgram, onlyRegistered, activeTab, attendanceFilter, certStatusFilter])
 
     // Search for potential volunteers
     useEffect(() => {
@@ -1278,6 +1280,17 @@ export default function DashboardPage() {
                                             <option value="ALL">All Attendance</option>
                                             <option value="PRESENT">Present</option>
                                             <option value="ABSENT">Absent</option>
+                                        </select>
+                                    )}
+                                    {(user.role === 'ADMIN' || user.role === 'MASTER') && (
+                                        <select
+                                            className={styles.selectInput}
+                                            value={certStatusFilter}
+                                            onChange={(e) => setCertStatusFilter(e.target.value as any)}
+                                        >
+                                            <option value="ALL">All Cert Status</option>
+                                            <option value="SENT">Cert Sent</option>
+                                            <option value="NOT_SENT">Cert Not Sent</option>
                                         </select>
                                     )}
                                     {user.role !== 'VOLUNTEER' && (
@@ -2128,6 +2141,23 @@ export default function DashboardPage() {
                                                                                 <div style={{ width: '100%', height: '100%', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#666' }}>
                                                                                     FILE
                                                                                 </div>
+                                                                            )}
+
+                                                                            {r.certificates?.some((c: any) => c.emailSent) && (
+                                                                                <span
+                                                                                    style={{
+                                                                                        fontSize: '0.65rem',
+                                                                                        color: 'var(--color-success)',
+                                                                                        backgroundColor: 'rgba(var(--color-success-rgb, 25, 135, 84), 0.1)',
+                                                                                        padding: '1px 4px',
+                                                                                        borderRadius: '3px',
+                                                                                        border: '1px solid var(--color-success)',
+                                                                                        fontWeight: 600
+                                                                                    }}
+                                                                                    title="Certificate successfully sent via email"
+                                                                                >
+                                                                                    Sent
+                                                                                </span>
                                                                             )}
                                                                         </a>
                                                                     )
