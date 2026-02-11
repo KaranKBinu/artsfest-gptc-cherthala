@@ -82,10 +82,12 @@ export default function ContactPage() {
                                             <div className={styles.iconWrapper}>{icon}</div>
                                             <div className={styles.infoText}>
                                                 <h3 style={{ textTransform: 'capitalize' }}>{key}</h3>
-                                                {href ? (
-                                                    <a href={href} className={styles.contactLink}>{value}</a>
-                                                ) : (
-                                                    <p>{value}</p>
+                                                <p>{value}</p>
+                                                {href && (
+                                                    <a href={href} className={`${styles.actionBtn} ${isEmail ? styles.emailBtn : styles.phoneBtn}`}>
+                                                        <span className={styles.btnIcon}>{isEmail ? '✉️' : '📞'}</span>
+                                                        {isEmail ? 'Send Email' : 'Call Now'}
+                                                    </a>
                                                 )}
                                             </div>
                                         </div>
@@ -104,7 +106,11 @@ export default function ContactPage() {
                                             <div className={styles.iconWrapper}>✉️</div>
                                             <div className={styles.infoText}>
                                                 <h3>Email</h3>
-                                                <a href="mailto:artsfest@gptccala.com" className={styles.contactLink}>artsfest@gptccala.com</a>
+                                                <p>artsfest@gptccala.com</p>
+                                                <a href="mailto:artsfest@gptccala.com" className={`${styles.actionBtn} ${styles.emailBtn}`}>
+                                                    <span className={styles.btnIcon}>✉️</span>
+                                                    Send Email
+                                                </a>
                                             </div>
                                         </div>
                                     </>

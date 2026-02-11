@@ -165,6 +165,51 @@
     transform: translateX(5px);
 }
 
+.actionBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.emailBtn {
+    background: rgba(var(--primary-red-rgb, 139, 0, 0), 0.1);
+    color: var(--primary-red);
+    border-color: rgba(var(--primary-red-rgb, 139, 0, 0), 0.2);
+}
+
+.phoneBtn {
+    background: rgba(25, 135, 84, 0.1);
+    color: #198754;
+    border-color: rgba(25, 135, 84, 0.2);
+}
+
+.actionBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.emailBtn:hover {
+    background: var(--primary-red);
+    color: white;
+}
+
+.phoneBtn:hover {
+    background: #198754;
+    color: white;
+}
+
+.btnIcon {
+    font-size: 1rem;
+}
+
 .socialBox h3 {
     font-size: 1.1rem;
     text-transform: uppercase;
