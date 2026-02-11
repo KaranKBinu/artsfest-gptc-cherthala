@@ -8,6 +8,7 @@ export interface AppConfig {
     notifications: string
     artsFestManual: string
     contactInfo: string
+    teamMembers: string
     departments: {
         code: string
         name: string
@@ -33,7 +34,7 @@ export async function getAppConfig(): Promise<AppConfig> {
     try {
         const configs = await prisma.configuration.findMany({
             where: {
-                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo'] }
+                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo', 'teamMembers'] }
             }
         })
 
@@ -46,6 +47,7 @@ export async function getAppConfig(): Promise<AppConfig> {
         const notifications = configMap.get('notifications') || '[]'
         const artsFestManual = configMap.get('artsFestManual') || ''
         const contactInfo = configMap.get('contactInfo') || JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' })
+        const teamMembers = configMap.get('teamMembers') || '[]'
 
         let departments: AppConfig['departments'] = []
         const deptJson = configMap.get('departments')
@@ -76,6 +78,7 @@ export async function getAppConfig(): Promise<AppConfig> {
             notifications,
             artsFestManual,
             contactInfo,
+            teamMembers,
             departments
         }
         lastFetchTime = now
@@ -92,6 +95,7 @@ export async function getAppConfig(): Promise<AppConfig> {
             notifications: '[]',
             artsFestManual: '',
             contactInfo: JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' }),
+            teamMembers: '[]',
             departments: [
                 { code: 'CHE', name: 'Computer Hardware Engineering' },
                 { code: 'CT', name: 'Computer Engineering' },

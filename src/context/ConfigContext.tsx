@@ -2,6 +2,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
+export interface TeamMember {
+    name: string
+    role: string
+    email: string
+    photo?: string
+}
+
 interface AppConfig {
     festivalName: string
     festivalYear: string
@@ -10,6 +17,7 @@ interface AppConfig {
     notifications: any[]
     artsFestManual: string
     contactInfo: any
+    teamMembers: TeamMember[]
     departments: {
         code: string
         name: string
@@ -30,6 +38,7 @@ const defaultConfig: AppConfig = {
     notifications: [],
     artsFestManual: '',
     contactInfo: null,
+    teamMembers: [],
     departments: []
 }
 
@@ -73,6 +82,12 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     contactInfo = JSON.parse(d.contactInfo || '{}')
                 } catch (e) { }
 
+                let teamMembers = []
+                try {
+                    teamMembers = JSON.parse(d.teamMembers || '[]')
+                    if (!Array.isArray(teamMembers)) teamMembers = []
+                } catch (e) { }
+
                 setConfig({
                     festivalName: d.festivalName || defaultConfig.festivalName,
                     festivalYear: d.festivalYear || defaultConfig.festivalYear,
@@ -81,6 +96,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     notifications,
                     artsFestManual: d.artsFestManual || '',
                     contactInfo,
+                    teamMembers,
                     departments
                 })
             }

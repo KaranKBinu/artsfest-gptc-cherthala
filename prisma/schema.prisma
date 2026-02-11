@@ -215,3 +215,16 @@ model PasswordReset {
 
   @@index([email])
 }
+
+model Feedback {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  category  String   @default("FEEDBACK") // FEEDBACK, CONTACT, INQUIRY
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([category])
+}

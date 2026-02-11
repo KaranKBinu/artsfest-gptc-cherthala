@@ -96,11 +96,11 @@ export async function getConfigs() {
     }
 }
 
-export async function updateConfig(key: string, value: string) {
+export async function updateConfig(key: string, value: string, description?: string) {
     try {
         const config = await prisma.configuration.update({
             where: { key },
-            data: { value }
+            data: { value, description }
         })
         invalidateConfigCache()
         revalidatePath('/')

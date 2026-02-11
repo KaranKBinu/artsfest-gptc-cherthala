@@ -177,6 +177,20 @@ export default function Navbar() {
                         Programs
                     </Link>
                 )}
+                <Link
+                    href="/about"
+                    className={`${styles.navLink} ${pathname === '/about' ? styles.active : ''}`}
+                    onClick={() => setIsMenuOpen(false)}
+                >
+                    About
+                </Link>
+                <Link
+                    href="/contact"
+                    className={`${styles.navLink} ${pathname === '/contact' ? styles.active : ''}`}
+                    onClick={() => setIsMenuOpen(false)}
+                >
+                    Contact
+                </Link>
 
                 {/* Notification Icon (Desktop: First Item via CSS order) */}
                 <div className={`${styles.notificationWrapper} ${styles.navNotification}`}>
