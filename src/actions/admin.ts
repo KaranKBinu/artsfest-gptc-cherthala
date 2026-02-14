@@ -5,6 +5,7 @@ import { ProgramCategory, ProgramType } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { invalidateConfigCache } from '@/lib/config'
 import { hash } from 'bcryptjs'
+import { sendEmail } from '@/lib/mail'
 
 // --- Program Management ---
 
@@ -265,6 +266,46 @@ export async function createUser(data: {
         const user = await prisma.user.create({
             data: finalData as any
         })
+
+        // If it's a staff role, send email notification
+        if (isStaff) {
+            try {
+                const configs = await prisma.configuration.findMany({
+                    where: { key: { in: ['smtpConfig', 'festivalName'] } }
+                })
+                const smtpStr = configs.find(c => c.key === 'smtpConfig')?.value || '{}'
+                const festivalName = configs.find(c => c.key === 'festivalName')?.value || 'ArtsFest GPTC'
+
+                let smtpConfigObj: any = {}
+                try { smtpConfigObj = JSON.parse(smtpStr) } catch (e) { }
+
+                const loginUrl = process.env.NEXTAUTH_URL ? `${process.env.NEXTAUTH_URL}/login` : `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : ''}/login`
+
+                await sendEmail({
+                    to: user.email,
+                    subject: `Welcome to ${festivalName} - Account Created`,
+                    text: `Hello ${user.fullName},\n\nYour account has been created as ${finalRole} on ${festivalName}.\n\nCredentials:\nEmail: ${user.email}\nPassword: ${password || 'Welcome@123'}\n\nLogin at: ${loginUrl}`,
+                    html: `
+                        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                            <h2 style="color: #333;">Welcome to ${festivalName}</h2>
+                            <p>Hello <strong>${user.fullName}</strong>,</p>
+                            <p>Your account has been created as <strong>${finalRole}</strong>.</p>
+                            <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                <p style="margin: 5px 0;"><strong>Login Email:</strong> ${user.email}</p>
+                                <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password || 'Welcome@123'}</p>
+                            </div>
+                            <p>You can login here: <a href="${loginUrl}" style="background: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Login to Portal</a></p>
+                            <p style="color: #666; font-size: 12px; margin-top: 30px;">If you have any issues, please contact the administrator.</p>
+                        </div>
+                    `,
+                    smtpConfig: smtpConfigObj.user ? smtpConfigObj : undefined
+                })
+            } catch (mailError) {
+                console.error('Failed to send welcome email:', mailError)
+                // We don't fail the whole creation if email fails, but we log it
+            }
+        }
+
         revalidatePath('/')
         return { success: true, data: user }
     } catch (error) {
