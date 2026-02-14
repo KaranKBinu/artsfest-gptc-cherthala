@@ -10,14 +10,13 @@ const cinzel = Cinzel({ subsets: ['latin'] })
 
 import { ProgramWithStats } from '@/types'
 import { useConfig } from '@/context/ConfigContext'
-import { useLoading } from '@/context/LoadingContext'
 
 export default function Home() {
   const { config } = useConfig()
-  const { setIsLoading } = useLoading()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [programs, setPrograms] = useState<ProgramWithStats[]>([])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [loadingPrograms, setLoadingPrograms] = useState(true)
   // Chunk images into layouts
   const [slides, setSlides] = useState<string[][]>([])
 
@@ -55,8 +54,8 @@ export default function Home() {
   }, [slides])
 
   useEffect(() => {
-    // Fetch programs
-    setIsLoading(true, "Fetching Events")
+    // Fetch programs - local loading for non-blocking UI
+    setLoadingPrograms(true)
     fetch('/api/programs')
       .then(res => res.json())
       .then(data => {
@@ -65,7 +64,7 @@ export default function Home() {
         }
       })
       .catch(err => console.error('Failed to load programs', err))
-      .finally(() => setIsLoading(false))
+      .finally(() => setLoadingPrograms(false))
 
     // Check login status
     const token = localStorage.getItem('token')
@@ -185,7 +184,23 @@ export default function Home() {
             Event List
           </h2>
           <div className={styles.grid}>
-            {programs.length > 0 ? (
+            {loadingPrograms ? (
+              // Multi-entry Skeleton Loader
+              Array(6).fill(0).map((_, i) => (
+                <div key={i} className={styles.skeletonCard}>
+                  <div className={`${styles.skeletonTitle} ${styles.skeleton}`} />
+                  <div className={styles.skeletonMeta}>
+                    <div className={`${styles.skeletonBadge} ${styles.skeleton}`} />
+                    <div className={`${styles.skeletonBadge} ${styles.skeleton}`} />
+                  </div>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <div className={`${styles.skeletonText} ${styles.skeleton}`} />
+                    <div className={`${styles.skeletonText} ${styles.skeleton}`} />
+                    <div className={`${styles.skeletonText} ${styles.skeleton} ${styles.skeletonTextLast}`} />
+                  </div>
+                </div>
+              ))
+            ) : programs.length > 0 ? (
               programs.map(program => (
                 <div key={program.id} className={styles.card}>
                   <h3>{program.name}</h3>

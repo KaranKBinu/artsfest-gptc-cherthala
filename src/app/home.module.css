@@ -448,3 +448,62 @@
     opacity: 1;
     transform: translateY(0);
 }
+
+/* Skeleton Loader */
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--card-bg) 25%,
+            rgba(255, 255, 255, 0.05) 50%,
+            var(--card-bg) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeletonCard {
+    padding: 2rem;
+    border-radius: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.skeletonTitle {
+    height: 1.5rem;
+    width: 70%;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.skeletonMeta {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.skeletonBadge {
+    height: 1.2rem;
+    width: 60px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.skeletonText {
+    height: 0.8rem;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 0.5rem;
+}
+
+.skeletonTextLast {
+    width: 40%;
+}
