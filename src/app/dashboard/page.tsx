@@ -1833,61 +1833,6 @@ export default function DashboardPage() {
                                     )}
                                 </div>
                             </div>
-
-                            {/* Scoring Rules */}
-                            <div className={styles.tableCard}>
-                                <h3 className={`${styles.cardTitle} ${cinzel.className}`}>Scoring Rules</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
-                                    {[
-                                        { label: 'Winner (1st)', points: 5, color: '#ffd700' },
-                                        { label: 'First Runner Up (2nd)', points: 4, color: '#c0c0c0' },
-                                        { label: 'Second Runner Up (3rd)', points: 3, color: '#cd7f32' },
-                                        { label: 'Participation', points: 0, color: 'var(--color-success)' }
-                                    ].map((rule, i) => (
-                                        <div key={i} style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: '1rem',
-                                            backgroundColor: 'rgba(255,255,255,0.03)',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(255,255,255,0.1)'
-                                        }}>
-                                            <span style={{ fontWeight: 500 }}>{rule.label}</span>
-                                            <span style={{
-                                                padding: '0.3rem 0.8rem',
-                                                backgroundColor: rule.color + '20',
-                                                color: rule.color,
-                                                borderRadius: '20px',
-                                                fontSize: '0.9rem',
-                                                fontWeight: 600,
-                                                border: `1px solid ${rule.color}40`
-                                            }}>
-                                                {rule.points} Points
-                                            </span>
-                                        </div>
-                                    ))}
-                                    <div style={{
-                                        marginTop: '1rem',
-                                        padding: '1rem',
-                                        backgroundColor: 'rgba(0,0,0,0.2)',
-                                        borderRadius: '8px',
-                                        fontSize: '0.85rem',
-                                        lineHeight: 1.5,
-                                        opacity: 0.8,
-                                        border: '1px solid rgba(255,255,255,0.05)'
-                                    }}>
-                                        <strong>Rules:</strong>
-                                        <ul style={{ margin: '0.5rem 0 0 1.2rem' }}>
-                                            <li>Points are awarded per program.</li>
-                                            <li>A student must be marked <strong>Present</strong> to receive any points.</li>
-                                            <li>Group events earn points as a single entry for the House.</li>
-                                            <li>Participation points (0) do not contribute to the total score.</li>
-                                            <li>House scores are updated in real-time as results are assigned.</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     )}
 
