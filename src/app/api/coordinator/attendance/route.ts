@@ -83,4 +83,4 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
     }
 }
 
-export const POST = withAuth(handler, { roles: ['VOLUNTEER', 'ADMIN'] as any })
+export const POST = withAuth(handler, { roles: ['COORDINATOR', 'ADMIN'] as any })

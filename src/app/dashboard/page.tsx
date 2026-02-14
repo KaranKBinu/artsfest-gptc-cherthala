@@ -16,7 +16,7 @@ const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
 import { getDashboardData, DashboardData } from '@/actions/dashboard'
-import { getUsersForAdmin, getHouses, getVolunteers, updateUserRole } from '@/actions/users'
+import { getUsersForAdmin, getHouses, getCoordinators, updateUserRole } from '@/actions/users'
 import { generateStudentRegistrationsPDF, generateAdminExportPDF } from '@/actions/pdf-generator'
 import { useConfig } from '@/context/ConfigContext'
 import { useModals } from '@/context/ModalContext'
@@ -629,7 +629,7 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                                 className={styles.selectInput}
                             >
                                 <option value="STUDENT">STUDENT</option>
-                                <option value="VOLUNTEER">VOLUNTEER</option>
+                                <option value="COORDINATOR">COORDINATOR</option>
                                 <option value="ADMIN">ADMIN</option>
                                 <option value="MASTER">MASTER</option>
                             </select>
@@ -708,19 +708,19 @@ export default function DashboardPage() {
     const [adminPrograms, setAdminPrograms] = useState<Program[]>([])
     const [programSearch, setProgramSearch] = useState('')
     const [programCategoryFilter, setProgramCategoryFilter] = useState<'ALL' | 'ON_STAGE' | 'OFF_STAGE'>('ALL')
-    const [programTab, setProgramTab] = useState<'PROGRAMS' | 'VOLUNTEERS'>('PROGRAMS')
-    const [volunteers, setVolunteers] = useState<any[]>([])
+    const [programTab, setProgramTab] = useState<'PROGRAMS' | 'COORDINATORS'>('PROGRAMS')
+    const [coordinators, setCoordinators] = useState<any[]>([])
     const [allUsers, setAllUsers] = useState<any[]>([])
     const [userSearch, setUserSearch] = useState('')
-    const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'STUDENT' | 'VOLUNTEER' | 'ADMIN' | 'MASTER'>('ALL')
+    const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'STUDENT' | 'COORDINATOR' | 'ADMIN' | 'MASTER'>('ALL')
     const [editingUser, setEditingUser] = useState<any | null>(null)
     const [userModalOpen, setUserModalOpen] = useState(false)
     const [programModalOpen, setProgramModalOpen] = useState(false)
     const [editingProgram, setEditingProgram] = useState<any | null>(null)
-    const [volunteerModalOpen, setVolunteerModalOpen] = useState(false)
-    const [volunteerSearch, setVolunteerSearch] = useState('')
-    const [potentialVolunteers, setPotentialVolunteers] = useState<any[]>([])
-    const [searchingVolunteers, setSearchingVolunteers] = useState(false)
+    const [coordinatorModalOpen, setCoordinatorModalOpen] = useState(false)
+    const [coordinatorSearch, setCoordinatorSearch] = useState('')
+    const [potentialCoordinators, setPotentialCoordinators] = useState<any[]>([])
+    const [searchingCoordinators, setSearchingCoordinators] = useState(false)
 
     // Admin State - Settings
     const [configs, setConfigs] = useState<Configuration[]>([])
@@ -746,7 +746,7 @@ export default function DashboardPage() {
             const userData = JSON.parse(userStr)
             setUser(userData)
 
-            if (userData.role === 'ADMIN' || userData.role === 'MASTER' || userData.role === 'VOLUNTEER') {
+            if (userData.role === 'ADMIN' || userData.role === 'MASTER' || userData.role === 'COORDINATOR') {
                 // Fetch Admin Data
                 setIsLoading(true, "Loading Dashboard")
                 fetchAdminData(userData)
@@ -770,7 +770,7 @@ export default function DashboardPage() {
                 })
             }
 
-            if (userData.role === 'VOLUNTEER') {
+            if (userData.role === 'COORDINATOR') {
                 getDashboardData(userData.id).then(res => {
                     if (res.success && res.data) setDashboardData(res.data)
                 })
@@ -807,7 +807,7 @@ export default function DashboardPage() {
                 programId: adminProgram,
                 hasRegistrations: onlyRegistered,
                 limit: 50,
-                volunteerId: targetUser?.role === 'VOLUNTEER' ? targetUser.id : undefined,
+                coordinatorId: targetUser?.role === 'COORDINATOR' ? targetUser.id : undefined,
                 attendanceStatus: attendanceFilter as any,
                 certStatus: certStatusFilter
             })
@@ -931,7 +931,7 @@ export default function DashboardPage() {
             if (res.success && res.data) setHouseScores(res.data)
         })
 
-        if (user?.role !== 'ADMIN' && user?.role !== 'MASTER' && user?.role !== 'VOLUNTEER') return
+        if (user?.role !== 'ADMIN' && user?.role !== 'MASTER' && user?.role !== 'COORDINATOR') return
 
         if (activeTab === 'programs' || activeTab === 'users') {
             getPrograms().then(res => {
@@ -941,8 +941,8 @@ export default function DashboardPage() {
 
         if (activeTab === 'programs') {
             setIsLoading(true, "Loading Programs")
-            getVolunteers().then(res => {
-                if (res.success && res.data) setVolunteers(res.data)
+            getCoordinators().then(res => {
+                if (res.success && res.data) setCoordinators(res.data)
                 setIsLoading(false)
             })
         } else if (activeTab === 'results') {
@@ -950,6 +950,9 @@ export default function DashboardPage() {
             import('@/actions/results').then(m => m.getHouseLeaderboard()).then(res => {
                 if (res.success && res.data) setHouseScores(res.data)
                 setIsLoading(false)
+            })
+            getCoordinators().then(res => {
+                if (res.success && res.data) setCoordinators(res.data)
             })
         } else if (activeTab === 'settings') {
             setIsLoading(true, "Loading Settings")
@@ -960,7 +963,7 @@ export default function DashboardPage() {
         } else if (activeTab === 'feedbacks') {
             fetchFeedbacks()
         }
-    }, [activeTab, user?.role, volunteerModalOpen, userModalOpen])
+    }, [activeTab, user?.role, coordinatorModalOpen, userModalOpen])
 
     // --- Program Handlers ---
     const handleSaveProgram = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -974,7 +977,7 @@ export default function DashboardPage() {
             minMembers: parseInt(formData.get('minMembers') as string),
             maxMembers: parseInt(formData.get('maxMembers') as string),
             description: formData.get('description') as string,
-            volunteerIds: formData.getAll('volunteerIds') as string[],
+            coordinatorIds: formData.getAll('coordinatorIds') as string[],
         }
 
         try {
@@ -1047,31 +1050,28 @@ export default function DashboardPage() {
         }
     }, [adminSearch, adminHouse, adminDept, adminProgram, onlyRegistered, activeTab, attendanceFilter, certStatusFilter])
 
-    // Search for potential volunteers
+    // Search for potential coordinators
     useEffect(() => {
-        if (!volunteerModalOpen || volunteerSearch.length < 2) {
-            setPotentialVolunteers([])
+        if (!coordinatorModalOpen || coordinatorSearch.length < 2) {
+            setPotentialCoordinators([])
             return
         }
 
         const timer = setTimeout(async () => {
-            setSearchingVolunteers(true)
+            setSearchingCoordinators(true)
             try {
                 // We only want students
-                const res = await getUsersForAdmin({ query: volunteerSearch, limit: 10 })
+                const res = await getUsersForAdmin({ query: coordinatorSearch, limit: 10 })
                 if (res.success && res.data) {
-                    // Filter out existing volunteers from the result if needed, 
-                    // though getUsersForAdmin returns 'STUDENT' mainly, let's just use it.
-                    // Actually getUsersForAdmin is hardcoded to return role: 'STUDENT'. Perfect.
-                    setPotentialVolunteers(res.data.users)
+                    setPotentialCoordinators(res.data.users)
                 }
             } finally {
-                setSearchingVolunteers(false)
+                setSearchingCoordinators(false)
             }
         }, 500)
 
         return () => clearTimeout(timer)
-    }, [volunteerSearch, volunteerModalOpen])
+    }, [coordinatorSearch, coordinatorModalOpen])
 
     useEffect(() => {
         if (activeTab === 'usermanagement' && user?.role === 'MASTER') {
@@ -1153,7 +1153,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {((user.role === 'ADMIN' || user.role === 'MASTER') || (user.role === 'VOLUNTEER' && viewMode === 'ADMIN')) ? (
+            {((user.role === 'ADMIN' || user.role === 'MASTER' || user.role === 'COORDINATOR') || (user.role === 'VOLUNTEER' && viewMode === 'ADMIN')) ? (
                 // ADMIN VIEW
                 <div className={styles.adminContainer}>
                     {/* Navigation */}
@@ -1183,7 +1183,7 @@ export default function DashboardPage() {
                         <button
                             className={`${styles.navItem} ${activeTab === 'programs' ? styles.active : ''}`}
                             onClick={() => setActiveTab('programs')}
-                            style={{ display: user.role === 'VOLUNTEER' ? 'none' : 'flex' }}
+                            style={{ display: (user.role === 'VOLUNTEER' || user.role === 'COORDINATOR') ? 'none' : 'flex' }}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -1193,7 +1193,7 @@ export default function DashboardPage() {
                             </svg>
                             Program Management
                         </button>
-                        {user.role !== 'VOLUNTEER' && (
+                        {(user.role !== 'VOLUNTEER' && user.role !== 'COORDINATOR') && (
                             <>
                                 <button
                                     className={`${styles.navItem} ${activeTab === 'gallery' ? styles.active : ''}`}
@@ -1318,7 +1318,7 @@ export default function DashboardPage() {
                                             ))}
                                         </select>
                                     )}
-                                    {user.role !== 'VOLUNTEER' && (
+                                    {(user.role !== 'VOLUNTEER' && user.role !== 'COORDINATOR') && (
                                         <label className={styles.checkboxLabel}>
                                             <input
                                                 type="checkbox"
@@ -1388,12 +1388,12 @@ export default function DashboardPage() {
                                                 <th>Admission No</th>
                                                 <th>House</th>
                                                 <th>Registrations</th>
-                                                {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER') && <th>Attendance & Select</th>}
+                                                {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'COORDINATOR') && <th>Attendance & Select</th>}
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {loadingAdmin ? (
-                                                <tr><td colSpan={(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER') ? 5 : 4} style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
+                                                <tr><td colSpan={(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'COORDINATOR') ? 5 : 4} style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
                                             ) : adminUsers.length > 0 ? (
                                                 adminUsers.map(u => (
                                                     <tr key={u.id}>
@@ -1423,7 +1423,7 @@ export default function DashboardPage() {
                                                                 <span style={{ opacity: 0.5 }}>-</span>
                                                             )}
                                                         </td>
-                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER') && (
+                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') && (
                                                             <td>
                                                                 {u.registrations.map((r: any) => (
                                                                     <div key={r.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
@@ -1439,7 +1439,7 @@ export default function DashboardPage() {
                                                                                     title: 'Change Attendance',
                                                                                     message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
                                                                                     onConfirm: async () => {
-                                                                                        const { markAttendance } = await import('@/actions/volunteer');
+                                                                                        const { markAttendance } = await import('@/actions/coordinator');
                                                                                         const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
                                                                                         if (res.success) {
                                                                                             modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
@@ -1533,7 +1533,7 @@ export default function DashboardPage() {
                                                     </tr>
                                                 ))
                                             ) : (
-                                                <tr><td colSpan={(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER') ? 5 : 4} style={{ textAlign: 'center', padding: '2rem' }}>No users found matching filters.</td></tr>
+                                                <tr><td colSpan={(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') ? 5 : 4} style={{ textAlign: 'center', padding: '2rem' }}>No users found matching filters.</td></tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -1578,7 +1578,7 @@ export default function DashboardPage() {
                                                                     </div>
 
                                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER') && (
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') && (
                                                                             <button
                                                                                 onClick={() => {
                                                                                     const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
@@ -1587,7 +1587,7 @@ export default function DashboardPage() {
                                                                                         title: 'Change Attendance',
                                                                                         message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
                                                                                         onConfirm: async () => {
-                                                                                            const { markAttendance } = await import('@/actions/volunteer');
+                                                                                            const { markAttendance } = await import('@/actions/coordinator');
                                                                                             const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
                                                                                             if (res.success) {
                                                                                                 modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
@@ -1806,7 +1806,7 @@ export default function DashboardPage() {
                         <>
                             <div className={styles.innerNav}>
                                 <button className={`${styles.innerNavBtn} ${programTab === 'PROGRAMS' ? styles.active : ''}`} onClick={() => setProgramTab('PROGRAMS')}>Programs</button>
-                                <button className={`${styles.innerNavBtn} ${programTab === 'VOLUNTEERS' ? styles.active : ''}`} onClick={() => setProgramTab('VOLUNTEERS')}>Volunteers</button>
+                                <button className={`${styles.innerNavBtn} ${programTab === 'COORDINATORS' ? styles.active : ''}`} onClick={() => setProgramTab('COORDINATORS')}>Coordinators</button>
                             </div>
 
                             {programTab === 'PROGRAMS' && (
@@ -1998,13 +1998,13 @@ export default function DashboardPage() {
                                 </div>
                             )}
 
-                            {/* Volunteer Management Section */}
-                            {programTab === 'VOLUNTEERS' && (
+                            {/* Coordinator Management Section */}
+                            {programTab === 'COORDINATORS' && (
                                 <div className={styles.tableCard}>
                                     <div className={styles.crudHeader}>
-                                        <h3 className={`${styles.cardTitle} ${cinzel.className}`}>Volunteer Management</h3>
-                                        <button className={styles.addButton} onClick={() => { setVolunteerSearch(''); setVolunteerModalOpen(true) }}>
-                                            + Add Volunteer
+                                        <h3 className={`${styles.cardTitle} ${cinzel.className}`}>Coordinator Management</h3>
+                                        <button className={styles.addButton} onClick={() => { setCoordinatorSearch(''); setCoordinatorModalOpen(true) }}>
+                                            + Add Coordinator
                                         </button>
                                     </div>
                                     <div className={styles.tableWrapper}>
@@ -2017,7 +2017,7 @@ export default function DashboardPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {volunteers.map(v => (
+                                                {coordinators.map(v => (
                                                     <tr key={v.id}>
                                                         <td className={styles.tdName} style={{ fontWeight: 600 }}>{v.fullName}</td>
                                                         <td>{v.email}</td>
@@ -2026,16 +2026,16 @@ export default function DashboardPage() {
                                                                 className={styles.deleteBtn}
                                                                 onClick={() => {
                                                                     modals.confirm({
-                                                                        title: 'Remove Volunteer',
-                                                                        message: `Remove volunteer status from ${v.fullName}?`,
+                                                                        title: 'Remove Coordinator',
+                                                                        message: `Remove coordinator status from ${v.fullName}?`,
                                                                         onConfirm: async () => {
-                                                                            setIsLoading(true, "Removing Volunteer Badge")
+                                                                            setIsLoading(true, "Removing Coordinator Badge")
                                                                             try {
                                                                                 const res = await updateUserRole(v.id, 'STUDENT')
                                                                                 if (res.success) {
-                                                                                    modals.showToast('Volunteer removed', 'success')
-                                                                                    const vRes = await getVolunteers()
-                                                                                    if (vRes.success && vRes.data) setVolunteers(vRes.data)
+                                                                                    modals.showToast('Coordinator removed', 'success')
+                                                                                    const vRes = await getCoordinators()
+                                                                                    if (vRes.success && vRes.data) setCoordinators(vRes.data)
                                                                                 }
                                                                             } finally {
                                                                                 setIsLoading(false)
@@ -2049,15 +2049,15 @@ export default function DashboardPage() {
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {volunteers.length === 0 && (
-                                                    <tr><td colSpan={3} style={{ textAlign: 'center', padding: '1rem', opacity: 0.6 }}>No volunteers added yet.</td></tr>
+                                                {coordinators.length === 0 && (
+                                                    <tr><td colSpan={3} style={{ textAlign: 'center', padding: '1rem', opacity: 0.6 }}>No coordinators added yet.</td></tr>
                                                 )}
                                             </tbody>
                                         </table>
 
-                                        {/* Mobile Card View for Volunteers */}
+                                        {/* Mobile Card View for Coordinators */}
                                         <div className={styles.mobileCardList}>
-                                            {volunteers.map(v => (
+                                            {coordinators.map(v => (
                                                 <div key={v.id} className={styles.mobileCard}>
                                                     <div className={styles.mobileCardHeader}>
                                                         <div className={styles.mobileCardTitle}>{v.fullName}</div>
@@ -2070,14 +2070,14 @@ export default function DashboardPage() {
                                                             className={styles.deleteBtn}
                                                             onClick={() => {
                                                                 modals.confirm({
-                                                                    title: 'Remove Volunteer',
-                                                                    message: `Remove volunteer status from ${v.fullName}?`,
+                                                                    title: 'Remove Coordinator',
+                                                                    message: `Remove coordinator status from ${v.fullName}?`,
                                                                     onConfirm: async () => {
                                                                         const res = await updateUserRole(v.id, 'STUDENT')
                                                                         if (res.success) {
-                                                                            modals.showToast('Volunteer removed', 'success')
-                                                                            const vRes = await getVolunteers()
-                                                                            if (vRes.success && vRes.data) setVolunteers(vRes.data)
+                                                                            modals.showToast('Coordinator removed', 'success')
+                                                                            const vRes = await getCoordinators()
+                                                                            if (vRes.success && vRes.data) setCoordinators(vRes.data)
                                                                         }
                                                                     }
                                                                 })
@@ -2088,8 +2088,8 @@ export default function DashboardPage() {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {volunteers.length === 0 && (
-                                                <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.6 }}>No volunteers added yet.</div>
+                                            {coordinators.length === 0 && (
+                                                <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.6 }}>No coordinators added yet.</div>
                                             )}
                                         </div>
                                     </div>
@@ -2433,21 +2433,21 @@ export default function DashboardPage() {
                                             <textarea name="description" defaultValue={editingProgram?.description || ''} className={styles.searchInput} style={{ minHeight: '80px' }} />
                                         </div>
                                         <div className={styles.formGroup} style={{ marginTop: '1rem' }}>
-                                            <label className={styles.formLabel}>Assign Volunteers</label>
+                                            <label className={styles.formLabel}>Assign Coordinators</label>
                                             <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #444', padding: '0.5rem', borderRadius: '4px' }}>
-                                                {volunteers.map(v => (
+                                                {coordinators.map(v => (
                                                     <div key={`${v.id}-${editingProgram?.id || 'new'}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
                                                         <input
                                                             type="checkbox"
-                                                            name="volunteerIds"
+                                                            name="coordinatorIds"
                                                             value={v.id}
-                                                            defaultChecked={editingProgram?.volunteers?.some((pv: any) => pv.id === v.id)}
+                                                            defaultChecked={editingProgram?.coordinators?.some((pv: any) => pv.id === v.id)}
                                                             style={{ transform: 'scale(1.2)', marginRight: '0.5rem' }}
                                                         />
                                                         <span>{v.fullName}</span>
                                                     </div>
                                                 ))}
-                                                {volunteers.length === 0 && <span style={{ opacity: 0.5 }}>No volunteers found.</span>}
+                                                {coordinators.length === 0 && <span style={{ opacity: 0.5 }}>No coordinators found.</span>}
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
@@ -2501,32 +2501,32 @@ export default function DashboardPage() {
                         )
                     }
 
-                    {/* Add Volunteer Modal */}
+                    {/* Add Coordinator Modal */}
                     {
-                        volunteerModalOpen && (
+                        coordinatorModalOpen && (
                             <div className={styles.modalOverlay}>
                                 <div className={styles.adminModal}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                        <h2 className={`${styles.cardTitle} ${cinzel.className}`}>Add Volunteer</h2>
-                                        <button onClick={() => setVolunteerModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                                        <h2 className={`${styles.cardTitle} ${cinzel.className}`}>Add Coordinator</h2>
+                                        <button onClick={() => setCoordinatorModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
                                     </div>
-                                    <p style={{ marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>Search for a student to promote to Volunteer status.</p>
+                                    <p style={{ marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>Search for a student to promote to Coordinator status.</p>
 
                                     <input
                                         type="text"
                                         placeholder="Search student name or admission no..."
                                         className={styles.searchInput}
                                         style={{ width: '100%', marginBottom: '1rem' }}
-                                        value={volunteerSearch}
-                                        onChange={(e) => setVolunteerSearch(e.target.value)}
+                                        value={coordinatorSearch}
+                                        onChange={(e) => setCoordinatorSearch(e.target.value)}
                                         autoFocus
                                     />
 
                                     <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                                        {searchingVolunteers ? (
+                                        {searchingCoordinators ? (
                                             <div style={{ padding: '1rem', textAlign: 'center' }}>Searching...</div>
-                                        ) : potentialVolunteers.length > 0 ? (
-                                            potentialVolunteers.map(u => (
+                                        ) : potentialCoordinators.length > 0 ? (
+                                            potentialCoordinators.map(u => (
                                                 <div key={u.id} style={{
                                                     padding: '0.8rem',
                                                     borderBottom: '1px solid var(--border-color)',
@@ -2543,17 +2543,17 @@ export default function DashboardPage() {
                                                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                                                         onClick={() => {
                                                             modals.confirm({
-                                                                title: 'Promote to Volunteer',
-                                                                message: `Promote ${u.fullName} to Volunteer?`,
+                                                                title: 'Promote to Coordinator',
+                                                                message: `Promote ${u.fullName} to Coordinator?`,
                                                                 confirmText: 'Promote',
                                                                 onConfirm: async () => {
-                                                                    setIsLoading(true, "Promoting to Volunteer")
+                                                                    setIsLoading(true, "Promoting to Coordinator")
                                                                     try {
-                                                                        await updateUserRole(u.id, 'VOLUNTEER')
-                                                                        modals.showToast(`${u.fullName} promoted to Volunteer`, 'success')
-                                                                        const res = await getVolunteers()
-                                                                        if (res.success && res.data) setVolunteers(res.data)
-                                                                        setVolunteerModalOpen(false)
+                                                                        await updateUserRole(u.id, 'COORDINATOR')
+                                                                        modals.showToast(`${u.fullName} promoted to Coordinator`, 'success')
+                                                                        const res = await getCoordinators()
+                                                                        if (res.success && res.data) setCoordinators(res.data)
+                                                                        setCoordinatorModalOpen(false)
                                                                     } finally {
                                                                         setIsLoading(false)
                                                                     }

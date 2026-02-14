@@ -18,25 +18,25 @@ export interface DashboardData {
 
 export async function getDashboardData(userId: string): Promise<{ success: boolean; data?: DashboardData; error?: string }> {
     try {
-        const [registrations, configs] = await Promise.all([
+        const [registrationsRaw, configs] = await Promise.all([
             prisma.registration.findMany({
                 where: {
                     OR: [
                         { userId },
-                        { groupMembers: { some: { userId } } }
+                        { GroupMember: { some: { userId } } }
                     ],
                     status: { not: 'CANCELLED' }
                 },
                 include: {
-                    program: true,
-                    user: {
+                    Program: true,
+                    User: {
                         select: {
                             fullName: true
                         }
                     },
-                    groupMembers: {
+                    GroupMember: {
                         include: {
-                            user: {
+                            User: {
                                 select: {
                                     fullName: true,
                                     studentAdmnNo: true
@@ -67,6 +67,17 @@ export async function getDashboardData(userId: string): Promise<{ success: boole
             if (config.key === 'maxOnStageGroup') limits.maxOnStageGroup = parseInt(config.value)
             if (config.key === 'maxOffStageTotal') limits.maxOffStageTotal = parseInt(config.value)
         })
+
+        // Map for consistency
+        const registrations = registrationsRaw.map(r => ({
+            ...r,
+            program: r.Program,
+            user: r.User,
+            groupMembers: r.GroupMember.map(m => ({
+                ...m,
+                user: m.User
+            }))
+        }))
 
         // Calculate counts
         let onStageSolo = 0

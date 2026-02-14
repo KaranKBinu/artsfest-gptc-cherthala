@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -19,11 +20,13 @@ async function main() {
     for (const h of houseNames) {
         await prisma.house.upsert({
             where: { name: h.name },
-            update: { color: h.color, description: h.description },
+            update: { color: h.color, description: h.description, updatedAt: new Date() },
             create: {
+                id: crypto.randomUUID(),
                 name: h.name,
                 color: h.color,
                 description: h.description,
+                updatedAt: new Date(),
             },
         })
     }
@@ -69,8 +72,12 @@ async function main() {
     for (const c of configs) {
         await prisma.configuration.upsert({
             where: { key: c.key },
-            update: { value: c.value, description: c.description },
-            create: c
+            update: { value: c.value, description: c.description, updatedAt: new Date() },
+            create: {
+                ...c,
+                id: crypto.randomUUID(),
+                updatedAt: new Date()
+            }
         })
     }
     console.log(`✅ Created ${configs.length} configurations`)
@@ -80,8 +87,9 @@ async function main() {
     const hashedMasterPassword = await bcrypt.hash('master@artsfest', 10)
     await prisma.user.upsert({
         where: { email: 'master@gptc.ac.in' },
-        update: {},
+        update: { updatedAt: new Date() },
         create: {
+            id: crypto.randomUUID(),
             fullName: 'Master Admin',
             email: 'master@gptc.ac.in',
             password: hashedMasterPassword,
@@ -89,6 +97,7 @@ async function main() {
             gender: 'MALE',
             role: 'MASTER',
             department: 'System',
+            updatedAt: new Date(),
         },
     })
     console.log('✅ Created master admin user (master@gptc.ac.in / master@artsfest)')
@@ -112,14 +121,16 @@ async function main() {
     for (const item of soloItems) {
         await prisma.program.upsert({
             where: { name: item },
-            update: { type: 'SOLO', category: 'ON_STAGE' },
+            update: { type: 'SOLO', category: 'ON_STAGE', updatedAt: new Date() },
             create: {
+                id: crypto.randomUUID(),
                 name: item,
                 type: 'SOLO',
                 category: 'ON_STAGE',
                 minMembers: 1,
                 maxMembers: 1,
-                isActive: true
+                isActive: true,
+                updatedAt: new Date(),
             }
         })
     }
@@ -127,14 +138,16 @@ async function main() {
     for (const item of groupItems) {
         await prisma.program.upsert({
             where: { name: item },
-            update: { type: 'GROUP', category: 'ON_STAGE' },
+            update: { type: 'GROUP', category: 'ON_STAGE', updatedAt: new Date() },
             create: {
+                id: crypto.randomUUID(),
                 name: item,
                 type: 'GROUP',
                 category: 'ON_STAGE',
                 minMembers: 2,
                 maxMembers: 20, // General limit for groups
-                isActive: true
+                isActive: true,
+                updatedAt: new Date(),
             }
         })
     }

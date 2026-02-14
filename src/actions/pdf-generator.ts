@@ -34,26 +34,30 @@ async function getBrowser() {
  */
 export async function generateStudentRegistrationsPDF(userId: string) {
     try {
-        const [user, registrations, festivalNameConfig] = await Promise.all([
+        const [userRaw, registrationsRaw, festivalNameConfig] = await Promise.all([
             prisma.user.findUnique({
                 where: { id: userId },
-                include: { house: true }
+                include: { House: true }
             }),
             prisma.registration.findMany({
                 where: {
                     OR: [
                         { userId: userId },
-                        { groupMembers: { some: { userId: userId } } }
+                        { GroupMember: { some: { userId: userId } } }
                     ],
                     status: { not: 'CANCELLED' }
                 },
-                include: { program: true },
+                include: { Program: true },
                 orderBy: { createdAt: 'desc' }
             }),
             prisma.configuration.findUnique({ where: { key: 'festivalName' } })
         ])
 
-        if (!user) throw new Error('User not found')
+        if (!userRaw) throw new Error('User not found')
+
+        // Map for consistency
+        const user = { ...userRaw, house: userRaw.House }
+        const registrations = registrationsRaw.map(r => ({ ...r, program: r.Program }))
 
         const festivalName = festivalNameConfig?.value || 'ArtsFest GPTC'
         const dateStr = new Date().toLocaleDateString('en-IN')
@@ -242,12 +246,12 @@ export async function generateAdminExportPDF(usersData: any[]) {
                             <td>${u.fullName}</td>
                             <td>${u.studentAdmnNo}</td>
                             <td>${u.department || ''}</td>
-                            <td class="malayalam">${u.house?.name || ''}</td>
+                            <td class="malayalam">${u.House?.name || ''}</td>
                             <td>
-                                ${u.registrations.map((r: any) => {
+                                ${u.Registration.map((r: any) => {
             let status = 'Absent'
-            if (r.attendances?.some((a: any) => a.isPresent)) status = 'Present'
-            return `<div class="reg-item"><span class="malayalam">${r.program.name}</span> (${r.program.type}) - <b>${status}</b></div>`
+            if (r.Attendance?.some((a: any) => a.isPresent)) status = 'Present'
+            return `<div class="reg-item"><span class="malayalam">${r.Program.name}</span> (${r.Program.type}) - <b>${status}</b></div>`
         }).join('')}
                             </td>
                         </tr>

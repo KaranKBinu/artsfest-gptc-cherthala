@@ -18,13 +18,13 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             )
         }
 
-        const participants = await prisma.registration.findMany({
+        const registrations = await prisma.registration.findMany({
             where: {
                 programId,
                 status: { not: 'CANCELLED' },
             },
             include: {
-                user: {
+                User: {
                     select: {
                         id: true,
                         fullName: true,
@@ -34,16 +34,16 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
                         semester: true,
                     },
                 },
-                house: {
+                House: {
                     select: {
                         id: true,
                         name: true,
                         color: true,
                     },
                 },
-                groupMembers: {
+                GroupMember: {
                     include: {
-                        user: {
+                        User: {
                             select: {
                                 id: true,
                                 fullName: true,
@@ -52,7 +52,7 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
                         },
                     },
                 },
-                attendances: {
+                Attendance: {
                     select: {
                         id: true,
                         isPresent: true,
@@ -63,10 +63,21 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             orderBy: { createdAt: 'asc' },
         })
 
+        const mappedParticipants = registrations.map(r => ({
+            ...r,
+            user: r.User,
+            house: r.House,
+            groupMembers: r.GroupMember.map(gm => ({
+                ...gm,
+                user: gm.User
+            })),
+            attendances: r.Attendance
+        }))
+
         return NextResponse.json<ApiResponse>(
             {
                 success: true,
-                data: participants,
+                data: mappedParticipants,
             },
             { status: 200 }
         )
@@ -82,4 +93,4 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
     }
 }
 
-export const GET = withAuth(handler, { roles: ['VOLUNTEER', 'ADMIN'] as any })
+export const GET = withAuth(handler, { roles: ['COORDINATOR', 'ADMIN'] as any })

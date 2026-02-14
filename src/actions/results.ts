@@ -34,7 +34,7 @@ export async function getHouseLeaderboard() {
     try {
         const houses = await prisma.house.findMany({
             include: {
-                registrations: {
+                Registration: {
                     where: {
                         grade: {
                             not: 'PARTICIPATION'
@@ -48,7 +48,7 @@ export async function getHouseLeaderboard() {
         })
 
         const stats = houses.map(house => {
-            const totalScore = house.registrations.reduce((sum, reg) => sum + reg.score, 0)
+            const totalScore = house.Registration.reduce((sum, reg) => sum + reg.score, 0)
             return {
                 id: house.id,
                 name: house.name,

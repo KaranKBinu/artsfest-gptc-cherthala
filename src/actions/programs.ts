@@ -15,7 +15,7 @@ export async function getPrograms(filters?: { category?: ProgramCategory }) {
         const programs = await prisma.program.findMany({
             where,
             orderBy: { name: 'asc' },
-            include: { volunteers: true }
+            include: { coordinators: true }
         })
 
         return { success: true, data: programs }
@@ -36,13 +36,13 @@ export async function registerForProgram(
         // 1. Check if user exists
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            include: { registrations: { include: { program: true } } }
+            include: { Registration: { include: { Program: true } } }
         })
 
         if (!user) return { success: false, error: 'User not found' }
 
         // 2. Check if already registered
-        const existingReg = user.registrations.find(r => r.programId === programId && r.status !== 'CANCELLED')
+        const existingReg = user.Registration.find(r => r.programId === programId && r.status !== 'CANCELLED')
         if (existingReg) return { success: false, error: 'Already registered for this program' }
 
         // 3. Get program details
@@ -85,7 +85,7 @@ export async function registerForProgram(
             const memberGrouporships = await prisma.groupMember.findMany({
                 where: {
                     userId: { in: groupMemberIds },
-                    registration: {
+                    Registration: {
                         programId: programId,
                         status: { not: 'CANCELLED' }
                     }
@@ -122,11 +122,11 @@ export async function registerForProgram(
         let onStageGroup = 0
         let offStageTotal = 0
 
-        user.registrations.forEach(r => {
+        user.Registration.forEach(r => {
             if (r.status === 'CANCELLED') return
-            if (r.program.category === 'ON_STAGE') {
-                if (r.program.type === 'SOLO') onStageSolo++
-                if (r.program.type === 'GROUP') onStageGroup++
+            if (r.Program.category === 'ON_STAGE') {
+                if (r.Program.type === 'SOLO') onStageSolo++
+                if (r.Program.type === 'GROUP') onStageGroup++
             } else {
                 offStageTotal++
             }
@@ -204,20 +204,20 @@ export async function getUserRegistrations(userId: string) {
             where: {
                 OR: [
                     { userId: userId },
-                    { groupMembers: { some: { userId: userId } } }
+                    { GroupMember: { some: { userId: userId } } }
                 ],
                 status: { not: 'CANCELLED' }
             },
             include: {
-                program: true,
-                user: {
+                Program: true,
+                User: {
                     select: {
                         fullName: true
                     }
                 },
-                groupMembers: {
+                GroupMember: {
                     include: {
-                        user: {
+                        User: {
                             select: {
                                 fullName: true,
                                 id: true
@@ -227,7 +227,18 @@ export async function getUserRegistrations(userId: string) {
                 }
             }
         })
-        return { success: true, data: registrations }
+
+        const mappedRegistrations = registrations.map(r => ({
+            ...r,
+            program: r.Program,
+            user: r.User,
+            groupMembers: r.GroupMember.map(gm => ({
+                ...gm,
+                user: gm.User
+            }))
+        }))
+
+        return { success: true, data: mappedRegistrations }
     } catch (error) {
         console.error('Failed to fetch user registrations:', error)
         return { success: false, error: 'Failed to fetch registrations' }
@@ -247,15 +258,15 @@ export async function registerForProgramsBatch(
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: {
-                house: true,
-                registrations: {
+                House: true,
+                Registration: {
                     where: { status: { not: RegistrationStatus.CANCELLED } },
-                    include: { program: true }
+                    include: { Program: true }
                 },
-                groupMemberships: {
+                GroupMember: {
                     include: {
-                        registration: {
-                            include: { program: true }
+                        Registration: {
+                            include: { Program: true }
                         }
                     }
                 }
@@ -282,20 +293,20 @@ export async function registerForProgramsBatch(
         let offStageTotal = 0
 
         // Count registrations where user is the lead
-        user.registrations.forEach((r: any) => {
-            if (r.program.category === 'ON_STAGE') {
-                if (r.program.type === 'SOLO') onStageSolo++
-                if (r.program.type === 'GROUP') onStageGroup++
+        user.Registration.forEach((r: any) => {
+            if (r.Program.category === 'ON_STAGE') {
+                if (r.Program.type === 'SOLO') onStageSolo++
+                if (r.Program.type === 'GROUP') onStageGroup++
             } else { offStageTotal++ }
         })
 
         // Count registrations where user is a group member
-        user.groupMemberships.forEach((m: any) => {
-            const r = m.registration;
+        user.GroupMember.forEach((m: any) => {
+            const r = m.Registration;
             if (!r || r.status === RegistrationStatus.CANCELLED) return;
 
-            if (r.program.category === 'ON_STAGE') {
-                if (r.program.type === 'GROUP') onStageGroup++
+            if (r.Program.category === 'ON_STAGE') {
+                if (r.Program.type === 'GROUP') onStageGroup++
             } else { offStageTotal++ }
         })
 
@@ -305,8 +316,8 @@ export async function registerForProgramsBatch(
 
         // Check for already registered programs to prevent duplicates
         const existingProgramIds = new Set([
-            ...user.registrations.map(r => r.programId),
-            ...user.groupMemberships.map(m => m.registration?.programId).filter(Boolean)
+            ...user.Registration.map(r => r.programId),
+            ...user.GroupMember.map(m => m.Registration?.programId).filter(Boolean)
         ])
 
         const newRegistrations = registrations.filter(r => !existingProgramIds.has(r.programId))
@@ -389,7 +400,7 @@ export async function registerForProgramsBatch(
             // Fetch info for everyone
             const usersToNotify = await prisma.user.findMany({
                 where: { id: { in: Array.from(allMemberIds) } },
-                include: { house: true }
+                include: { House: true }
             })
 
             const registeredPrograms = newRegistrations.map(reg => {
@@ -443,7 +454,7 @@ export async function registerForProgramsBatch(
                         </div>
                         
                         <p>Hello <strong>${recipient.fullName}</strong>,</p>
-                        <p style="color: #555; font-size: 14px; margin-top: -10px;">House: ${recipient.house?.name || 'N/A'}</p>
+                        <p style="color: #555; font-size: 14px; margin-top: -10px;">House: ${recipient.House?.name || 'N/A'}</p>
                         
                         <p>${helloText}</p>
                         

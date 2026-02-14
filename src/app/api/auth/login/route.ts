@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
                 ]
             },
             include: {
-                house: {
+                House: {
                     select: {
                         id: true,
                         name: true,
@@ -73,16 +73,16 @@ export async function POST(request: NextRequest) {
                 id: user.id,
                 fullName: user.fullName,
                 email: user.email,
-                studentAdmnNo: user.studentAdmnNo,
+                studentAdmnNo: user.studentAdmnNo || '',
                 role: user.role,
                 gender: user.gender,
                 department: user.department || undefined,
                 semester: user.semester || undefined,
-                house: user.house
+                house: user.House
                     ? {
-                        id: user.house.id,
-                        name: user.house.name,
-                        color: user.house.color || undefined,
+                        id: user.House.id,
+                        name: user.House.name,
+                        color: user.House.color || undefined,
                     }
                     : undefined,
             },

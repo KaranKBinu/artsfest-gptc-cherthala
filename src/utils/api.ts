@@ -114,18 +114,18 @@ export const registrationsApi = {
     }),
 }
 
-// Volunteer API calls
-export const volunteerApi = {
-    getPrograms: () => apiRequest('/api/volunteer/programs', {
+// Coordinator API calls
+export const coordinatorApi = {
+    getPrograms: () => apiRequest('/api/coordinator/programs', {
         token: getToken() || undefined,
     }),
 
     getParticipants: (programId: string) =>
-        apiRequest(`/api/volunteer/participants?programId=${programId}`, {
+        apiRequest(`/api/coordinator/participants?programId=${programId}`, {
             token: getToken() || undefined,
         }),
 
-    markAttendance: (data: any) => apiRequest('/api/volunteer/attendance', {
+    markAttendance: (data: any) => apiRequest('/api/coordinator/attendance', {
         method: 'POST',
         body: JSON.stringify(data),
         token: getToken() || undefined,

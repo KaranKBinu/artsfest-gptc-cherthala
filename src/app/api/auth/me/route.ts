@@ -16,7 +16,7 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
                 gender: true,
                 department: true,
                 semester: true,
-                house: {
+                House: {
                     select: {
                         id: true,
                         name: true,
@@ -36,14 +36,19 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             )
         }
 
+        // Map House to house for frontend consistency
+        const { House, ...userData } = user
+        const mappedUser = {
+            ...userData,
+            house: House,
+            department: user.department || undefined,
+            semester: user.semester || undefined,
+        }
+
         return NextResponse.json<ApiResponse>(
             {
                 success: true,
-                data: {
-                    ...user,
-                    department: user.department || undefined,
-                    semester: user.semester || undefined,
-                },
+                data: mappedUser,
             },
             { status: 200 }
         )

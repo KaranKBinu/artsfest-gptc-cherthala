@@ -13,7 +13,7 @@ async function getHandler(
             include: {
                 _count: {
                     select: {
-                        registrations: true,
+                        Registration: true,
                     },
                 },
             },

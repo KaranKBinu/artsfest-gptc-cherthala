@@ -1359,7 +1359,7 @@
     color: #4338ca;
 }
 
-.roleBadge_VOLUNTEER {
+.roleBadge_COORDINATOR {
     background-color: #dcfce7;
     color: #16a34a;
 }
@@ -1392,6 +1392,7 @@
     background-color: #e0e7ff;
     color: #4338ca;
 }
+
 .spinner {
     width: 20px;
     height: 20px;
@@ -1402,5 +1403,7 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }

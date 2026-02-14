@@ -15,7 +15,7 @@ async function getHandler(
                 status: { not: 'CANCELLED' },
             },
             include: {
-                program: {
+                Program: {
                     select: {
                         id: true,
                         name: true,
@@ -24,9 +24,9 @@ async function getHandler(
                         description: true,
                     },
                 },
-                groupMembers: {
+                GroupMember: {
                     include: {
-                        user: {
+                        User: {
                             select: {
                                 id: true,
                                 fullName: true,
@@ -39,10 +39,19 @@ async function getHandler(
             orderBy: { createdAt: 'desc' },
         })
 
+        const mappedRegistrations = registrations.map(r => ({
+            ...r,
+            program: r.Program,
+            groupMembers: r.GroupMember.map(m => ({
+                ...m,
+                user: m.User
+            }))
+        }))
+
         return NextResponse.json<ApiResponse>(
             {
                 success: true,
-                data: registrations,
+                data: mappedRegistrations,
             },
             { status: 200 }
         )
@@ -245,7 +254,7 @@ async function postHandler(
                 groupName: isGroup ? groupName : null,
                 category: program.category,
                 status: 'CONFIRMED',
-                groupMembers: isGroup && groupMemberIds
+                GroupMember: isGroup && groupMemberIds
                     ? {
                         create: groupMemberIds.map((memberId) => ({
                             userId: memberId,
@@ -254,10 +263,10 @@ async function postHandler(
                     : undefined,
             },
             include: {
-                program: true,
-                groupMembers: {
+                Program: true,
+                GroupMember: {
                     include: {
-                        user: {
+                        User: {
                             select: {
                                 id: true,
                                 fullName: true,
@@ -269,10 +278,19 @@ async function postHandler(
             },
         })
 
+        const mappedRegistration = {
+            ...registration,
+            program: registration.Program,
+            groupMembers: registration.GroupMember.map((gm) => ({
+                ...gm,
+                user: gm.User,
+            })),
+        }
+
         return NextResponse.json<ApiResponse>(
             {
                 success: true,
-                data: registration,
+                data: mappedRegistration,
                 message: 'Successfully registered for program',
             },
             { status: 201 }
@@ -289,5 +307,5 @@ async function postHandler(
     }
 }
 
-export const GET = withAuth(getHandler, { roles: ['STUDENT', 'VOLUNTEER', 'ADMIN', 'MASTER'] as any })
+export const GET = withAuth(getHandler, { roles: ['STUDENT', 'COORDINATOR', 'ADMIN', 'MASTER'] as any })
 export const POST = withAuth(postHandler, { roles: ['STUDENT'] as any })

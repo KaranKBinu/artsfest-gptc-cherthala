@@ -29,15 +29,19 @@ export async function GET(request: NextRequest) {
 
         // Fetch programs with registration counts
         const programs = await prisma.program.findMany({
-            where,
+            where: {
+                ...where,
+                ...(type ? { type } : {}),
+                ...(category ? { category } : {})
+            },
             include: {
                 _count: {
                     select: {
-                        registrations: true,
+                        Registration: true, // PascalCase
                     },
                 },
-                registrations: userId
-                    ? {
+                ...(userId ? {
+                    Registration: {
                         where: {
                             userId,
                             status: { not: 'CANCELLED' },
@@ -46,7 +50,7 @@ export async function GET(request: NextRequest) {
                             id: true,
                         },
                     }
-                    : false,
+                } : {}),
             },
             orderBy: [{ category: 'asc' }, { type: 'asc' }, { name: 'asc' }],
         })
@@ -60,8 +64,8 @@ export async function GET(request: NextRequest) {
             minMembers: program.minMembers,
             maxMembers: program.maxMembers,
             isActive: program.isActive,
-            registrationCount: program._count.registrations,
-            userRegistered: userId ? (program.registrations as any[]).length > 0 : undefined,
+            registrationCount: program._count.Registration, // PascalCase
+            userRegistered: userId ? (program.Registration as any[]).length > 0 : undefined,
         }))
 
         return NextResponse.json<ApiResponse<ProgramWithStats[]>>(

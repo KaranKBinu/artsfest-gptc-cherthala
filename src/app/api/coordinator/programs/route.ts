@@ -10,11 +10,7 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             include: {
                 _count: {
                     select: {
-                        registrations: {
-                            where: {
-                                status: { not: 'CANCELLED' },
-                            },
-                        },
+                        Registration: true,
                     },
                 },
             },
@@ -29,7 +25,7 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             category: program.category,
             minMembers: program.minMembers,
             maxMembers: program.maxMembers,
-            participantCount: program._count.registrations,
+            participantCount: program._count.Registration,
         }))
 
         return NextResponse.json<ApiResponse>(
@@ -40,7 +36,7 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             { status: 200 }
         )
     } catch (error: any) {
-        console.error('Get volunteer programs error:', error)
+        console.error('Get coordinator programs error:', error)
         return NextResponse.json<ApiResponse>(
             {
                 success: false,
@@ -51,4 +47,4 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
     }
 }
 
-export const GET = withAuth(handler, { roles: ['VOLUNTEER', 'ADMIN'] as any })
+export const GET = withAuth(handler, { roles: ['COORDINATOR', 'ADMIN'] as any })

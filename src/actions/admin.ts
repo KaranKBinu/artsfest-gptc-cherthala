@@ -15,7 +15,7 @@ export async function createProgram(data: {
     category: ProgramCategory
     minMembers: number
     maxMembers: number
-    volunteerIds?: string[]
+    coordinatorIds?: string[]
 }) {
     try {
         const program = await prisma.program.create({
@@ -27,8 +27,8 @@ export async function createProgram(data: {
                 minMembers: data.minMembers,
                 maxMembers: data.maxMembers,
                 isActive: true,
-                volunteers: data.volunteerIds ? {
-                    connect: data.volunteerIds.map(id => ({ id }))
+                coordinators: data.coordinatorIds ? {
+                    connect: data.coordinatorIds.map(id => ({ id }))
                 } : undefined
             }
         })
@@ -48,16 +48,16 @@ export async function updateProgram(id: string, data: {
     minMembers?: number
     maxMembers?: number
     isActive?: boolean
-    volunteerIds?: string[] // Optional for update
+    coordinatorIds?: string[] // Optional for update
 }) {
-    const { volunteerIds, ...updateData } = data
+    const { coordinatorIds, ...updateData } = data
     try {
         const program = await prisma.program.update({
             where: { id },
             data: {
                 ...updateData,
-                volunteers: volunteerIds ? {
-                    set: volunteerIds.map(id => ({ id }))
+                coordinators: coordinatorIds ? {
+                    set: coordinatorIds.map(id => ({ id }))
                 } : undefined
             }
         })
@@ -142,7 +142,7 @@ export async function deleteConfig(key: string) {
 
 export async function getAllUsers(params?: {
     query?: string
-    role?: 'ALL' | 'STUDENT' | 'VOLUNTEER' | 'ADMIN' | 'MASTER'
+    role?: 'ALL' | 'STUDENT' | 'COORDINATOR' | 'ADMIN' | 'MASTER'
     page?: number
     limit?: number
 }) {
@@ -171,13 +171,18 @@ export async function getAllUsers(params?: {
                 take: limit,
                 orderBy: { createdAt: 'desc' },
                 include: {
-                    house: { select: { name: true } }
+                    House: { select: { name: true } }
                 }
             }),
             prisma.user.count({ where })
         ])
 
-        return { success: true, data: { users, total, page, limit } }
+        const mappedUsers = users.map(u => ({
+            ...u,
+            house: u.House
+        }))
+
+        return { success: true, data: { users: mappedUsers, total, page, limit } }
     } catch (error) {
         console.error('Failed to fetch all users:', error)
         return { success: false, error: 'Failed to fetch all users' }
@@ -229,7 +234,7 @@ export async function createUser(data: {
     email: string
     password?: string
     phone?: string
-    role?: 'STUDENT' | 'VOLUNTEER' | 'ADMIN' | 'MASTER'
+    role?: 'STUDENT' | 'COORDINATOR' | 'ADMIN' | 'MASTER'
     houseId?: string
     department?: string
     semester?: string
@@ -242,7 +247,7 @@ export async function createUser(data: {
 
         // For ADMIN/MASTER, fill in missing required fields if not provided
         const finalRole = data.role || 'STUDENT'
-        const isStaff = finalRole === 'ADMIN' || finalRole === 'MASTER'
+        const isStaff = finalRole === 'ADMIN' || finalRole === 'MASTER' || finalRole === 'COORDINATOR'
 
         const finalData = {
             ...userData,
