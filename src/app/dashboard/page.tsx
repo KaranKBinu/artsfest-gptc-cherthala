@@ -847,6 +847,7 @@ export default function DashboardPage() {
 
     const fetchAdminData = async (currentUser?: any, showLoading = true) => {
         const targetUser = currentUser || user
+        const isCoordinator = targetUser?.role === 'COORDINATOR'
         if (showLoading) setLoadingAdmin(true)
         try {
             const res = await getUsersForAdmin({

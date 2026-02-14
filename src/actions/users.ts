@@ -126,7 +126,7 @@ export async function getUsersForAdmin(params: {
         }
 
         if (attendanceStatus && attendanceStatus !== 'ALL') {
-            registrationWhere = registrationWhere || {}
+            if (!registrationWhere) registrationWhere = {}
             if (attendanceStatus === 'PRESENT') {
                 registrationWhere.Attendance = { some: { isPresent: true } }
             } else if (attendanceStatus === 'ABSENT') {
@@ -139,7 +139,7 @@ export async function getUsersForAdmin(params: {
         }
 
         if (certStatus && certStatus !== 'ALL') {
-            registrationWhere = registrationWhere || {}
+            if (!registrationWhere) registrationWhere = {}
             if (certStatus === 'SENT') {
                 registrationWhere.Certificate = { some: { emailSent: true } }
             } else if (certStatus === 'NOT_SENT') {
@@ -151,7 +151,7 @@ export async function getUsersForAdmin(params: {
             }
         }
 
-        if (registrationWhere) {
+        if (registrationWhere && Object.keys(registrationWhere).length > 0) {
             where.Registration = { some: registrationWhere }
         } else if (hasRegistrations) {
             where.Registration = { some: {} }
