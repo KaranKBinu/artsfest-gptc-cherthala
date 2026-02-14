@@ -33,6 +33,7 @@ import {
     deleteUser,
     createUser
 } from '@/actions/admin'
+import { getVolunteers, addVolunteer, removeVolunteer } from '@/actions/volunteers'
 import { getPrograms } from '@/actions/programs'
 import { Program, ProgramType, ProgramCategory, Configuration } from '@prisma/client'
 
@@ -488,7 +489,8 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
         department: '',
         studentAdmnNo: '',
         gender: 'MALE',
-        password: ''
+        password: '',
+        isVolunteer: false,
     })
     const [isSaving, setIsSaving] = useState(false)
 
@@ -504,7 +506,8 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                 semester: user.semester || '',
                 studentAdmnNo: user.studentAdmnNo || '',
                 gender: user.gender || 'MALE',
-                password: ''
+                password: '',
+                isVolunteer: user.isVolunteer || false,
             })
         } else {
             setFormData({
@@ -685,8 +688,33 @@ export default function DashboardPage() {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
 
+    // Admin State - Volunteers
+    const [volunteers, setVolunteers] = useState<any[]>([])
+    const [volunteerSearch, setVolunteerSearch] = useState('')
+    const [loadingVolunteers, setLoadingVolunteers] = useState(false)
+    const [newVolunteerAdmn, setNewVolunteerAdmn] = useState('')
+
+    const loadVolunteers = async () => {
+        setLoadingVolunteers(true)
+        try {
+            const res = await getVolunteers()
+            if (res.success && res.data) setVolunteers(res.data)
+        } catch (e) {
+            console.error(e)
+            modals.showToast('Failed to load volunteers', 'error')
+        } finally {
+            setLoadingVolunteers(false)
+        }
+    }
+
     // Admin State - Navigation
-    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'results' | 'feedbacks'>('users')
+    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'results' | 'feedbacks' | 'volunteers'>('users')
+
+    useEffect(() => {
+        if (activeTab === 'volunteers' && (user?.role === 'ADMIN' || user?.role === 'MASTER')) {
+            loadVolunteers()
+        }
+    }, [activeTab, user])
 
     // Admin State - Users
     const [adminSearch, setAdminSearch] = useState('')
@@ -694,11 +722,13 @@ export default function DashboardPage() {
     const [adminDept, setAdminDept] = useState('ALL')
     const [adminProgram, setAdminProgram] = useState('ALL')
     const [onlyRegistered, setOnlyRegistered] = useState(false)
+    const [onlyVolunteers, setOnlyVolunteers] = useState(false)
     const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'>('ALL')
     const [certStatusFilter, setCertStatusFilter] = useState<'ALL' | 'SENT' | 'NOT_SENT'>('ALL')
     const [adminUsers, setAdminUsers] = useState<any[]>([])
     const [houses, setHouses] = useState<any[]>([])
     const [selectedRegs, setSelectedRegs] = useState<string[]>([])
+    const [adminPage, setAdminPage] = useState(1)
     const [certLoading, setCertLoading] = useState(false)
     const [loadingAdmin, setLoadingAdmin] = useState(false)
     // New state for split view
@@ -745,6 +775,25 @@ export default function DashboardPage() {
         try {
             const userData = JSON.parse(userStr)
             setUser(userData)
+
+            // Refresh user data from API to ensure we have latest role/volunteer status
+            fetch('/api/auth/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success && res.data) {
+                        const newUser = { ...userData, ...res.data }
+                        // Only update if there are changes to avoid loop/re-render issues if strict mode
+                        if (JSON.stringify(newUser) !== JSON.stringify(userData)) {
+                            setUser(newUser)
+                            localStorage.setItem('user', JSON.stringify(newUser))
+                        }
+                    }
+                })
+                .catch(err => console.error('Failed to refresh user data', err))
 
             if (userData.role === 'ADMIN' || userData.role === 'MASTER' || userData.role === 'COORDINATOR') {
                 // Fetch Admin Data
@@ -806,10 +855,12 @@ export default function DashboardPage() {
                 department: adminDept,
                 programId: adminProgram,
                 hasRegistrations: onlyRegistered,
+                page: adminPage,
                 limit: 50,
-                coordinatorId: targetUser?.role === 'COORDINATOR' ? targetUser.id : undefined,
-                attendanceStatus: attendanceFilter as any,
-                certStatus: certStatusFilter
+                coordinatorId: (isCoordinator && user?.id) ? user.id : undefined,
+                attendanceStatus: attendanceFilter,
+                certStatus: certStatusFilter,
+                isVolunteer: onlyVolunteers
             })
             if (res.success && res.data) {
                 setAdminUsers(res.data.users)
@@ -1048,7 +1099,7 @@ export default function DashboardPage() {
             }, 500)
             return () => clearTimeout(timer)
         }
-    }, [adminSearch, adminHouse, adminDept, adminProgram, onlyRegistered, activeTab, attendanceFilter, certStatusFilter])
+    }, [adminSearch, adminHouse, adminDept, adminProgram, onlyRegistered, onlyVolunteers, adminPage, user, attendanceFilter, certStatusFilter])
 
     // Search for potential coordinators
     useEffect(() => {
@@ -1193,6 +1244,20 @@ export default function DashboardPage() {
                             </svg>
                             Program Management
                         </button>
+                        {(user.role === 'ADMIN' || user.role === 'MASTER') && (
+                            <button
+                                className={`${styles.navItem} ${activeTab === 'volunteers' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('volunteers')}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Volunteers
+                            </button>
+                        )}
                         {(user.role !== 'VOLUNTEER' && user.role !== 'COORDINATOR') && (
                             <>
                                 <button
@@ -1373,6 +1438,14 @@ export default function DashboardPage() {
                                                 {certLoading ? <><LoadingSpinner size="18px" /> Processing...</> : `Send Certificates (${selectedRegs.length})`}
                                             </button>
                                         )}
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={onlyVolunteers}
+                                                onChange={(e) => setOnlyVolunteers(e.target.checked)}
+                                            />
+                                            Volunteers Only
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -1398,7 +1471,24 @@ export default function DashboardPage() {
                                                 adminUsers.map(u => (
                                                     <tr key={u.id}>
                                                         <td className={styles.tdName}>
-                                                            <div style={{ fontWeight: 600 }}>{u.fullName}</div>
+                                                            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                {u.fullName}
+                                                                {u.isVolunteer && (
+                                                                    <span style={{
+                                                                        fontSize: '0.65rem',
+                                                                        padding: '2px 6px',
+                                                                        borderRadius: '10px',
+                                                                        background: 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)',
+                                                                        color: '#000',
+                                                                        fontWeight: 700,
+                                                                        textTransform: 'uppercase',
+                                                                        letterSpacing: '0.5px',
+                                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                                    }}>
+                                                                        VOLUNTEER
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{u.department}</div>
                                                         </td>
                                                         <td>{u.studentAdmnNo}</td>
@@ -2391,6 +2481,141 @@ export default function DashboardPage() {
                         )
                     }
 
+                    {/* Volunteers Tab */}
+                    {
+                        activeTab === 'volunteers' && (
+                            <div>
+                                <div className={styles.crudHeader}>
+                                    <h3 className={`${styles.cardTitle} ${cinzel.className}`}>Student Volunteers</h3>
+                                </div>
+
+                                {/* Add Volunteer Section */}
+                                <div className={styles.card} style={{ marginBottom: '1.5rem' }}>
+                                    <h4 style={{ marginBottom: '1rem', fontWeight: 600 }}>Add New Volunteer</h4>
+                                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                        <input
+                                            placeholder="Student Admission Number"
+                                            className={styles.searchInput}
+                                            value={newVolunteerAdmn}
+                                            onChange={(e) => setNewVolunteerAdmn(e.target.value)}
+                                            style={{ flex: 1, minWidth: '200px' }}
+                                        />
+                                        <button
+                                            className={styles.addButton}
+                                            disabled={loadingVolunteers || !newVolunteerAdmn.trim()}
+                                            onClick={async () => {
+                                                if (!newVolunteerAdmn.trim()) return
+                                                setLoadingVolunteers(true)
+                                                try {
+                                                    const res = await addVolunteer(newVolunteerAdmn)
+                                                    if (res.success) {
+                                                        modals.showToast('Volunteer added successfully', 'success')
+                                                        setNewVolunteerAdmn('')
+                                                        await loadVolunteers()
+                                                    } else {
+                                                        modals.showToast(res.error || 'Failed to add volunteer', 'error')
+                                                    }
+                                                } finally {
+                                                    setLoadingVolunteers(false)
+                                                }
+                                            }}
+                                        >
+                                            {loadingVolunteers ? <LoadingSpinner size="16px" /> : '+ Add Volunteer'}
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem' }}>
+                                        Enter the admission number of the student you wish to mark as a volunteer.
+                                        This will not change their role but will grant them a volunteer badge.
+                                    </p>
+                                </div>
+
+                                {/* Volunteers List */}
+                                <div className={styles.tableCard}>
+                                    <div className={styles.tableWrapper}>
+                                        <table className={styles.userTable}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Admission No</th>
+                                                    <th>Department</th>
+                                                    <th>House</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {volunteers.map((v: any) => (
+                                                    <tr key={v.id}>
+                                                        <td className={styles.tdName}>
+                                                            <div style={{ fontWeight: 600 }}>{v.fullName}</div>
+                                                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{v.email}</div>
+                                                        </td>
+                                                        <td>{v.studentAdmnNo}</td>
+                                                        <td>{v.department || '-'}</td>
+                                                        <td>
+                                                            {v.House ? (
+                                                                <span style={{
+                                                                    color: v.House.color || 'inherit',
+                                                                    fontWeight: 600,
+                                                                    border: `1px solid ${v.House.color || 'transparent'}`,
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '12px',
+                                                                    fontSize: '0.8rem'
+                                                                }}>
+                                                                    {v.House.name}
+                                                                </span>
+                                                            ) : '-'}
+                                                        </td>
+                                                        <td className={styles.actionButtons}>
+                                                            <button
+                                                                className={styles.deleteBtn}
+                                                                onClick={() => {
+                                                                    modals.confirm({
+                                                                        title: 'Remove Volunteer',
+                                                                        message: `Are you sure you want to remove ${v.fullName} from volunteers?`,
+                                                                        onConfirm: async () => {
+                                                                            setLoadingVolunteers(true)
+                                                                            try {
+                                                                                const res = await removeVolunteer(v.id)
+                                                                                if (res.success) {
+                                                                                    modals.showToast('Volunteer removed', 'success')
+                                                                                    await loadVolunteers()
+                                                                                } else {
+                                                                                    modals.showToast(res.error || 'Failed to remove volunteer', 'error')
+                                                                                }
+                                                                            } finally {
+                                                                                setLoadingVolunteers(false)
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                }}
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {volunteers.length === 0 && !loadingVolunteers && (
+                                                    <tr>
+                                                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', opacity: 0.6 }}>
+                                                            No student volunteers found.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                {loadingVolunteers && volunteers.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
+                                                            Loading...
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+
                     {/* Program Modal */}
                     {
                         programModalOpen && (
@@ -2851,8 +3076,27 @@ export default function DashboardPage() {
 
                     <div className={styles.grid}>
                         {/* Profile Card */}
-                        <div className={styles.card}>
+                        <div className={styles.card} style={{ position: 'relative' }}>
                             <h2 className={`${styles.cardTitle} ${cinzel.className}`}>Profile Details</h2>
+                            {user.isVolunteer && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    right: '1rem',
+                                    background: 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)',
+                                    padding: '6px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(255, 215, 0, 0.4)',
+                                    cursor: 'help'
+                                }} title="Student Volunteer">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#000" stroke="none">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                                    </svg>
+                                </div>
+                            )}
                             <div className={styles.infoRow}>
                                 <span className={styles.label}>Admission No</span>
                                 <span className={styles.value}>{user.studentAdmnNo}</span>
@@ -2877,6 +3121,7 @@ export default function DashboardPage() {
                                     </span>
                                 </div>
                             )}
+
                         </div>
 
                         {/* Registration Limits Card */}

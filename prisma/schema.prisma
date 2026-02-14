@@ -160,6 +160,7 @@ model User {
   department                           String?
   semester                             String?
   houseId                              String?
+  isVolunteer                          Boolean        @default(false)
   createdAt                            DateTime       @default(now())
   updatedAt                            DateTime       @updatedAt
   phone                                String?

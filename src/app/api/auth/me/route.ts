@@ -16,6 +16,7 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
                 gender: true,
                 department: true,
                 semester: true,
+                isVolunteer: true,
                 House: {
                     select: {
                         id: true,

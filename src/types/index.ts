@@ -50,6 +50,7 @@ export interface AuthResponse {
     gender: string
     department?: string
     semester?: string
+    isVolunteer?: boolean
     house?: {
       id: string
       name: string

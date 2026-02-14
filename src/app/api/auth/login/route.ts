@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
                 gender: user.gender,
                 department: user.department || undefined,
                 semester: user.semester || undefined,
+                isVolunteer: user.isVolunteer,
                 house: user.House
                     ? {
                         id: user.House.id,

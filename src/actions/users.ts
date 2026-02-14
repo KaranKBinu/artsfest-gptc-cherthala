@@ -72,6 +72,7 @@ export async function getUsersForAdmin(params: {
     coordinatorId?: string
     attendanceStatus?: 'ALL' | 'PRESENT' | 'ABSENT' | 'NOT_MARKED'
     certStatus?: 'ALL' | 'SENT' | 'NOT_SENT'
+    isVolunteer?: boolean
 }) {
     const { query, houseId, department, programId, hasRegistrations, page = 1, limit = 20, coordinatorId, attendanceStatus, certStatus } = params
     const skip = (page - 1) * limit
@@ -107,6 +108,10 @@ export async function getUsersForAdmin(params: {
 
         if (department && department !== 'ALL') {
             where.department = department
+        }
+
+        if (params.isVolunteer) {
+            where.isVolunteer = true
         }
 
         // Complex registration filtering
