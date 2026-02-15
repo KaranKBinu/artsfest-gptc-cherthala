@@ -20,19 +20,19 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
         const students = await prisma.user.findMany({
             where,
             include: {
-                house: {
+                House: {
                     select: {
                         id: true,
                         name: true,
                         color: true,
                     },
                 },
-                registrations: {
+                Registration: {
                     where: {
                         status: { not: 'CANCELLED' },
                     },
                     include: {
-                        program: {
+                        Program: {
                             select: {
                                 name: true,
                                 type: true,
@@ -41,13 +41,13 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
                         },
                     },
                 },
-                attendances: {
+                Attendance_Attendance_userIdToUser: {
                     select: {
                         isPresent: true,
                     },
                 },
             },
-            orderBy: [{ house: { name: 'asc' } }, { fullName: 'asc' }],
+            orderBy: [{ House: { name: 'asc' } }, { fullName: 'asc' }],
         })
 
         const report = students.map((student) => ({
@@ -56,13 +56,13 @@ async function handler(request: NextRequest, context: { user: { userId: string; 
             email: student.email,
             department: student.department,
             semester: student.semester,
-            house: student.house?.name,
-            totalPrograms: student.registrations.length,
-            attendanceCount: student.attendances.filter((a) => a.isPresent).length,
-            programs: student.registrations.map((r) => ({
-                name: r.program.name,
-                type: r.program.type,
-                category: r.program.category,
+            house: student.House?.name,
+            totalPrograms: student.Registration.length,
+            attendanceCount: student.Attendance_Attendance_userIdToUser.filter((a) => a.isPresent).length,
+            programs: student.Registration.map((r) => ({
+                name: r.Program.name,
+                type: r.Program.type,
+                category: r.Program.category,
                 isGroup: r.isGroup,
                 groupName: r.groupName,
             })),

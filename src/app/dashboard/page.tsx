@@ -11,6 +11,7 @@ import writeXlsxFile from 'write-excel-file'
 import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { APP_VERSION } from '@/utils/version'
+import Tooltip from '@/components/ui/Tooltip'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -196,6 +197,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
     const [type, setType] = useState<'TEXT' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'FILE'>('TEXT')
     const [jsonError, setJsonError] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
 
     useEffect(() => {
         if (config) {
@@ -335,6 +337,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                             const formData = new FormData()
                                             formData.append('file', file)
                                             console.log('Uploading file:', file.name, 'Size:', file.size);
+                                            setIsUploading(true)
                                             try {
                                                 const res = await fetch('/api/upload', { method: 'POST', body: formData })
                                                 console.log('Upload response status:', res.status);
@@ -357,6 +360,8 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                             } catch (err) {
                                                 console.error('Upload error:', err)
                                                 modals.showToast('Upload failed. Check console for details.', 'error')
+                                            } finally {
+                                                setIsUploading(false)
                                             }
                                         }
                                     }}
@@ -444,10 +449,10 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                             <button
                                 type="submit"
                                 className={styles.addButton}
-                                disabled={(type === 'JSON' && !!jsonError) || isSaving}
+                                disabled={(type === 'JSON' && !!jsonError) || isSaving || isUploading}
                                 style={{
-                                    opacity: ((type === 'JSON' && !!jsonError) || isSaving) ? 0.5 : 1,
-                                    cursor: ((type === 'JSON' && !!jsonError) || isSaving) ? 'not-allowed' : 'pointer',
+                                    opacity: ((type === 'JSON' && !!jsonError) || isSaving || isUploading) ? 0.5 : 1,
+                                    cursor: ((type === 'JSON' && !!jsonError) || isSaving || isUploading) ? 'not-allowed' : 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.5rem',
@@ -455,10 +460,10 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                     justifyContent: 'center'
                                 }}
                             >
-                                {isSaving ? (
+                                {isSaving || isUploading ? (
                                     <>
                                         <LoadingSpinner size="18px" />
-                                        Saving
+                                        {isUploading ? 'Uploading...' : 'Saving'}
                                     </>
                                 ) : 'Save'}
                             </button>
@@ -1190,18 +1195,22 @@ export default function DashboardPage() {
                 Normal students (Role: STUDENT) will not see this section. */}
             {user.role === 'VOLUNTEER' && (
                 <div className={styles.viewToggleContainer}>
-                    <button
-                        onClick={() => setViewMode('ADMIN')}
-                        className={`${styles.viewToggleBtn} ${viewMode === 'ADMIN' ? styles.active : ''}`}
-                    >
-                        Volunteer Dashboard
-                    </button>
-                    <button
-                        onClick={() => setViewMode('STUDENT')}
-                        className={`${styles.viewToggleBtn} ${viewMode === 'STUDENT' ? styles.active : ''}`}
-                    >
-                        My Student Profile
-                    </button>
+                    <Tooltip content="Switch to Volunteer Admin Dashboard">
+                        <button
+                            onClick={() => setViewMode('ADMIN')}
+                            className={`${styles.viewToggleBtn} ${viewMode === 'ADMIN' ? styles.active : ''}`}
+                        >
+                            Volunteer Dashboard
+                        </button>
+                    </Tooltip>
+                    <Tooltip content="Switch to Personal Student View">
+                        <button
+                            onClick={() => setViewMode('STUDENT')}
+                            className={`${styles.viewToggleBtn} ${viewMode === 'STUDENT' ? styles.active : ''}`}
+                        >
+                            My Student Profile
+                        </button>
+                    </Tooltip>
                 </div>
             )}
 
@@ -1210,45 +1219,10 @@ export default function DashboardPage() {
                 <div className={styles.adminContainer}>
                     {/* Navigation */}
                     <div className={styles.adminNav}>
-                        <button
-                            className={`${styles.navItem} ${activeTab === 'users' ? styles.active : ''}`}
-                            onClick={() => setActiveTab('users')}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            Users & Registrations
-                        </button>
-                        <button
-                            className={`${styles.navItem} ${activeTab === 'results' ? styles.active : ''}`}
-                            onClick={() => setActiveTab('results')}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="8" r="7"></circle>
-                                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-                            </svg>
-                            Grades & Results
-                        </button>
-                        <button
-                            className={`${styles.navItem} ${activeTab === 'programs' ? styles.active : ''}`}
-                            onClick={() => setActiveTab('programs')}
-                            style={{ display: (user.role === 'VOLUNTEER' || user.role === 'COORDINATOR') ? 'none' : 'flex' }}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            Program Management
-                        </button>
-                        {(user.role === 'ADMIN' || user.role === 'MASTER') && (
+                        <Tooltip content="Manage Users & Registrations" position="bottom">
                             <button
-                                className={`${styles.navItem} ${activeTab === 'volunteers' ? styles.active : ''}`}
-                                onClick={() => setActiveTab('volunteers')}
+                                className={`${styles.navItem} ${activeTab === 'users' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('users')}
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -1256,52 +1230,103 @@ export default function DashboardPage() {
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
-                                Volunteers
+                                Users & Registrations
                             </button>
+                        </Tooltip>
+                        <Tooltip content="View Results & House Leaderboard" position="bottom">
+                            <button
+                                className={`${styles.navItem} ${activeTab === 'results' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('results')}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="8" r="7"></circle>
+                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                </svg>
+                                Grades & Results
+                            </button>
+                        </Tooltip>
+                        <Tooltip content="Configure Programs" position="bottom">
+                            <button
+                                className={`${styles.navItem} ${activeTab === 'programs' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('programs')}
+                                style={{ display: (user.role === 'VOLUNTEER' || user.role === 'COORDINATOR') ? 'none' : 'flex' }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Program Management
+                            </button>
+                        </Tooltip>
+                        {(user.role === 'ADMIN' || user.role === 'MASTER') && (
+                            <Tooltip content="Manage Volunteer Status" position="bottom">
+                                <button
+                                    className={`${styles.navItem} ${activeTab === 'volunteers' ? styles.active : ''}`}
+                                    onClick={() => setActiveTab('volunteers')}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    Volunteers
+                                </button>
+                            </Tooltip>
                         )}
                         {(user.role !== 'VOLUNTEER' && user.role !== 'COORDINATOR') && (
                             <>
-                                <button
-                                    className={`${styles.navItem} ${activeTab === 'gallery' ? styles.active : ''}`}
-                                    onClick={() => setActiveTab('gallery')}
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                        <polyline points="21 15 16 10 5 21"></polyline>
-                                    </svg>
-                                    Gallery Images
-                                </button>
-                                {user.role === 'MASTER' && (
+                                <Tooltip content="Manage Website Gallery" position="bottom">
                                     <button
-                                        className={`${styles.navItem} ${activeTab === 'usermanagement' ? styles.active : ''}`}
-                                        onClick={() => setActiveTab('usermanagement')}
+                                        className={`${styles.navItem} ${activeTab === 'gallery' ? styles.active : ''}`}
+                                        onClick={() => setActiveTab('gallery')}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
                                         </svg>
-                                        User Management
+                                        Gallery Images
                                     </button>
+                                </Tooltip>
+                                {user.role === 'MASTER' && (
+                                    <Tooltip content="Advanced User Management" position="bottom">
+                                        <button
+                                            className={`${styles.navItem} ${activeTab === 'usermanagement' ? styles.active : ''}`}
+                                            onClick={() => setActiveTab('usermanagement')}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                            </svg>
+                                            User Management
+                                        </button>
+                                    </Tooltip>
                                 )}
-                                <button
-                                    className={`${styles.navItem} ${activeTab === 'settings' ? styles.active : ''}`}
-                                    onClick={() => setActiveTab('settings')}
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                    </svg>
-                                    Configurations
-                                </button>
-                                <button
-                                    className={`${styles.navItem} ${activeTab === 'feedbacks' ? styles.active : ''}`}
-                                    onClick={() => setActiveTab('feedbacks')}
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                    </svg>
-                                    Feedbacks
-                                </button>
+                                <Tooltip content="System Configurations" position="bottom">
+                                    <button
+                                        className={`${styles.navItem} ${activeTab === 'settings' ? styles.active : ''}`}
+                                        onClick={() => setActiveTab('settings')}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                        </svg>
+                                        Configurations
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content="User Feedbacks & Suggestions" position="bottom">
+                                    <button
+                                        className={`${styles.navItem} ${activeTab === 'feedbacks' ? styles.active : ''}`}
+                                        onClick={() => setActiveTab('feedbacks')}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        Feedbacks
+                                    </button>
+                                </Tooltip>
                             </>
                         )}
                     </div>
@@ -1396,15 +1421,21 @@ export default function DashboardPage() {
                                     )}
 
                                     <div className={styles.exportButtons}>
-                                        <button onClick={() => handleExport('csv')} className={`${styles.exportButton} ${styles.csv}`} title="Export CSV">
-                                            CSV
-                                        </button>
-                                        <button onClick={() => handleExport('excel')} className={`${styles.exportButton} ${styles.excel}`} title="Export Excel">
-                                            XLS
-                                        </button>
-                                        <button onClick={() => handleExport('pdf')} className={`${styles.exportButton} ${styles.pdf}`} title="Export PDF">
-                                            PDF
-                                        </button>
+                                        <Tooltip content="Export filtered list to CSV">
+                                            <button onClick={() => handleExport('csv')} className={`${styles.exportButton} ${styles.csv}`} title="Export CSV">
+                                                CSV
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip content="Export filtered list to Excel">
+                                            <button onClick={() => handleExport('excel')} className={`${styles.exportButton} ${styles.excel}`} title="Export Excel">
+                                                XLS
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip content="Export filtered list to PDF">
+                                            <button onClick={() => handleExport('pdf')} className={`${styles.exportButton} ${styles.pdf}`} title="Export PDF">
+                                                PDF
+                                            </button>
+                                        </Tooltip>
                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
                                             <button
                                                 onClick={async () => {
@@ -1522,38 +1553,40 @@ export default function DashboardPage() {
                                                                             {r.program.name}:
                                                                             {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
                                                                         </span>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
-                                                                                const nextState = !isPresentNow;
-                                                                                modals.confirm({
-                                                                                    title: 'Change Attendance',
-                                                                                    message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
-                                                                                    onConfirm: async () => {
-                                                                                        const { markAttendance } = await import('@/actions/coordinator');
-                                                                                        const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
-                                                                                        if (res.success) {
-                                                                                            modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
-                                                                                            fetchAdminData()
-                                                                                        } else {
-                                                                                            modals.showToast('Failed to update attendance.', 'error')
+                                                                        <Tooltip content={r.attendances?.some((a: any) => a.isPresent) ? "Mark as Absent" : "Mark as Present"}>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
+                                                                                    const nextState = !isPresentNow;
+                                                                                    modals.confirm({
+                                                                                        title: 'Change Attendance',
+                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
+                                                                                        onConfirm: async () => {
+                                                                                            const { markAttendance } = await import('@/actions/coordinator');
+                                                                                            const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
+                                                                                            if (res.success) {
+                                                                                                modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
+                                                                                                fetchAdminData()
+                                                                                            } else {
+                                                                                                modals.showToast('Failed to update attendance.', 'error')
+                                                                                            }
                                                                                         }
-                                                                                    }
-                                                                                })
-                                                                            }}
-                                                                            style={{
-                                                                                padding: '2px 8px',
-                                                                                fontSize: '0.7rem',
-                                                                                backgroundColor: r.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
-                                                                                color: r.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
-                                                                                border: '1px solid var(--border-color)',
-                                                                                borderRadius: '4px',
-                                                                                cursor: 'pointer',
-                                                                                transition: 'all 0.2s ease'
-                                                                            }}
-                                                                        >
-                                                                            {r.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
-                                                                        </button>
+                                                                                    })
+                                                                                }}
+                                                                                style={{
+                                                                                    padding: '2px 8px',
+                                                                                    fontSize: '0.7rem',
+                                                                                    backgroundColor: r.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
+                                                                                    color: r.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
+                                                                                    border: '1px solid var(--border-color)',
+                                                                                    borderRadius: '4px',
+                                                                                    cursor: 'pointer',
+                                                                                    transition: 'all 0.2s ease'
+                                                                                }}
+                                                                            >
+                                                                                {r.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
+                                                                            </button>
+                                                                        </Tooltip>
 
                                                                         {/* Checkbox for Certification */}
                                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER') && r.attendances?.some((a: any) => a.isPresent) && (
@@ -2021,8 +2054,12 @@ export default function DashboardPage() {
                                                                 <span style={{ fontWeight: 500 }}>{p.minMembers} - {p.maxMembers}</span>
                                                             </div>
                                                             <div className={styles.mobileCardActions}>
-                                                                <button className={styles.editBtn} onClick={() => { setEditingProgram(p); setProgramModalOpen(true) }}>Edit</button>
-                                                                <button className={styles.deleteBtn} onClick={() => handleDeleteProgram(p.id, p.name)}>Delete</button>
+                                                                <Tooltip content="Edit Program Details">
+                                                                    <button className={styles.editBtn} onClick={() => { setEditingProgram(p); setProgramModalOpen(true) }}>Edit</button>
+                                                                </Tooltip>
+                                                                <Tooltip content="Permanently Delete Program">
+                                                                    <button className={styles.deleteBtn} onClick={() => handleDeleteProgram(p.id, p.name)}>Delete</button>
+                                                                </Tooltip>
                                                             </div>
                                                         </div>
                                                     ))
@@ -2058,30 +2095,32 @@ export default function DashboardPage() {
                                                         <td className={styles.tdName} style={{ fontWeight: 600 }}>{v.fullName}</td>
                                                         <td>{v.email}</td>
                                                         <td className={styles.actionButtons}>
-                                                            <button
-                                                                className={styles.deleteBtn}
-                                                                onClick={() => {
-                                                                    modals.confirm({
-                                                                        title: 'Remove Coordinator',
-                                                                        message: `Remove coordinator status from ${v.fullName}?`,
-                                                                        onConfirm: async () => {
-                                                                            setIsLoading(true, "Removing Coordinator Badge")
-                                                                            try {
-                                                                                const res = await updateUserRole(v.id, 'STUDENT')
-                                                                                if (res.success) {
-                                                                                    modals.showToast('Coordinator removed', 'success')
-                                                                                    const vRes = await getCoordinators()
-                                                                                    if (vRes.success && vRes.data) setCoordinators(vRes.data)
+                                                            <Tooltip content="Remove Coordinator Role">
+                                                                <button
+                                                                    className={styles.deleteBtn}
+                                                                    onClick={() => {
+                                                                        modals.confirm({
+                                                                            title: 'Remove Coordinator',
+                                                                            message: `Remove coordinator status from ${v.fullName}?`,
+                                                                            onConfirm: async () => {
+                                                                                setIsLoading(true, "Removing Coordinator Badge")
+                                                                                try {
+                                                                                    const res = await updateUserRole(v.id, 'STUDENT')
+                                                                                    if (res.success) {
+                                                                                        modals.showToast('Coordinator removed', 'success')
+                                                                                        const vRes = await getCoordinators()
+                                                                                        if (vRes.success && vRes.data) setCoordinators(vRes.data)
+                                                                                    }
+                                                                                } finally {
+                                                                                    setIsLoading(false)
                                                                                 }
-                                                                            } finally {
-                                                                                setIsLoading(false)
                                                                             }
-                                                                        }
-                                                                    })
-                                                                }}
-                                                            >
-                                                                Remove
-                                                            </button>
+                                                                        })
+                                                                    }}
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                            </Tooltip>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -2294,7 +2333,9 @@ export default function DashboardPage() {
                                                             {c.value}
                                                         </span>
                                                     )}
-                                                    <button className={styles.editConfigBtn} onClick={() => { setEditingConfig(c); setConfigModalOpen(true) }}>Edit Change</button>
+                                                    <Tooltip content="Edit Configuration Value">
+                                                        <button className={styles.editConfigBtn} onClick={() => { setEditingConfig(c); setConfigModalOpen(true) }}>Edit Change</button>
+                                                    </Tooltip>
                                                 </div>
                                             </div>
                                         );
@@ -2397,28 +2438,30 @@ export default function DashboardPage() {
                                                 <div style={{ aspectRatio: '16/9', position: 'relative', width: '100%', borderRadius: '4px', overflow: 'hidden', background: '#eee' }}>
                                                     <img src={img} alt="Gallery" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 </div>
-                                                <button
-                                                    onClick={() => {
-                                                        modals.confirm({
-                                                            title: 'Delete Image',
-                                                            message: 'Are you sure you want to delete this image?',
-                                                            confirmText: 'Delete',
-                                                            onConfirm: async () => {
-                                                                const newImages = images.filter((_, i) => i !== idx)
-                                                                setIsLoading(true, "Deleting Image")
-                                                                await updateConfig('galleryImages', JSON.stringify(newImages))
-                                                                const newConfigs = await getConfigs()
-                                                                if (newConfigs.success && newConfigs.data) setConfigs(newConfigs.data)
-                                                                modals.showToast('Image deleted successfully', 'success')
-                                                                setIsLoading(false)
-                                                            }
-                                                        })
-                                                    }}
-                                                    className={styles.deleteBtn}
-                                                    style={{ position: 'absolute', top: '10px', right: '10px', padding: '4px 8px', fontSize: '0.7rem' }}
-                                                >
-                                                    Delete
-                                                </button>
+                                                <Tooltip content="Delete Image from Gallery">
+                                                    <button
+                                                        onClick={() => {
+                                                            modals.confirm({
+                                                                title: 'Delete Image',
+                                                                message: 'Are you sure you want to delete this image?',
+                                                                confirmText: 'Delete',
+                                                                onConfirm: async () => {
+                                                                    const newImages = images.filter((_, i) => i !== idx)
+                                                                    setIsLoading(true, "Deleting Image")
+                                                                    await updateConfig('galleryImages', JSON.stringify(newImages))
+                                                                    const newConfigs = await getConfigs()
+                                                                    if (newConfigs.success && newConfigs.data) setConfigs(newConfigs.data)
+                                                                    modals.showToast('Image deleted successfully', 'success')
+                                                                    setIsLoading(false)
+                                                                }
+                                                            })
+                                                        }}
+                                                        className={styles.deleteBtn}
+                                                        style={{ position: 'absolute', top: '10px', right: '10px', padding: '4px 8px', fontSize: '0.7rem' }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </Tooltip>
                                             </div>
                                         ))
                                     })()}

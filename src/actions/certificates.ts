@@ -5,8 +5,8 @@ import { sendEmail } from '@/lib/mail'
 import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
-import puppeteer from 'puppeteer-core'
-// @ts-expect-error - Chromium types can be tricky in certain environments
+import puppeteer from 'puppeteer'
+// @ts-ignore
 import chromium from '@sparticuz/chromium'
 
 /**
@@ -169,8 +169,9 @@ async function generateCertificatePDF(options: {
         args: isLocal
             ? ['--no-sandbox', '--disable-setuid-sandbox']
             : [...chromium.args, '--disable-gpu'],
+        // @ts-ignore
         defaultViewport: chromium.defaultViewport,
-        executablePath: execPath,
+        executablePath: execPath || undefined,
         headless: true,
     })
 
@@ -210,9 +211,9 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
         const registrations = await prisma.registration.findMany({
             where: {
                 id: { in: registrationIds },
-                attendances: { some: { isPresent: true } }
+                Attendance: { some: { isPresent: true } }
             },
-            include: { user: true, program: true }
+            include: { User: true, Program: true }
         })
 
         if (registrations.length === 0) {
@@ -246,6 +247,9 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
             console.log('Loading local template:', templatePath)
             try {
                 templateBuffer = await fs.readFile(templatePath)
+                if (templateVal.toLowerCase().endsWith('.pdf')) {
+                    return { success: false, error: 'PDF templates are not supported. Please upload a PNG or JPG image.' }
+                }
                 templateMimeType = templateVal.endsWith('.png') ? 'image/png' : 'image/jpeg'
                 console.log('Local template loaded successfully')
             } catch (error: any) {
@@ -263,6 +267,9 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 templateBuffer = Buffer.from(await res.arrayBuffer())
                 // Determine mime type from URL or content-type header
                 const contentType = res.headers.get('content-type')
+                if (contentType?.includes('pdf') || templateVal.toLowerCase().endsWith('.pdf')) {
+                    return { success: false, error: 'The uploaded template is a PDF. Please use a PNG or JPG image instead.' }
+                }
                 templateMimeType = contentType?.includes('png') ? 'image/png' : 'image/jpeg'
                 console.log('Template fetched successfully from blob storage')
             } catch (error: any) {
@@ -278,7 +285,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
 
         for (const reg of registrations) {
             try {
-                console.log(`Generating certificate for ${reg.user.fullName}...`)
+                console.log(`Generating certificate for ${reg.User.fullName}...`)
 
                 const regGrade = (reg as any).grade || 'PARTICIPATION'
                 const certPoints = CERT_SCORE_MAP[regGrade] || 2
@@ -286,8 +293,8 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                 const pdfBuffer = await generateCertificatePDF({
                     templateBuffer,
                     templateMimeType,
-                    studentName: reg.user.fullName,
-                    programName: `${reg.program.name} (${reg.program.type})`,
+                    studentName: reg.User.fullName,
+                    programName: `${reg.Program.name} (${reg.Program.type})`,
                     grade: (reg as any).grade,
                     points: certPoints,
                     festivalName
@@ -295,11 +302,11 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
 
                 // Send Email
                 const emailRes = await sendEmail({
-                    to: reg.user.email,
-                    subject: `Certificate for ${reg.program.name} - ${festivalName}`,
-                    text: `Hello ${reg.user.fullName},\n\nCongratulations! Please find your certificate for ${reg.program.name} attached.\n\nBest regards,\n${festivalName} Committee`,
+                    to: reg.User.email,
+                    subject: `Certificate for ${reg.Program.name} - ${festivalName}`,
+                    text: `Hello ${reg.User.fullName},\n\nCongratulations! Please find your certificate for ${reg.Program.name} attached.\n\nBest regards,\n${festivalName} Committee`,
                     attachments: [{
-                        filename: `Certificate_${reg.user.fullName.replace(/\s+/g, '_')}_${reg.program.name.replace(/\s+/g, '_')}.pdf`,
+                        filename: `Certificate_${reg.User.fullName.replace(/\s+/g, '_')}_${reg.Program.name.replace(/\s+/g, '_')}.pdf`,
                         content: pdfBuffer
                     }],
                     smtpConfig: smtpConfigObj.user ? smtpConfigObj : undefined
@@ -320,7 +327,7 @@ export async function generateAndSendCertificates(registrationIds: string[]) {
                     failCount++
                 }
             } catch (err) {
-                console.error(`Failed to process cert for ${reg.user.fullName}:`, err)
+                console.error(`Failed to process cert for ${reg.User.fullName}:`, err)
                 failCount++
             }
         }

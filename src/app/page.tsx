@@ -5,6 +5,7 @@ import Image from 'next/image'
 import styles from './home.module.css'
 import { Cinzel } from 'next/font/google'
 import Link from 'next/link'
+import Tooltip from '@/components/ui/Tooltip'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 
@@ -160,17 +161,22 @@ export default function Home() {
               })}
 
               {/* Navigation */}
-              <button className={`${styles.galleryNavBtn} ${styles.prevBtn}`} onClick={prevSlide}>&#10094;</button>
-              <button className={`${styles.galleryNavBtn} ${styles.nextBtn}`} onClick={nextSlide}>&#10095;</button>
+              <Tooltip content="Previous Slide">
+                <button className={`${styles.galleryNavBtn} ${styles.prevBtn}`} onClick={prevSlide}>&#10094;</button>
+              </Tooltip>
+              <Tooltip content="Next Slide">
+                <button className={`${styles.galleryNavBtn} ${styles.nextBtn}`} onClick={nextSlide}>&#10095;</button>
+              </Tooltip>
 
               {/* Indicators */}
               <div className={styles.galleryIndicators}>
                 {slides.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`${styles.indicator} ${idx === currentSlide ? styles.active : ''}`}
-                    onClick={() => setCurrentSlide(idx)}
-                  />
+                  <Tooltip key={idx} content={`Slide ${idx + 1}`}>
+                    <div
+                      className={`${styles.indicator} ${idx === currentSlide ? styles.active : ''}`}
+                      onClick={() => setCurrentSlide(idx)}
+                    />
+                  </Tooltip>
                 ))}
               </div>
             </div>

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import styles from './ContactFloat.module.css'
 import { Cinzel, Inter } from 'next/font/google'
 import { useConfig } from '@/context/ConfigContext'
+import Tooltip from './ui/Tooltip'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -125,22 +126,24 @@ export default function ContactFloat() {
                 </div>
             )}
 
-            <button
-                className={styles.floatBtn}
-                onClick={() => setIsOpen(!isOpen)}
-                aria-label="Contact Us"
-            >
-                {isOpen ? (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                ) : (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                )}
-            </button>
+            <Tooltip content={isOpen ? "Close" : "Contact Us"} position="left">
+                <button
+                    className={styles.floatBtn}
+                    onClick={() => setIsOpen(!isOpen)}
+                    aria-label="Contact Us"
+                >
+                    {isOpen ? (
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    ) : (
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    )}
+                </button>
+            </Tooltip>
         </div>
     )
 }

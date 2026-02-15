@@ -1,8 +1,8 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import puppeteer from 'puppeteer-core'
-// @ts-expect-error - Chromium types can be tricky in certain environments
+import puppeteer from 'puppeteer'
+// @ts-ignore
 import chromium from '@sparticuz/chromium'
 
 /**
@@ -23,8 +23,9 @@ async function getBrowser() {
         args: isLocal
             ? ['--no-sandbox', '--disable-setuid-sandbox']
             : [...chromium.args, '--disable-gpu'],
+        // @ts-ignore
         defaultViewport: chromium.defaultViewport,
-        executablePath: execPath,
+        executablePath: execPath || undefined,
         headless: true,
     })
 }
