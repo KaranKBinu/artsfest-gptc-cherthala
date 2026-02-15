@@ -242,18 +242,7 @@
     line-height: 1.6;
 }
 
-.footer {
-    padding: 4rem 5%;
-    background: #0a0a0a;
-    text-align: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
 
-.footer p {
-    font-size: 0.9rem;
-    opacity: 0.5;
-    margin-bottom: 0.5rem;
-}
 
 .gptcText {
     font-family: 'Cinzel', serif;

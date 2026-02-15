@@ -170,14 +170,7 @@
     }
 }
 
-/* Footer */
-.footer {
-    padding: 2rem 5%;
-    background-color: var(--deep-black);
-    color: var(--cream-white);
-    text-align: center;
-    opacity: 0.9;
-}
+
 
 /* Keyframes */
 @keyframes fadeInUp {

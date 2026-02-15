@@ -1,0 +1,151 @@
+/* src/components/Footer.module.css */
+
+.footer {
+    background-color: #050505;
+    color: var(--foreground);
+    padding: 6rem 5% 3rem 5%;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: light) {
+    .footer {
+        background-color: #f8f9fa;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.topSection {
+    display: grid;
+    grid-template-columns: 1.5fr 2fr;
+    gap: 4rem;
+    margin-bottom: 4rem;
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.logo {
+    font-size: 1.8rem;
+    color: var(--primary-gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.tagline {
+    font-size: 1rem;
+    opacity: 0.6;
+    line-height: 1.6;
+    max-width: 350px;
+}
+
+@media (prefers-color-scheme: light) {
+    .tagline {
+        opacity: 0.8;
+        color: #444;
+    }
+}
+
+.linksGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.linkGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.linkGroup h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 1rem;
+    color: var(--primary-red);
+    font-weight: 700;
+}
+
+.linkGroup a {
+    font-size: 0.95rem;
+    opacity: 0.6;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.linkGroup a:hover {
+    opacity: 1;
+    color: var(--primary-gold);
+    transform: translateX(5px);
+}
+
+@media (prefers-color-scheme: light) {
+    .linkGroup a {
+        opacity: 0.8;
+        color: #333;
+    }
+}
+
+.bottomSection {
+    padding-top: 3rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+@media (prefers-color-scheme: light) {
+    .bottomSection {
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+}
+
+.copyright,
+.credits {
+    font-size: 0.85rem;
+    opacity: 0.4;
+}
+
+@media (prefers-color-scheme: light) {
+
+    .copyright,
+    .credits {
+        opacity: 0.6;
+        color: #555;
+    }
+}
+
+.premiumText {
+    font-size: 1.1rem;
+    color: var(--primary-gold);
+    opacity: 0.8;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+    .topSection {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .bottomSection {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .linksGrid {
+        grid-template-columns: 1fr;
+    }
+}

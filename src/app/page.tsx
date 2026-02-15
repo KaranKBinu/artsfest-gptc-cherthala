@@ -228,14 +228,6 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className={styles.footer}>
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '2rem', justifyContent: 'center' }}>
-          <Link href="/about" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.8 }}>About</Link>
-          <Link href="/contact" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.8 }}>Contact</Link>
-          <Link href="/programs" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.8 }}>Programs</Link>
-        </div>
-        <p>&copy; {new Date().getFullYear()} GPTC Cherthala. All rights reserved.</p>
-      </footer>
     </div>
   )
 }

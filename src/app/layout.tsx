@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 import ContactFloat from '@/components/ContactFloat'
 import './globals.css'
 import { ConfigProvider } from '@/context/ConfigContext'
@@ -54,6 +55,7 @@ export default function RootLayout({
             <ModalProvider>
               <Navbar />
               {children}
+              <Footer />
               <ContactFloat />
             </ModalProvider>
           </LoadingProvider>

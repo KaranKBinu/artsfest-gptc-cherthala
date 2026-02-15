@@ -126,10 +126,6 @@ export default function AboutPage() {
                 </section>
             )}
 
-            <footer className={styles.footer}>
-                <p>&copy; {new Date().getFullYear()} {config.festivalName} Organizing Committee</p>
-                <p className={styles.gptcText}>Crafted with Passion</p>
-            </footer>
         </main>
     )
 }
