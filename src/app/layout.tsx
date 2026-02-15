@@ -15,6 +15,15 @@ export const metadata: Metadata = {
   description: 'The official digital platform for the Arts Festival at Government Polytechnic College Cherthala. Register for events, track house scores, and celebrate cultural heritage.',
   keywords: ['ArtsFest', 'GPTC Cherthala', 'Arts Festival', 'Polytechnic', 'Kerala Culture', 'Student Competition', 'Program Registration'],
   authors: [{ name: 'GPTC Cherthala' }],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ArtsFest',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: '/favicon.png',
     apple: '/favicon.png',
@@ -40,6 +49,13 @@ export const metadata: Metadata = {
     description: 'Official portal for GPTC Cherthala Arts Festival.',
     images: ['/favicon.png'],
   },
+}
+
+export const viewport = {
+  themeColor: '#8B0000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({

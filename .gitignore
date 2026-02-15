@@ -93,3 +93,11 @@ push_log.txt
 seed_log.txt
 *.txt
 *.log
+
+# PWA
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/worker-*.js
+public/worker-*.js.map
