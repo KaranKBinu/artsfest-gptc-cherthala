@@ -12,6 +12,7 @@ import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { APP_VERSION } from '@/utils/version'
 import Tooltip from '@/components/ui/Tooltip'
+import DatabasePanel from '@/components/DatabasePanel'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
@@ -713,7 +714,7 @@ export default function DashboardPage() {
     }
 
     // Admin State - Navigation
-    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'feedbacks' | 'volunteers'>('users')
+    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'feedbacks' | 'volunteers' | 'database'>('users')
 
     useEffect(() => {
         if (activeTab === 'volunteers' && (user?.role === 'ADMIN' || user?.role === 'MASTER')) {
@@ -1307,6 +1308,22 @@ export default function DashboardPage() {
                                         Feedbacks
                                     </button>
                                 </Tooltip>
+                                {user.role === 'MASTER' && (
+                                    <Tooltip content="Direct Database CRUD" position="bottom">
+                                        <button
+                                            className={`${styles.navItem} ${activeTab === 'database' ? styles.active : ''}`}
+                                            onClick={() => setActiveTab('database')}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M4 7h16" />
+                                                <path d="M4 12h16" />
+                                                <path d="M4 17h16" />
+                                            </svg>
+                                            Database Master
+                                        </button>
+                                    </Tooltip>
+                                )}
+
                             </>
                         )}
                     </div>
@@ -2973,6 +2990,9 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
+                    )}
+                    {activeTab === 'database' && user?.role === 'MASTER' && (
+                        <DatabasePanel />
                     )}
                 </div>
             ) : (
