@@ -446,36 +446,68 @@
 .filtersSection {
     background: var(--card-bg);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: 16px;
     margin: 2rem 0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     border: 1px solid var(--border-color);
-}
-
-@media (prefers-color-scheme: dark) {
-    .filtersSection {
-        background: var(--card-bg);
-        border-color: var(--border-color);
-    }
-}
-
-.filterGroup {
     display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.filterGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1rem;
+    width: 100%;
+}
+
+.toggleFilters {
+    display: flex;
+    gap: 1.5rem;
     align-items: center;
     flex-wrap: wrap;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.actionFilters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 @media (max-width: 768px) {
-    .filterGroup {
+    .filtersSection {
+        padding: 1rem;
+    }
+
+    .filterGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .toggleFilters {
+        gap: 1rem;
+    }
+
+    .actionFilters {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .searchInput,
-    .selectInput {
-        min-width: 0;
+    .exportButtons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
         width: 100%;
+    }
+
+    .exportButton {
+        justify-content: center;
+        width: 100% !important;
     }
 }
 
@@ -527,10 +559,44 @@
 .checkboxLabel {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
+    gap: 0.75rem;
+    font-weight: 600;
     cursor: pointer;
-    color: var(--deep-black);
+    color: var(--foreground);
+    font-size: 0.85rem;
+    user-select: none;
+    transition: all 0.2s ease;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+}
+
+.checkboxLabel:hover {
+    border-color: var(--primary-red);
+    background: rgba(212, 31, 31, 0.02);
+}
+
+.checkboxLabel:has(input:checked) {
+    background: rgba(212, 31, 31, 0.1);
+    border-color: var(--primary-red);
+    color: var(--primary-red);
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary-red);
+    margin: 0;
+}
+
+.tableCheckbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-red);
+    vertical-align: middle;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -626,21 +692,29 @@
     }
 }
 
+.exportButtons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .exportButton {
     background: var(--color-success);
     color: white;
     padding: 0.6rem 1rem;
     border: none;
-    border-radius: 6px;
-    font-weight: 600;
+    border-radius: 8px;
+    font-weight: 700;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     transition: all 0.2s;
     height: 42px;
-    /* Ensure consistency */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .exportButton:hover {

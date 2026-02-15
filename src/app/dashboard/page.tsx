@@ -1354,14 +1354,14 @@ export default function DashboardPage() {
 
                             {/* Filters */}
                             <div className={styles.filtersSection}>
-                                <div className={styles.filterGroup}>
+                                {/* Search and Dropdown Grid */}
+                                <div className={styles.filterGrid}>
                                     <input
                                         type="text"
                                         placeholder="Search by name, adm no..."
                                         className={styles.searchInput}
                                         value={adminSearch}
                                         onChange={(e) => setAdminSearch(e.target.value)}
-
                                     />
                                     {(user.role === 'ADMIN' || user.role === 'MASTER' || user.role === 'VOLUNTEER') && (
                                         <select
@@ -1409,6 +1409,10 @@ export default function DashboardPage() {
                                             ))}
                                         </select>
                                     )}
+                                </div>
+
+                                {/* Toggle Options */}
+                                <div className={styles.toggleFilters}>
                                     {(user.role !== 'VOLUNTEER' && user.role !== 'COORDINATOR') && (
                                         <label className={styles.checkboxLabel}>
                                             <input
@@ -1416,69 +1420,73 @@ export default function DashboardPage() {
                                                 checked={onlyRegistered}
                                                 onChange={(e) => setOnlyRegistered(e.target.checked)}
                                             />
-                                            Has Registrations
+                                            <span>Has Registrations</span>
                                         </label>
                                     )}
+                                    <label className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={onlyVolunteers}
+                                            onChange={(e) => setOnlyVolunteers(e.target.checked)}
+                                        />
+                                        <span>Volunteers Only</span>
+                                    </label>
+                                </div>
 
+                                {/* Export and Batch Actions */}
+                                <div className={styles.actionFilters}>
                                     <div className={styles.exportButtons}>
-                                        <Tooltip content="Export filtered list to CSV">
-                                            <button onClick={() => handleExport('csv')} className={`${styles.exportButton} ${styles.csv}`} title="Export CSV">
+                                        <Tooltip content="Export list to CSV">
+                                            <button onClick={() => handleExport('csv')} className={`${styles.exportButton} ${styles.csv}`}>
                                                 CSV
                                             </button>
                                         </Tooltip>
-                                        <Tooltip content="Export filtered list to Excel">
-                                            <button onClick={() => handleExport('excel')} className={`${styles.exportButton} ${styles.excel}`} title="Export Excel">
-                                                XLS
+                                        <Tooltip content="Export list to Excel">
+                                            <button onClick={() => handleExport('excel')} className={`${styles.exportButton} ${styles.excel}`}>
+                                                EXCEL
                                             </button>
                                         </Tooltip>
-                                        <Tooltip content="Export filtered list to PDF">
-                                            <button onClick={() => handleExport('pdf')} className={`${styles.exportButton} ${styles.pdf}`} title="Export PDF">
+                                        <Tooltip content="Export list to PDF">
+                                            <button onClick={() => handleExport('pdf')} className={`${styles.exportButton} ${styles.pdf}`}>
                                                 PDF
                                             </button>
                                         </Tooltip>
-                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
-                                            <button
-                                                onClick={async () => {
-                                                    if (selectedRegs.length === 0) return modals.showToast('Please select at least one student.', 'info');
-                                                    modals.confirm({
-                                                        title: 'Generate Certificates',
-                                                        message: `Generate and send certificates for ${selectedRegs.length} selected items? (Requires SMTP config)`,
-                                                        confirmText: 'Generate & Send',
-                                                        onConfirm: async () => {
-                                                            setCertLoading(true);
-                                                            setIsLoading(true, "Mailing Certificates")
-                                                            try {
-                                                                const { generateAndSendCertificates } = await import('@/actions/certificates');
-                                                                const res = await generateAndSendCertificates(selectedRegs);
-                                                                if (res.success) {
-                                                                    modals.showToast(res.message || 'Certificates processed.', 'success');
-                                                                    setSelectedRegs([]);
-                                                                } else {
-                                                                    modals.showToast(res.error || 'Failed to process certificates.', 'error');
-                                                                }
-                                                            } finally {
-                                                                setCertLoading(false);
-                                                                setIsLoading(false);
-                                                            }
-                                                        }
-                                                    })
-                                                }}
-                                                className={styles.exportButton}
-                                                style={{ backgroundColor: 'var(--color-success)', color: 'white', opacity: certLoading ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
-                                                disabled={certLoading}
-                                            >
-                                                {certLoading ? <><LoadingSpinner size="18px" /> Processing...</> : `Send Certificates (${selectedRegs.length})`}
-                                            </button>
-                                        )}
-                                        <label className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={onlyVolunteers}
-                                                onChange={(e) => setOnlyVolunteers(e.target.checked)}
-                                            />
-                                            Volunteers Only
-                                        </label>
                                     </div>
+
+                                    {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                                        <button
+                                            onClick={async () => {
+                                                if (selectedRegs.length === 0) return modals.showToast('Please select at least one student.', 'info');
+                                                modals.confirm({
+                                                    title: 'Generate Certificates',
+                                                    message: `Generate and send certificates for ${selectedRegs.length} selected items?`,
+                                                    confirmText: 'Generate & Send',
+                                                    onConfirm: async () => {
+                                                        setCertLoading(true);
+                                                        setIsLoading(true, "Mailing Certificates")
+                                                        try {
+                                                            const { generateAndSendCertificates } = await import('@/actions/certificates');
+                                                            const res = await generateAndSendCertificates(selectedRegs);
+                                                            if (res.success) {
+                                                                modals.showToast(res.message || 'Certificates processed.', 'success');
+                                                                setSelectedRegs([]);
+                                                            } else {
+                                                                modals.showToast(res.error || 'Failed to process certificates.', 'error');
+                                                            }
+                                                        } finally {
+                                                            setCertLoading(false);
+                                                            setIsLoading(false);
+                                                        }
+                                                    }
+                                                })
+                                            }}
+                                            className={styles.exportButton}
+                                            style={{ backgroundColor: 'var(--kathakali-green)', minWidth: '220px' }}
+                                            disabled={certLoading}
+                                        >
+                                            {certLoading ? <><LoadingSpinner size="18px" /> Processing...</> : `Send Certificates (${selectedRegs.length})`}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -1592,6 +1600,7 @@ export default function DashboardPage() {
                                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER') && r.attendances?.some((a: any) => a.isPresent) && (
                                                                             <input
                                                                                 type="checkbox"
+                                                                                className={styles.tableCheckbox}
                                                                                 checked={selectedRegs.includes(r.id)}
                                                                                 onChange={(e) => {
                                                                                     if (e.target.checked) {
@@ -1600,7 +1609,6 @@ export default function DashboardPage() {
                                                                                         setSelectedRegs(prev => prev.filter(id => id !== r.id));
                                                                                     }
                                                                                 }}
-                                                                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                                                                                 title="Select for certificate"
                                                                             />
                                                                         )}
