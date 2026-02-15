@@ -42,14 +42,6 @@ export default function ContactPage() {
 
     return (
         <main className={`${styles.container} ${inter.className}`}>
-            <section className={styles.hero}>
-                <div className={styles.heroOverlay}></div>
-                <div className={styles.heroContent}>
-                    <h1 className={`${styles.title} ${cinzel.className}`}>Connect With Us</h1>
-                    <p className={styles.subtitle}>Have questions or feedback? We'd love to hear from you.</p>
-                </div>
-            </section>
-
             <section className={styles.mainContent}>
                 <div className={styles.wrapper}>
                     <div className={styles.contactGrid}>
