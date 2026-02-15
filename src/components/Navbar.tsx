@@ -96,10 +96,13 @@ export default function Navbar() {
 
             <div className={styles.mobileControls}>
                 {/* Notification Icon Mobile (Left of SignOut in Mobile) */}
-                <div className={`${styles.notificationWrapper} ${styles.mobileNotification}`}>
+                <div
+                    className={`${styles.notificationWrapper} ${styles.mobileNotification}`}
+                    onMouseEnter={() => setShowNotifications(true)}
+                    onMouseLeave={() => setShowNotifications(false)}
+                >
                     <button
                         className={styles.notificationBtn}
-                        onClick={() => setShowNotifications(!showNotifications)}
                         aria-label="Notifications"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -135,7 +138,7 @@ export default function Navbar() {
                                     </a>
                                 </div>
                             )}
-                            <div className={styles.versionDisplay}>v{APP_VERSION}</div>
+
                         </div>
                     )}
                 </div>
@@ -199,20 +202,21 @@ export default function Navbar() {
                 </Link>
 
                 {/* Notification Icon (Desktop: First Item via CSS order) */}
-                <div className={`${styles.notificationWrapper} ${styles.navNotification}`}>
-                    <Tooltip content="Notifications" position="bottom">
-                        <button
-                            className={styles.notificationBtn}
-                            onClick={() => setShowNotifications(!showNotifications)}
-                            aria-label="Notifications"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                            </svg>
-                            {config.notifications.length > 0 && <span className={styles.notificationBadge} />}
-                        </button>
-                    </Tooltip>
+                <div
+                    className={`${styles.notificationWrapper} ${styles.navNotification}`}
+                    onMouseEnter={() => setShowNotifications(true)}
+                    onMouseLeave={() => setShowNotifications(false)}
+                >
+                    <button
+                        className={styles.notificationBtn}
+                        aria-label="Notifications"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        {config.notifications.length > 0 && <span className={styles.notificationBadge} />}
+                    </button>
 
                     {showNotifications && (
                         <div className={styles.notificationDropdown}>
@@ -240,7 +244,7 @@ export default function Navbar() {
                                     </a>
                                 </div>
                             )}
-                            <div className={styles.versionDisplay}>v{APP_VERSION}</div>
+
                         </div>
                     )}
                 </div>

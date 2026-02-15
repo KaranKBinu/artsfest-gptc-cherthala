@@ -239,7 +239,22 @@
     border-radius: 8px;
     padding: 0.5rem 0;
     z-index: 100;
-    margin-top: 0.5rem;
+    margin-top: 0;
+    /* Remove gap */
+    transform-origin: top right;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .notificationItem {
