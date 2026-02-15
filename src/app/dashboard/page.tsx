@@ -713,7 +713,7 @@ export default function DashboardPage() {
     }
 
     // Admin State - Navigation
-    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'results' | 'feedbacks' | 'volunteers'>('users')
+    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'feedbacks' | 'volunteers'>('users')
 
     useEffect(() => {
         if (activeTab === 'volunteers' && (user?.role === 'ADMIN' || user?.role === 'MASTER')) {
@@ -1002,15 +1002,7 @@ export default function DashboardPage() {
                 if (res.success && res.data) setCoordinators(res.data)
                 setIsLoading(false)
             })
-        } else if (activeTab === 'results') {
-            setIsLoading(true, "Loading Leaderboard")
-            import('@/actions/results').then(m => m.getHouseLeaderboard()).then(res => {
-                if (res.success && res.data) setHouseScores(res.data)
-                setIsLoading(false)
-            })
-            getCoordinators().then(res => {
-                if (res.success && res.data) setCoordinators(res.data)
-            })
+
         } else if (activeTab === 'settings') {
             setIsLoading(true, "Loading Settings")
             getConfigs().then(res => {
@@ -1231,18 +1223,6 @@ export default function DashboardPage() {
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
                                 Users & Registrations
-                            </button>
-                        </Tooltip>
-                        <Tooltip content="View Results & House Leaderboard" position="bottom">
-                            <button
-                                className={`${styles.navItem} ${activeTab === 'results' ? styles.active : ''}`}
-                                onClick={() => setActiveTab('results')}
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="8" r="7"></circle>
-                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-                                </svg>
-                                Grades & Results
                             </button>
                         </Tooltip>
                         <Tooltip content="Configure Programs" position="bottom">
@@ -1815,67 +1795,7 @@ export default function DashboardPage() {
                             </div>
                         </>
                     )}
-                    {activeTab === 'results' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                            {/* House Leaderboard */}
-                            <div className={styles.tableCard}>
-                                <h3 className={`${styles.cardTitle} ${cinzel.className}`}>House Leaderboard</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                                    {houseScores.length > 0 ? (
-                                        houseScores.map((h, idx) => {
-                                            const maxScore = Math.max(...houseScores.map(x => x.score)) || 1;
-                                            const percentage = (h.score / maxScore) * 100;
 
-                                            return (
-                                                <div key={h.id} style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '1.5rem',
-                                                    padding: '1rem',
-                                                    backgroundColor: 'rgba(255,255,255,0.03)',
-                                                    borderRadius: '12px',
-                                                    borderLeft: `4px solid ${h.color || 'var(--primary-red)'}`
-                                                }}>
-                                                    <div style={{
-                                                        width: '40px',
-                                                        height: '40px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: idx === 0 ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255,255,255,0.1)',
-                                                        color: idx === 0 ? '#ffd700' : 'white',
-                                                        fontWeight: 'bold',
-                                                        fontSize: '1.2rem'
-                                                    }}>
-                                                        {idx + 1}
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                                            <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>{h.name}</span>
-                                                            <span style={{ fontWeight: 700, color: h.color || 'white' }}>{h.score} pts</span>
-                                                        </div>
-                                                        <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                                                            <div style={{
-                                                                width: `${percentage}%`,
-                                                                height: '100%',
-                                                                backgroundColor: h.color || 'var(--primary-red)',
-                                                                transition: 'width 1s ease-out'
-                                                            }} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div style={{ padding: '3rem', textAlign: 'center', opacity: 0.5 }}>
-                                            {loadingAdmin ? 'Calculating scores...' : 'No scores recorded yet.'}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
 
 
@@ -3200,11 +3120,7 @@ export default function DashboardPage() {
                                                         <span className={`${styles.statusBadge} ${styles[reg.status.toLowerCase()]}`}>
                                                             {reg.status}
                                                         </span>
-                                                        {reg.grade && (
-                                                            <span className={styles.statusBadge} style={{ backgroundColor: 'var(--color-success)', color: 'white' }}>
-                                                                {reg.grade.replace(/_/g, ' ')}
-                                                            </span>
-                                                        )}
+
                                                     </div>
                                                 </div>
                                                 <div className={styles.regMeta}>
@@ -3245,35 +3161,7 @@ export default function DashboardPage() {
                             </div>
                         )}
 
-                        {/* House Leaderboard Card for Students */}
-                        <div className={styles.card}>
-                            <h2 className={`${styles.cardTitle} ${cinzel.className}`}>House Standings</h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
-                                {houseScores.length > 0 ? (
-                                    houseScores.map((h, idx) => (
-                                        <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <span style={{ fontWeight: 700, opacity: 0.5, width: '20px' }}>#{idx + 1}</span>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '2px' }}>
-                                                    <span>{h.name}</span>
-                                                    <span style={{ fontWeight: 600 }}>{h.score}</span>
-                                                </div>
-                                                <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                                                    <div style={{
-                                                        height: '100%',
-                                                        backgroundColor: h.color || 'var(--primary-red)',
-                                                        width: `${(h.score / (Math.max(...houseScores.map(x => x.score)) || 1)) * 100}%`,
-                                                        borderRadius: '2px'
-                                                    }} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>Leaderboard loading...</p>
-                                )}
-                            </div>
-                        </div>
+
 
                         {/* Role specific cards */}
                         {(user.role === 'ADMIN' || user.role === 'MASTER') && (

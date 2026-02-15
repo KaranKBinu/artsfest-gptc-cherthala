@@ -5,91 +5,134 @@
 
 .tooltipTip {
     position: absolute;
-    border-radius: 4px;
-    padding: 6px 12px;
+    border-radius: 8px;
+    padding: 8px 14px;
     color: #fff;
-    background: #222;
-    font-size: 11px;
-    font-family: sans-serif;
-    line-height: 1;
-    z-index: 9999;
+    background: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    z-index: 1000000;
     white-space: nowrap;
     pointer-events: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    transition: none;
+    /* Reset transitions for mount animation */
 }
 
 /* Tooltip arrows */
 .tooltipTip::before {
     content: "";
     position: absolute;
-    border: 5px solid transparent;
+    border: 6px solid transparent;
 }
 
 /* Top position */
 .tooltipTip.top {
-    bottom: calc(100% + 8px);
+    bottom: calc(100% + 10px);
     left: 50%;
-    transform: translateX(-50%);
+    translate: -50% 0;
+    animation: slideUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tooltipTip.top::before {
     top: 100%;
     left: 50%;
-    transform: translateX(-50%);
-    border-top-color: #222;
+    translate: -50% 0;
+    border-top-color: rgba(15, 15, 15, 0.95);
 }
 
 /* Bottom position */
 .tooltipTip.bottom {
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     left: 50%;
-    transform: translateX(-50%);
+    translate: -50% 0;
+    animation: slideDown 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tooltipTip.bottom::before {
     bottom: 100%;
     left: 50%;
-    transform: translateX(-50%);
-    border-bottom-color: #222;
+    translate: -50% 0;
+    border-bottom-color: rgba(15, 15, 15, 0.95);
 }
 
 /* Left position */
 .tooltipTip.left {
-    right: calc(100% + 8px);
+    right: calc(100% + 10px);
     top: 50%;
-    transform: translateY(-50%);
+    translate: 0 -50%;
+    animation: slideLeft 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tooltipTip.left::before {
     left: 100%;
     top: 50%;
-    transform: translateY(-50%);
-    border-left-color: #222;
+    translate: 0 -50%;
+    border-left-color: rgba(15, 15, 15, 0.95);
 }
 
 /* Right position */
 .tooltipTip.right {
-    left: calc(100% + 8px);
+    left: calc(100% + 10px);
     top: 50%;
-    transform: translateY(-50%);
+    translate: 0 -50%;
+    animation: slideRight 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tooltipTip.right::before {
     right: 100%;
     top: 50%;
-    transform: translateY(-50%);
-    border-right-color: #222;
+    translate: 0 -50%;
+    border-right-color: rgba(15, 15, 15, 0.95);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translateX(8px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes slideRight {
+    from {
+        opacity: 0;
+        transform: translateX(-8px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
 }

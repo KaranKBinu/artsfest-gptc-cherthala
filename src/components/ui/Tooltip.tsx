@@ -24,7 +24,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     };
 
     const hideTip = () => {
-        clearInterval(timeout);
+        if (timeout) clearTimeout(timeout);
         setActive(false);
     };
 
