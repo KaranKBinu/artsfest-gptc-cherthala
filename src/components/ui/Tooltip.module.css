@@ -1,33 +1,34 @@
 .tooltipWrapper {
     display: inline-flex;
-    position: relative;
 }
 
 .tooltipTip {
-    position: absolute;
-    border-radius: 4px;
-    padding: 6px 12px;
+    position: fixed;
+    border-radius: 6px;
+    padding: 8px 14px;
     color: #fff;
-    background: #222;
+    background: #111;
     font-size: 11px;
-    font-family: sans-serif;
-    line-height: 1;
-    z-index: 9999;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.2;
+    z-index: 1000001;
+    /* Above almost everything */
     white-space: nowrap;
     pointer-events: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.2s ease-out;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: scale(0.95);
+        transform: translate(-50%, 4px);
     }
 
     to {
         opacity: 1;
-        transform: scale(1);
+        transform: translate(-50%, 0);
     }
 }
 
@@ -35,61 +36,38 @@
 .tooltipTip::before {
     content: "";
     position: absolute;
-    border: 5px solid transparent;
+    border: 6px solid transparent;
 }
 
-/* Top position */
-.tooltipTip.top {
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-}
+/* Positional arrows */
 
 .tooltipTip.top::before {
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    border-top-color: #222;
+    border-top-color: #111;
 }
 
 /* Bottom position */
-.tooltipTip.bottom {
-    top: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-}
-
 .tooltipTip.bottom::before {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    border-bottom-color: #222;
+    border-bottom-color: #111;
 }
 
 /* Left position */
-.tooltipTip.left {
-    right: calc(100% + 8px);
-    top: 50%;
-    transform: translateY(-50%);
-}
-
 .tooltipTip.left::before {
     left: 100%;
     top: 50%;
     transform: translateY(-50%);
-    border-left-color: #222;
+    border-left-color: #111;
 }
 
 /* Right position */
-.tooltipTip.right {
-    left: calc(100% + 8px);
-    top: 50%;
-    transform: translateY(-50%);
-}
-
 .tooltipTip.right::before {
     right: 100%;
     top: 50%;
     transform: translateY(-50%);
-    border-right-color: #222;
+    border-right-color: #111;
 }
