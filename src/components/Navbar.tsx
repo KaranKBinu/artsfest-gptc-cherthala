@@ -91,7 +91,14 @@ export default function Navbar() {
     return (
         <header className={`${headerClass} ${inter.className}`}>
             <Link href="/" className={`${styles.logo} ${cinzel.className}`}>
-                {config.festivalName}
+                {config.appLogo && (
+                    <img
+                        src={config.appLogo}
+                        alt="Logo"
+                        className={styles.logoImage}
+                    />
+                )}
+                <span>{config.festivalName}</span>
             </Link>
 
             <div className={styles.mobileControls}>

@@ -215,8 +215,8 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                 } catch (e) {
                     setValue(config.value)
                 }
-            } else if (config.key === 'artsFestManual' || config.key === 'certificateTemplate' || (typeof config.value === 'string' && config.value.startsWith('http'))) {
-                if (config.key === 'artsFestManual' || config.key === 'certificateTemplate') setType('FILE')
+            } else if (['artsFestManual', 'certificateTemplate', 'appFavicon', 'appLogo'].includes(config.key) || (typeof config.value === 'string' && config.value.startsWith('http'))) {
+                if (['artsFestManual', 'certificateTemplate', 'appFavicon', 'appLogo'].includes(config.key)) setType('FILE')
                 else setType('TEXT')
                 setValue(config.value)
             } else if (config.value === 'true' || config.value === 'false') {

@@ -28,6 +28,9 @@
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--foreground);
@@ -35,6 +38,13 @@
     letter-spacing: 2px;
     text-decoration: none;
     z-index: 52;
+}
+
+.logoImage {
+    height: 32px;
+    width: auto;
+    border-radius: 4px;
+    object-fit: contain;
 }
 
 @media (min-width: 769px) {

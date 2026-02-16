@@ -14,6 +14,8 @@ export interface AppConfig {
         code: string
         name: string
     }[]
+    appFavicon: string
+    appLogo: string
 }
 
 // Simple in-memory cache to avoid hitting DB on every request if needed
@@ -35,7 +37,7 @@ export async function getAppConfig(): Promise<AppConfig> {
     try {
         const configs = await prisma.configuration.findMany({
             where: {
-                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo', 'teamMembers', 'showScoreboard'] }
+                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo', 'teamMembers', 'showScoreboard', 'appFavicon', 'appLogo'] }
             }
         })
 
@@ -82,7 +84,9 @@ export async function getAppConfig(): Promise<AppConfig> {
             contactInfo,
             teamMembers,
             showScoreboard,
-            departments
+            departments,
+            appFavicon: configMap.get('appFavicon') || '/favicon.png',
+            appLogo: configMap.get('appLogo') || '/favicon.png'
         }
         lastFetchTime = now
 
@@ -107,6 +111,8 @@ export async function getAppConfig(): Promise<AppConfig> {
                 { code: 'IE', name: 'Instrumentation Engineering' },
                 { code: 'EC', name: 'Electronics & Communication' },
             ],
+            appFavicon: '/favicon.png',
+            appLogo: '/favicon.png'
         }
     }
 }

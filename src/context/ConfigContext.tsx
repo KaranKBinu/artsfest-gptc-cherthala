@@ -23,6 +23,8 @@ interface AppConfig {
         code: string
         name: string
     }[]
+    appFavicon: string
+    appLogo: string
 }
 
 interface ConfigContextType {
@@ -41,7 +43,9 @@ const defaultConfig: AppConfig = {
     contactInfo: null,
     teamMembers: [],
     showScoreboard: false,
-    departments: []
+    departments: [],
+    appFavicon: '/favicon.png',
+    appLogo: '/favicon.png'
 }
 
 const ConfigContext = createContext<ConfigContextType>({
@@ -100,7 +104,9 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     contactInfo,
                     teamMembers,
                     showScoreboard: d.showScoreboard === true || d.showScoreboard === 'true',
-                    departments
+                    departments,
+                    appFavicon: d.appFavicon || defaultConfig.appFavicon,
+                    appLogo: d.appLogo || defaultConfig.appLogo
                 })
             }
         } catch (error) {
