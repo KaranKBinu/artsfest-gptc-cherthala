@@ -18,7 +18,7 @@ const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
 import { getDashboardData, DashboardData } from '@/actions/dashboard'
-import { getUsersForAdmin, getHouses, getCoordinators, updateUserRole } from '@/actions/users'
+import { getUsersForAdmin, getHouses, getCoordinators, updateUserRole, changePassword } from '@/actions/users'
 import { generateStudentRegistrationsPDF, generateAdminExportPDF } from '@/actions/pdf-generator'
 import { useConfig } from '@/context/ConfigContext'
 import { useModals } from '@/context/ModalContext'
@@ -693,6 +693,7 @@ export default function DashboardPage() {
     const [user, setUser] = useState<AuthResponse['user'] | null>(null)
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [passwordModalOpen, setPasswordModalOpen] = useState(false)
 
     // Admin State - Volunteers
     const [volunteers, setVolunteers] = useState<any[]>([])
@@ -1171,6 +1172,37 @@ export default function DashboardPage() {
         router.push('/login')
     }
 
+    const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+        const currentPassword = formData.get('currentPassword') as string
+        const newPassword = formData.get('newPassword') as string
+        const confirmPassword = formData.get('confirmPassword') as string
+
+        if (newPassword !== confirmPassword) {
+            modals.showToast('New passwords do not match', 'error')
+            return
+        }
+
+        if (newPassword.length < 6) {
+            modals.showToast('Password must be at least 6 characters', 'error')
+            return
+        }
+
+        setIsLoading(true, "Updating Password")
+        try {
+            const res = await changePassword({ currentPassword, newPassword })
+            if (res.success) {
+                modals.showToast('Password updated successfully', 'success')
+                setPasswordModalOpen(false)
+            } else {
+                modals.showToast(res.error || 'Failed to update password', 'error')
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     if (loading) return null
 
     if (!user) return null
@@ -1181,6 +1213,56 @@ export default function DashboardPage() {
                 <div>
                     <h1 className={`${styles.title} ${cinzel.className}`}>Dashboard</h1>
                     <p className={styles.welcomeText}>Welcome, <span className={styles.userName}>{user.fullName}</span></p>
+                </div>
+                <div className={styles.headerActions}>
+                    <Tooltip content="Update account security">
+                        <button
+                            onClick={() => setPasswordModalOpen(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                background: 'rgba(212, 175, 55, 0.1)',
+                                color: 'var(--primary-gold)',
+                                border: '1px solid rgba(212, 175, 55, 0.2)',
+                                cursor: 'pointer',
+                                fontWeight: 500,
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zM12 7l.5 13 6-8.5H12z" />
+                            </svg>
+                            Password
+                        </button>
+                    </Tooltip>
+                    <Tooltip content="Sign out of your account">
+                        <button
+                            onClick={handleLogout}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                background: 'rgba(255, 71, 87, 0.1)',
+                                color: '#ff4757',
+                                border: '1px solid rgba(255, 71, 87, 0.2)',
+                                cursor: 'pointer',
+                                fontWeight: 500,
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            Logout
+                        </button>
+                    </Tooltip>
                 </div>
             </header>
 
@@ -3058,7 +3140,32 @@ export default function DashboardPage() {
                                     </span>
                                 </div>
                             )}
-
+                            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                <button
+                                    onClick={() => setPasswordModalOpen(true)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--primary-gold)',
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        opacity: 0.7,
+                                        transition: 'opacity 0.2s'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                                    onMouseOut={e => e.currentTarget.style.opacity = '0.7'}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                    Security: Change Password
+                                </button>
+                            </div>
                         </div>
 
                         {/* Registration Limits Card */}
@@ -3194,9 +3301,63 @@ export default function DashboardPage() {
                 </>
             )
             }
+            {passwordModalOpen && (
+                <div className={styles.modalOverlay} style={{ zIndex: 9999 }}>
+                    <div className={styles.adminModal} style={{ maxWidth: '450px', padding: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0, color: 'var(--primary-gold)' }}>Security Settings</h2>
+                            <button
+                                onClick={() => setPasswordModalOpen(false)}
+                                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '2rem', lineHeight: 1 }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <form onSubmit={handlePasswordChange}>
+                            <div className={styles.formGroup} style={{ marginBottom: '1.5rem' }}>
+                                <label className={styles.formLabel} style={{ display: 'block', marginBottom: '8px', opacity: 0.8 }}>Current Password</label>
+                                <input
+                                    name="currentPassword"
+                                    type="password"
+                                    required
+                                    className={styles.searchInput}
+                                    placeholder="Enter existing password"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                            <div className={styles.formGroup} style={{ marginBottom: '1.5rem' }}>
+                                <label className={styles.formLabel} style={{ display: 'block', marginBottom: '8px', opacity: 0.8 }}>New Password</label>
+                                <input
+                                    name="newPassword"
+                                    type="password"
+                                    required
+                                    className={styles.searchInput}
+                                    placeholder="Minimum 6 characters"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                            <div className={styles.formGroup} style={{ marginBottom: '2rem' }}>
+                                <label className={styles.formLabel} style={{ display: 'block', marginBottom: '8px', opacity: 0.8 }}>Confirm New Password</label>
+                                <input
+                                    name="confirmPassword"
+                                    type="password"
+                                    required
+                                    className={styles.searchInput}
+                                    placeholder="Re-type new password"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                <button type="button" onClick={() => setPasswordModalOpen(false)} className={styles.cancelButton}>Cancel</button>
+                                <button type="submit" className={styles.addButton} style={{ padding: '10px 24px', background: 'var(--primary-gold)', color: 'black', fontWeight: 600 }}>Update Password</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
             <div style={{ textAlign: 'center', padding: '2rem 0', opacity: 0.5, fontSize: '0.8rem' }}>
                 ArtsFest v{APP_VERSION}
             </div>
-        </div >
+        </div>
     )
 }

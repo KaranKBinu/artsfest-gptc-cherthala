@@ -1,6 +1,38 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
+import { verifyToken, verifyPassword, hashPassword } from '@/lib/auth'
+
+export async function changePassword(data: { currentPassword: string, newPassword: string }) {
+    try {
+        const token = cookies().get('token')?.value
+        if (!token) return { success: false, error: 'Unauthorized' }
+
+        const payload = verifyToken(token)
+        if (!payload || !payload.userId) return { success: false, error: 'Unauthorized' }
+
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId }
+        })
+
+        if (!user) return { success: false, error: 'User not found' }
+
+        const isCorrect = await verifyPassword(data.currentPassword, user.password)
+        if (!isCorrect) return { success: false, error: 'Current password is incorrect' }
+
+        const hashedPassword = await hashPassword(data.newPassword)
+        await prisma.user.update({
+            where: { id: payload.userId },
+            data: { password: hashedPassword }
+        })
+
+        return { success: true }
+    } catch (error: any) {
+        console.error('Password change failed:', error)
+        return { success: false, error: error.message || 'Failed to change password' }
+    }
+}
 
 export async function searchTeamMembers(query: string, houseId: string, currentUserId: string) {
     if (!query || query.length < 2) return { success: true, data: [] }
