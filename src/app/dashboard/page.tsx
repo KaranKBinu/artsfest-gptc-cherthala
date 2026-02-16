@@ -238,7 +238,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
     }, [config, isOpen])
 
     const handleChange = (e: any) => {
-        const val = e.target.value
+        const val = e.target.type === 'checkbox' ? (e.target.checked ? 'true' : 'false') : e.target.value
         setValue(val)
 
         if (type === 'JSON') {
@@ -398,15 +398,15 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                 {jsonError ? <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{jsonError}</p> : null}
                             </>
                         ) : type === 'BOOLEAN' ? (
-                            <select
-                                className={styles.selectInput}
-                                value={value}
-                                onChange={handleChange}
-                            >
-                                <option value="">Select boolean value</option>
-                                <option value="true">True</option>
-                                <option value="false">False</option>
-                            </select>
+                            <label className={styles.checkboxLabel} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.5rem 0' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={value === 'true'}
+                                    onChange={handleChange}
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                />
+                                <span style={{ fontWeight: 500, opacity: 0.9 }}>{value === 'true' ? 'Enabled' : 'Disabled'}</span>
+                            </label>
                         ) : type === 'NUMBER' ? (
                             <input
                                 type="number"
@@ -2251,23 +2251,6 @@ export default function DashboardPage() {
                                                                                 <div style={{ width: '100%', height: '100%', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#666' }}>
                                                                                     FILE
                                                                                 </div>
-                                                                            )}
-
-                                                                            {r.certificates?.some((c: any) => c.emailSent) && (
-                                                                                <span
-                                                                                    style={{
-                                                                                        fontSize: '0.65rem',
-                                                                                        color: 'var(--color-success)',
-                                                                                        backgroundColor: 'rgba(var(--color-success-rgb, 25, 135, 84), 0.1)',
-                                                                                        padding: '1px 4px',
-                                                                                        borderRadius: '3px',
-                                                                                        border: '1px solid var(--color-success)',
-                                                                                        fontWeight: 600
-                                                                                    }}
-                                                                                    title="Certificate successfully sent via email"
-                                                                                >
-                                                                                    Sent
-                                                                                </span>
                                                                             )}
                                                                         </a>
                                                                     )

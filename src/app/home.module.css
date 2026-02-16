@@ -537,3 +537,142 @@
 .skeletonTextLast {
     width: 40%;
 }
+
+/* Scoreboard Styles */
+.scoreboardSection {
+    padding: 6rem 5%;
+    text-align: center;
+    background: radial-gradient(circle at center, rgba(var(--primary-gold-rgb), 0.05) 0%, transparent 70%);
+}
+
+.scoreboardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2.5rem;
+    max-width: 1100px;
+    margin: 3rem auto 0;
+}
+
+.scoreCard {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 3rem 1.5rem;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.scoreCard::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(212, 175, 55, 0.1), transparent 40%);
+    animation: rotateGlow 10s linear infinite;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+}
+
+.scoreCard:hover {
+    transform: translateY(-15px) scale(1.02);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 30px rgba(212, 175, 55, 0.15);
+}
+
+.scoreCard:hover::before {
+    opacity: 1;
+}
+
+@keyframes rotateGlow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.houseColorStrip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.houseName {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--primary-gold);
+}
+
+.houseScore {
+    font-size: 4.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0.5rem 0;
+    line-height: 1;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+    transition: all 0.4s ease;
+}
+
+.scoreCard:hover .houseScore {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, #fff 0%, var(--primary-gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.scoreLabel {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    opacity: 0.5;
+    font-weight: 700;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .scoreboardSection {
+        padding: 4rem 1.5rem;
+    }
+
+    .scoreboardGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .houseScore {
+        font-size: 3rem;
+    }
+
+    .scoreCard {
+        padding: 2rem 1rem;
+        border-radius: 20px;
+    }
+
+    .houseName {
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+    }
+}

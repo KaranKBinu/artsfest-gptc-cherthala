@@ -9,6 +9,7 @@ export interface AppConfig {
     artsFestManual: string
     contactInfo: string
     teamMembers: string
+    showScoreboard: boolean
     departments: {
         code: string
         name: string
@@ -34,7 +35,7 @@ export async function getAppConfig(): Promise<AppConfig> {
     try {
         const configs = await prisma.configuration.findMany({
             where: {
-                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo', 'teamMembers'] }
+                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo', 'teamMembers', 'showScoreboard'] }
             }
         })
 
@@ -48,6 +49,7 @@ export async function getAppConfig(): Promise<AppConfig> {
         const artsFestManual = configMap.get('artsFestManual') || ''
         const contactInfo = configMap.get('contactInfo') || JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' })
         const teamMembers = configMap.get('teamMembers') || '[]'
+        const showScoreboard = configMap.get('showScoreboard')?.toLowerCase() === 'true'
 
         let departments: AppConfig['departments'] = []
         const deptJson = configMap.get('departments')
@@ -79,6 +81,7 @@ export async function getAppConfig(): Promise<AppConfig> {
             artsFestManual,
             contactInfo,
             teamMembers,
+            showScoreboard,
             departments
         }
         lastFetchTime = now
@@ -96,6 +99,7 @@ export async function getAppConfig(): Promise<AppConfig> {
             artsFestManual: '',
             contactInfo: JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' }),
             teamMembers: '[]',
+            showScoreboard: false,
             departments: [
                 { code: 'CHE', name: 'Computer Hardware Engineering' },
                 { code: 'CT', name: 'Computer Engineering' },

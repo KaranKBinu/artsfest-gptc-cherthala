@@ -11,6 +11,7 @@ const cinzel = Cinzel({ subsets: ['latin'] })
 
 import { ProgramWithStats } from '@/types'
 import { useConfig } from '@/context/ConfigContext'
+import { getHouseLeaderboard } from '@/actions/results'
 
 export default function Home() {
   const { config } = useConfig()
@@ -20,6 +21,7 @@ export default function Home() {
   const [loadingPrograms, setLoadingPrograms] = useState(true)
   // Chunk images into layouts
   const [slides, setSlides] = useState<string[][]>([])
+  const [houseStats, setHouseStats] = useState<any[]>([])
 
   useEffect(() => {
     if (!config.galleryImages || config.galleryImages.length === 0) return
@@ -72,6 +74,24 @@ export default function Home() {
     setIsLoggedIn(!!token)
   }, [])
 
+  useEffect(() => {
+    const fetchLeaderboard = () => {
+      getHouseLeaderboard().then(res => {
+        if (res.success) {
+          setHouseStats(res.data || [])
+        }
+      })
+    }
+
+    fetchLeaderboard()
+    // Refresh scores every 30 seconds if visible
+    let interval: NodeJS.Timeout;
+    if (config.showScoreboard) {
+      interval = setInterval(fetchLeaderboard, 30000)
+    }
+    return () => { if (interval) clearInterval(interval) }
+  }, [config.showScoreboard])
+
   const nextSlide = () => setCurrentSlide(c => (c + 1) % slides.length)
   const prevSlide = () => setCurrentSlide(c => (c - 1 + slides.length) % slides.length)
 
@@ -112,6 +132,32 @@ export default function Home() {
             )}
           </div>
         </section>
+
+        {/* Scoreboard Section */}
+        {config.showScoreboard && (
+          <section className={styles.scoreboardSection}>
+            <h2 className={`${styles.sectionTitle} ${cinzel.className}`}>Live Scoreboard</h2>
+            {houseStats.length > 0 ? (
+              <div className={styles.scoreboardGrid}>
+                {houseStats.map((house) => (
+                  <div key={house.id} className={styles.scoreCard}>
+                    <div
+                      className={styles.houseColorStrip}
+                      style={{ background: house.color || 'var(--primary-gold)' }}
+                    />
+                    <h3 className={`${styles.houseName} ${cinzel.className}`}>{house.name}</h3>
+                    <div className={styles.houseScore}>{house.score}</div>
+                    <div className={styles.scoreLabel}>Points</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ opacity: 0.6, marginTop: '2rem' }}>
+                <p>Fetching latest scores...</p>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Gallery Section - Futuristic Collage */}
         {slides.length > 0 && (

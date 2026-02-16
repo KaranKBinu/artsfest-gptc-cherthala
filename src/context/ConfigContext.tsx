@@ -18,6 +18,7 @@ interface AppConfig {
     artsFestManual: string
     contactInfo: any
     teamMembers: TeamMember[]
+    showScoreboard: boolean
     departments: {
         code: string
         name: string
@@ -39,6 +40,7 @@ const defaultConfig: AppConfig = {
     artsFestManual: '',
     contactInfo: null,
     teamMembers: [],
+    showScoreboard: false,
     departments: []
 }
 
@@ -54,7 +56,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
 
     const fetchConfig = async () => {
         try {
-            const res = await fetch('/api/config')
+            const res = await fetch('/api/config', { cache: 'no-store' })
             const data = await res.json()
             if (data.success) {
                 const d = data.data
@@ -97,6 +99,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     artsFestManual: d.artsFestManual || '',
                     contactInfo,
                     teamMembers,
+                    showScoreboard: d.showScoreboard === true,
                     departments
                 })
             }
@@ -109,6 +112,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         fetchConfig()
+        const interval = setInterval(fetchConfig, 60000) // Refresh config every minute
+        return () => clearInterval(interval)
     }, [])
 
     return (
