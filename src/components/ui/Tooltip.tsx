@@ -6,13 +6,15 @@ interface TooltipProps {
     children: React.ReactNode;
     position?: 'top' | 'bottom' | 'left' | 'right';
     delay?: number;
+    className?: string;
 }
 
 const Tooltip: React.FC<TooltipProps> = ({
     content,
     children,
     position = 'top',
-    delay = 200
+    delay = 200,
+    className = ''
 }) => {
     const [active, setActive] = useState(false);
     let timeout: NodeJS.Timeout;
@@ -30,7 +32,7 @@ const Tooltip: React.FC<TooltipProps> = ({
 
     return (
         <div
-            className={styles.tooltipWrapper}
+            className={`${styles.tooltipWrapper} ${className}`}
             onMouseEnter={showTip}
             onMouseLeave={hideTip}
         >

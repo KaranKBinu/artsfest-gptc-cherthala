@@ -314,9 +314,6 @@
 
 /* Futuristic Controls */
 .galleryNavBtn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -325,26 +322,39 @@
     height: 50px;
     border-radius: 50%;
     cursor: pointer;
-    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     outline: none;
+    font-size: 1.2rem;
 }
 
 .galleryNavBtn:hover {
     background: rgba(var(--primary-gold-rgb), 0.8);
     border-color: var(--primary-gold);
     box-shadow: 0 0 15px var(--primary-gold);
+    transform: scale(1.1);
+}
+
+.galleryNavBtn:active {
+    transform: scale(0.95);
 }
 
 .prevBtn {
+    position: absolute !important;
     left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
 }
 
 .nextBtn {
+    position: absolute !important;
     right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
 }
 
 .galleryIndicators {

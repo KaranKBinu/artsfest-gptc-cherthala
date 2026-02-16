@@ -161,11 +161,11 @@ export default function Home() {
               })}
 
               {/* Navigation */}
-              <Tooltip content="Previous Slide">
-                <button className={`${styles.galleryNavBtn} ${styles.prevBtn}`} onClick={prevSlide}>&#10094;</button>
+              <Tooltip content="Previous Slide" className={styles.prevBtn}>
+                <button className={styles.galleryNavBtn} onClick={prevSlide}>&#10094;</button>
               </Tooltip>
-              <Tooltip content="Next Slide">
-                <button className={`${styles.galleryNavBtn} ${styles.nextBtn}`} onClick={nextSlide}>&#10095;</button>
+              <Tooltip content="Next Slide" className={styles.nextBtn}>
+                <button className={styles.galleryNavBtn} onClick={nextSlide}>&#10095;</button>
               </Tooltip>
 
               {/* Indicators */}
