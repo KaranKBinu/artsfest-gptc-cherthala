@@ -23,7 +23,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     keywords: ['ArtsFest', 'GPTC Cherthala', 'Arts Festival', 'Polytechnic', 'Kerala Culture', 'Student Competition', 'Program Registration'],
     authors: [{ name: 'GPTC Cherthala' }],
-    manifest: '/manifest.json',
     other: {
       'mobile-web-app-capable': 'yes',
       'apple-mobile-web-app-capable': 'yes',
