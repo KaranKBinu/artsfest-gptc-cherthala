@@ -1868,10 +1868,10 @@ export default function DashboardPage() {
                                                                                 </select>
                                                                                 <input
                                                                                     type="checkbox"
-                                                                                    checked={selectedRegs.includes(r.id)}
+                                                                                    checked={selectedRegs.includes(reg.id)}
                                                                                     onChange={(e) => {
-                                                                                        if (e.target.checked) setSelectedRegs(prev => [...prev, r.id]);
-                                                                                        else setSelectedRegs(prev => prev.filter(id => id !== r.id));
+                                                                                        if (e.target.checked) setSelectedRegs(prev => [...prev, reg.id]);
+                                                                                        else setSelectedRegs(prev => prev.filter(id => id !== reg.id));
                                                                                     }}
                                                                                     style={{ width: '18px', height: '18px' }}
                                                                                 />
