@@ -46,6 +46,9 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       images: [icon],
     },
+    verification: {
+      google: '2a2b2787f7d55980',
+    },
   }
 }
 
