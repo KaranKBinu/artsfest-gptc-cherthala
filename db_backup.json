@@ -645,6 +645,30 @@
       "description": "",
       "createdAt": "2026-02-15T07:19:57.059Z",
       "updatedAt": "2026-02-15T08:57:52.258Z"
+    },
+    {
+      "id": "cmlnf1w5o0003txqoqvlp9ldw",
+      "key": "showScoreboard",
+      "value": "true",
+      "description": "Show house leaderboard on home page",
+      "createdAt": "2026-02-16T13:00:00.000Z",
+      "updatedAt": "2026-02-16T13:00:00.000Z"
+    },
+    {
+      "id": "cmlnf2w5o0003txqoqvlp9ldw",
+      "key": "appFavicon",
+      "value": "/favicon.png",
+      "description": "Application favicon URL",
+      "createdAt": "2026-02-16T13:00:00.000Z",
+      "updatedAt": "2026-02-16T13:00:00.000Z"
+    },
+    {
+      "id": "cmlnf3w5o0003txqoqvlp9ldw",
+      "key": "appLogo",
+      "value": "/favicon.png",
+      "description": "Application logo URL used in Navbar",
+      "createdAt": "2026-02-16T13:00:00.000Z",
+      "updatedAt": "2026-02-16T13:00:00.000Z"
     }
   ],
   "houses": [
