@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      url: 'https://artsfest-gptc.vercel.app',
+      url: 'https://artsfestgptcctla.vercel.app',
       siteName: config.festivalName,
       images: [{ url: icon }],
       locale: 'en_IN',
