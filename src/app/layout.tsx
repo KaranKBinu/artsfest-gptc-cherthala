@@ -16,10 +16,9 @@ export const metadata: Metadata = {
   keywords: ['ArtsFest', 'GPTC Cherthala', 'Arts Festival', 'Polytechnic', 'Kerala Culture', 'Student Competition', 'Program Registration'],
   authors: [{ name: 'GPTC Cherthala' }],
   manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'ArtsFest',
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
   },
   formatDetection: {
     telephone: false,

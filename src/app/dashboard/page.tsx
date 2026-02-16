@@ -893,11 +893,11 @@ export default function DashboardPage() {
 
         // Prepare data for CSV and PDF (Array of Arrays)
         const dataAoA = adminUsers.map(u => {
-            const registrationsStr = u.registrations.map((r: any) => {
+            const registrationsStr = u.registrations.map((reg: any) => {
                 let status = 'Absent'
-                if (r.attendances?.some((a: any) => a.isPresent)) status = 'Present'
-                let certStatus = r.certificates?.some((c: any) => c.emailSent) ? ' [Cert Sent]' : ''
-                return `${r.program.name} (${r.program.type}) - ${status}${certStatus}`
+                if (reg.attendances?.some((a: any) => a.isPresent)) status = 'Present'
+                let certStatus = reg.certificates?.some((c: any) => c.emailSent) ? ' [Cert Sent]' : ''
+                return `${reg.program.name} (${reg.program.type}) - ${status}${certStatus}`
             }).join('; ')
 
             return [
@@ -947,11 +947,11 @@ export default function DashboardPage() {
                 { column: 'Department', type: String, value: (student: any) => student.department || '' },
                 { column: 'House', type: String, value: (student: any) => student.house?.name || '' },
                 {
-                    column: 'Registrations', type: String, value: (student: any) => student.registrations.map((r: any) => {
+                    column: 'Registrations', type: String, value: (student: any) => student.registrations.map((reg: any) => {
                         let status = 'Absent'
-                        if (r.attendances?.some((a: any) => a.isPresent)) status = 'Present'
-                        let certStatus = r.certificates?.some((c: any) => c.emailSent) ? ' [Cert Sent]' : ''
-                        return `${r.program.name} (${r.program.type}) - ${status}${certStatus}`
+                        if (reg.attendances?.some((a: any) => a.isPresent)) status = 'Present'
+                        let certStatus = reg.certificates?.some((c: any) => c.emailSent) ? ' [Cert Sent]' : ''
+                        return `${reg.program.name} (${reg.program.type}) - ${status}${certStatus}`
                     }).join('; ')
                 }
             ]
@@ -1621,10 +1621,10 @@ export default function DashboardPage() {
                                                         <td>
                                                             {u.registrations.length > 0 ? (
                                                                 <div className={styles.regTags}>
-                                                                    {u.registrations.map((r: any) => (
-                                                                        <span key={r.id} className={styles.miniTag}>
-                                                                            {r.program.name} ({r.program.type === 'GROUP' ? 'G' : 'S'})
-                                                                            {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
+                                                                    {u.registrations.map((reg: any) => (
+                                                                        <span key={reg.id} className={styles.miniTag}>
+                                                                            {reg.program.name} ({reg.program.type === 'GROUP' ? 'G' : 'S'})
+                                                                            {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
                                                                         </span>
                                                                     ))}
                                                                 </div>
@@ -1634,23 +1634,23 @@ export default function DashboardPage() {
                                                         </td>
                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') && (
                                                             <td>
-                                                                {u.registrations.map((r: any) => (
-                                                                    <div key={r.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
+                                                                {u.registrations.map((reg: any) => (
+                                                                    <div key={reg.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
                                                                         <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>
-                                                                            {r.program.name}:
-                                                                            {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
+                                                                            {reg.program.name}:
+                                                                            {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
                                                                         </span>
-                                                                        <Tooltip content={r.attendances?.some((a: any) => a.isPresent) ? "Mark as Absent" : "Mark as Present"}>
+                                                                        <Tooltip content={reg.attendances?.some((a: any) => a.isPresent) ? "Mark as Absent" : "Mark as Present"}>
                                                                             <button
                                                                                 onClick={() => {
-                                                                                    const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
+                                                                                    const isPresentNow = reg.attendances?.some((a: any) => a.isPresent);
                                                                                     const nextState = !isPresentNow;
                                                                                     modals.confirm({
                                                                                         title: 'Change Attendance',
-                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
+                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${reg.program.name}?`,
                                                                                         onConfirm: async () => {
                                                                                             const { markAttendance } = await import('@/actions/coordinator');
-                                                                                            const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
+                                                                                            const res = await markAttendance(u.id, reg.id, reg.program.id, user.id, nextState);
                                                                                             if (res.success) {
                                                                                                 modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
                                                                                                 fetchAdminData()
@@ -1663,29 +1663,29 @@ export default function DashboardPage() {
                                                                                 style={{
                                                                                     padding: '2px 8px',
                                                                                     fontSize: '0.7rem',
-                                                                                    backgroundColor: r.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
-                                                                                    color: r.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
+                                                                                    backgroundColor: reg.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
+                                                                                    color: reg.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
                                                                                     border: '1px solid var(--border-color)',
                                                                                     borderRadius: '4px',
                                                                                     cursor: 'pointer',
                                                                                     transition: 'all 0.2s ease'
                                                                                 }}
                                                                             >
-                                                                                {r.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
+                                                                                {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
                                                                             </button>
                                                                         </Tooltip>
 
                                                                         {/* Checkbox for Certification */}
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && r.attendances?.some((a: any) => a.isPresent) && (
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
                                                                             <input
                                                                                 type="checkbox"
                                                                                 className={styles.tableCheckbox}
-                                                                                checked={selectedRegs.includes(r.id)}
+                                                                                checked={selectedRegs.includes(reg.id)}
                                                                                 onChange={(e) => {
                                                                                     if (e.target.checked) {
-                                                                                        setSelectedRegs(prev => [...prev, r.id]);
+                                                                                        setSelectedRegs(prev => [...prev, reg.id]);
                                                                                     } else {
-                                                                                        setSelectedRegs(prev => prev.filter(id => id !== r.id));
+                                                                                        setSelectedRegs(prev => prev.filter(id => id !== reg.id));
                                                                                     }
                                                                                 }}
                                                                                 title="Select for certificate"
@@ -1693,9 +1693,9 @@ export default function DashboardPage() {
                                                                         )}
 
                                                                         {/* Grade Selector for ADMIN/MASTER */}
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && r.attendances?.some((a: any) => a.isPresent) && (
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
                                                                             <select
-                                                                                value={r.grade || 'PARTICIPATION'}
+                                                                                value={reg.grade || 'PARTICIPATION'}
                                                                                 onChange={async (e) => {
                                                                                     const newGrade = e.target.value;
                                                                                     // Optimistic update
@@ -1703,9 +1703,9 @@ export default function DashboardPage() {
                                                                                         if (userItem.id === u.id) {
                                                                                             return {
                                                                                                 ...userItem,
-                                                                                                registrations: userItem.registrations.map((reg: any) => {
-                                                                                                    if (reg.id === r.id) return { ...reg, grade: newGrade };
-                                                                                                    return reg;
+                                                                                                registrations: userItem.registrations.map((r_map: any) => {
+                                                                                                    if (r_map.id === reg.id) return { ...r_map, grade: newGrade };
+                                                                                                    return r_map;
                                                                                                 })
                                                                                             };
                                                                                         }
@@ -1713,7 +1713,7 @@ export default function DashboardPage() {
                                                                                     }));
 
                                                                                     const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
-                                                                                    const res = await updateRegistrationResult(r.id, newGrade);
+                                                                                    const res = await updateRegistrationResult(reg.id, newGrade);
                                                                                     if (res.success) {
                                                                                         modals.showToast(`Updated result for ${u.fullName}`, 'success');
                                                                                         fetchAdminData(undefined, false);
@@ -1773,8 +1773,8 @@ export default function DashboardPage() {
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Registrations:</div>
                                                     {u.registrations.length > 0 ? (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                                                            {u.registrations.map((r: any) => (
-                                                                <div key={r.id} style={{
+                                                            {u.registrations.map((reg: any) => (
+                                                                <div key={reg.id} style={{
                                                                     padding: '0.8rem',
                                                                     backgroundColor: 'rgba(255,255,255,0.03)',
                                                                     borderRadius: '8px',
@@ -1782,24 +1782,24 @@ export default function DashboardPage() {
                                                                 }}>
                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                                                         <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                                                                            {r.program.name}
-                                                                            {r.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '8px' }} title="Certificate Sent">✓</span>}
+                                                                            {reg.program.name}
+                                                                            {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '8px' }} title="Certificate Sent">✓</span>}
                                                                         </span>
-                                                                        <span className={styles.miniTag}>{r.program.type === 'GROUP' ? 'Group' : 'Solo'}</span>
+                                                                        <span className={styles.miniTag}>{reg.program.type === 'GROUP' ? 'Group' : 'Solo'}</span>
                                                                     </div>
 
                                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
                                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') && (
                                                                             <button
                                                                                 onClick={() => {
-                                                                                    const isPresentNow = r.attendances?.some((a: any) => a.isPresent);
+                                                                                    const isPresentNow = reg.attendances?.some((a: any) => a.isPresent);
                                                                                     const nextState = !isPresentNow;
                                                                                     modals.confirm({
                                                                                         title: 'Change Attendance',
-                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${r.program.name}?`,
+                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${reg.program.name}?`,
                                                                                         onConfirm: async () => {
                                                                                             const { markAttendance } = await import('@/actions/coordinator');
-                                                                                            const res = await markAttendance(u.id, r.id, r.program.id, user.id, nextState);
+                                                                                            const res = await markAttendance(u.id, reg.id, reg.program.id, user.id, nextState);
                                                                                             if (res.success) {
                                                                                                 modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
                                                                                                 fetchAdminData()
@@ -1812,21 +1812,21 @@ export default function DashboardPage() {
                                                                                 style={{
                                                                                     padding: '4px 10px',
                                                                                     fontSize: '0.75rem',
-                                                                                    backgroundColor: r.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
-                                                                                    color: r.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
+                                                                                    backgroundColor: reg.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
+                                                                                    color: reg.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
                                                                                     border: '1px solid var(--border-color)',
                                                                                     borderRadius: '4px',
                                                                                     cursor: 'pointer'
                                                                                 }}
                                                                             >
-                                                                                {r.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark Presence'}
+                                                                                {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark Presence'}
                                                                             </button>
                                                                         )}
 
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && r.attendances?.some((a: any) => a.isPresent) && (
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
                                                                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                                                                 <select
-                                                                                    value={r.grade || 'PARTICIPATION'}
+                                                                                    value={reg.grade || 'PARTICIPATION'}
                                                                                     onChange={async (e) => {
                                                                                         const newGrade = e.target.value;
                                                                                         // Optimistic update
@@ -1834,9 +1834,9 @@ export default function DashboardPage() {
                                                                                             if (userItem.id === u.id) {
                                                                                                 return {
                                                                                                     ...userItem,
-                                                                                                    registrations: userItem.registrations.map((reg: any) => {
-                                                                                                        if (reg.id === r.id) return { ...reg, grade: newGrade };
-                                                                                                        return reg;
+                                                                                                    registrations: userItem.registrations.map((r_mob: any) => {
+                                                                                                        if (r_mob.id === reg.id) return { ...r_mob, grade: newGrade };
+                                                                                                        return r_mob;
                                                                                                     })
                                                                                                 };
                                                                                             }
@@ -1844,7 +1844,7 @@ export default function DashboardPage() {
                                                                                         }));
 
                                                                                         const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
-                                                                                        const res = await updateRegistrationResult(r.id, newGrade);
+                                                                                        const res = await updateRegistrationResult(reg.id, newGrade);
                                                                                         if (res.success) {
                                                                                             modals.showToast(`Updated result for ${u.fullName}`, 'success');
                                                                                             fetchAdminData(undefined, false);
@@ -2338,6 +2338,17 @@ export default function DashboardPage() {
                                                                 </span>
                                                             </a>
                                                         </div>
+                                                    ) : c.key === 'showScoreboard' || c.value === 'true' || c.value === 'false' ? (
+                                                        <span style={{
+                                                            padding: '4px 12px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 600,
+                                                            backgroundColor: c.value === 'true' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                            color: c.value === 'true' ? '#22c55e' : '#ef4444'
+                                                        }}>
+                                                            {c.value === 'true' ? 'ENABLED' : 'DISABLED'}
+                                                        </span>
                                                     ) : (
                                                         <span className={styles.configValue} style={{ wordBreak: 'break-all', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                             {c.value}

@@ -99,7 +99,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     artsFestManual: d.artsFestManual || '',
                     contactInfo,
                     teamMembers,
-                    showScoreboard: d.showScoreboard === true,
+                    showScoreboard: d.showScoreboard === true || d.showScoreboard === 'true',
                     departments
                 })
             }
