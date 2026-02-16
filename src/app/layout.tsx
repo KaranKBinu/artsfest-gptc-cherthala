@@ -59,13 +59,46 @@ export const viewport = {
   maximumScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { getAppConfig } = await import('@/lib/config')
+  const config = await getAppConfig()
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: config.festivalName,
+    startDate: `${config.festivalYear}-01-01`, // Rough start date for schema
+    location: {
+      '@type': 'Place',
+      name: 'Government Polytechnic College Cherthala',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Cherthala',
+        addressRegion: 'Kerala',
+        addressCountry: 'IN',
+      },
+    },
+    image: config.appFavicon || '/favicon.png',
+    description: `The official digital platform for the ${config.festivalName} at GPTC Cherthala.`,
+    organizer: {
+      '@type': 'Organization',
+      name: 'GPTC Cherthala',
+      url: 'https://artsfestgptcctla.vercel.app',
+    },
+  }
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={inter.className}>
         <ConfigProvider>
           <LoadingProvider>
