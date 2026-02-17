@@ -110,18 +110,20 @@ export default function ScoreboardPage() {
     return (
         <div className={`${styles.container} ${inter.className}`}>
             <header className={styles.header}>
-                <h1 className={`${styles.title} ${cinzel.className}`}>Live Scoreboard</h1>
+                <div className={styles.topNav}>
+                    {/* Back Button */}
+                    <a href="/" className={styles.backButton}>
+                        ← Back
+                    </a>
 
-                {/* Back Button (Top Left) */}
-                <a href="/" className={styles.backButton}>
-                    ← Back to Home
-                </a>
-
-                {/* Live Status (Top Right) */}
-                <div className={styles.liveStatusContainer}>
-                    <div className={styles.liveIndicator}></div>
-                    {lastUpdated ? `Updated: ${lastUpdated.toLocaleTimeString()}` : 'Connecting...'}
+                    {/* Live Status */}
+                    <div className={styles.liveStatusContainer}>
+                        <div className={styles.liveIndicator}></div>
+                        {lastUpdated ? lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
+                    </div>
                 </div>
+
+                <h1 className={`${styles.title} ${cinzel.className}`}>Scoreboard</h1>
             </header>
 
             <div className={styles.podiumSection}>
