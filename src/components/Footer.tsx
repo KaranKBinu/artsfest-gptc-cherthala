@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Cinzel } from 'next/font/google'
 import styles from './Footer.module.css'
 import { useConfig } from '@/context/ConfigContext'
+import { APP_VERSION } from '@/utils/version'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 
@@ -47,6 +48,7 @@ export default function Footer() {
                 <div className={styles.bottomSection}>
                     <div className={styles.copyright}>
                         &copy; {currentYear} {config.festivalName}. All rights reserved.
+                        <span className={styles.versionText}>v{APP_VERSION}</span>
                     </div>
                     <div className={styles.credits}>
                         Department of Computer Hardware Engineering
