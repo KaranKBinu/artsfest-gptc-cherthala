@@ -262,7 +262,7 @@ export default function Home() {
                 <div key={program.id} className={styles.card}>
                   <h3>{program.name}</h3>
                   <div className={styles.cardMeta}>
-                    <span className={`${styles.badge} ${styles.badgeCategory}`}>
+                    <span className={`${styles.badge} ${program.category === 'ON_STAGE' ? styles.badgeOnStage : styles.badgeOffStage}`}>
                       {program.category.replace('_', ' ')}
                     </span>
                     <span className={`${styles.badge} ${styles.badgeType}`}>

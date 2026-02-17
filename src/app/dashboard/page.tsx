@@ -2080,10 +2080,7 @@ export default function DashboardPage() {
                                                                     </span>
                                                                 </td>
                                                                 <td>
-                                                                    <span className={styles.miniTag} style={{
-                                                                        backgroundColor: p.category === 'ON_STAGE' ? '#fff3e0' : '#e8f5e9',
-                                                                        color: p.category === 'ON_STAGE' ? '#e65100' : '#2e7d32'
-                                                                    }}>
+                                                                    <span className={`${styles.miniTag} ${p.category === 'ON_STAGE' ? styles.onStageBadge : styles.offStageBadge}`}>
                                                                         {p.category.replace('_', ' ')}
                                                                     </span>
                                                                 </td>
@@ -2158,13 +2155,7 @@ export default function DashboardPage() {
                                                             )}
                                                             <div className={styles.mobileCardRow}>
                                                                 <span style={{ opacity: 0.7 }}>Category:</span>
-                                                                <span className={styles.miniTag} style={{
-                                                                    backgroundColor: p.category === 'ON_STAGE' ? '#fff3e0' : '#e8f5e9',
-                                                                    color: p.category === 'ON_STAGE' ? '#e65100' : '#2e7d32',
-                                                                    padding: '0.2rem 0.5rem',
-                                                                    borderRadius: '4px',
-                                                                    fontSize: '0.75rem'
-                                                                }}>
+                                                                <span className={`${styles.miniTag} ${p.category === 'ON_STAGE' ? styles.onStageBadge : styles.offStageBadge}`}>
                                                                     {p.category.replace('_', ' ')}
                                                                 </span>
                                                             </div>
@@ -3337,7 +3328,9 @@ export default function DashboardPage() {
                                                     </div>
                                                 </div>
                                                 <div className={styles.regMeta}>
-                                                    <span>{reg.program.category.replace('_', ' ')}</span>
+                                                    <span className={`${styles.miniTag} ${reg.program.category === 'ON_STAGE' ? styles.onStageBadge : styles.offStageBadge}`}>
+                                                        {reg.program.category.replace('_', ' ')}
+                                                    </span>
                                                     <span>•</span>
                                                     <span>{reg.program.type}</span>
                                                     {reg.isGroup && reg.groupName && (

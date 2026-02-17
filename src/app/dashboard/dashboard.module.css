@@ -726,6 +726,20 @@
     white-space: nowrap;
 }
 
+.onStageBadge {
+    background-color: #FF9F43 !important;
+    /* Consistent Warm Orange */
+    color: white !important;
+    font-weight: 700;
+}
+
+.offStageBadge {
+    background-color: #54A0FF !important;
+    /* Consistent Soft Blue */
+    color: white !important;
+    font-weight: 700;
+}
+
 @media (prefers-color-scheme: dark) {
     .miniTag {
         background: rgba(255, 255, 255, 0.1);

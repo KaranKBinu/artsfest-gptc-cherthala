@@ -152,9 +152,18 @@
     display: inline-block;
 }
 
-.badgeCategory {
-    background-color: var(--primary-red);
+.badgeOnStage {
+    background-color: #FF9F43;
+    /* Warm Orange */
     color: white;
+    font-weight: 700;
+}
+
+.badgeOffStage {
+    background-color: #54A0FF;
+    /* Soft Blue */
+    color: white;
+    font-weight: 700;
 }
 
 .badgeType {

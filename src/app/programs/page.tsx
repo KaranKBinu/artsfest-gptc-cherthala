@@ -325,6 +325,9 @@ export default function ProgramsPage() {
                             <div className={styles.cardHeader}>
                                 <h3 className={`${styles.programName} ${cinzel.className}`}>{program.name}</h3>
                                 <div className={styles.badgeRow}>
+                                    <span className={`${styles.programCategory} ${program.category === 'ON_STAGE' ? styles.onStageBadge : styles.offStageBadge}`}>
+                                        {program.category.replace('_', ' ')}
+                                    </span>
                                     <span className={styles.programType}>{program.type}</span>
                                     {registered && <span className={styles.registeredBadge}>Registered</span>}
                                 </div>

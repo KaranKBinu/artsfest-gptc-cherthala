@@ -197,6 +197,30 @@
     }
 }
 
+.programCategory {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.onStageBadge {
+    background: #FF9F43;
+    /* Warm Orange */
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(255, 159, 67, 0.3);
+}
+
+.offStageBadge {
+    background: #54A0FF;
+    /* Soft Blue */
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(84, 160, 255, 0.3);
+}
+
 .registeredBadge {
     padding: 0.25rem 0.6rem;
     background: #27ae60;
