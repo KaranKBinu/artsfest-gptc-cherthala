@@ -16,9 +16,6 @@ export default function ContactFloat() {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
 
-    // Hide on scoreboard page
-    if (pathname === '/scoreboard') return null
-
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -30,7 +27,8 @@ export default function ContactFloat() {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
-    if (!config.contactInfo) return null
+    // Hide on scoreboard page or if config is missing
+    if (pathname === '/scoreboard' || !config.contactInfo) return null
 
     const contact = config.contactInfo
 
