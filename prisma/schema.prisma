@@ -160,10 +160,10 @@ model User {
   department                           String?
   semester                             String?
   houseId                              String?
-  isVolunteer                          Boolean        @default(false)
   createdAt                            DateTime       @default(now())
   updatedAt                            DateTime       @updatedAt
   phone                                String?
+  isVolunteer                          Boolean        @default(false)
   Attendance_Attendance_markedByToUser Attendance[]   @relation("Attendance_markedByToUser")
   Attendance_Attendance_userIdToUser   Attendance[]   @relation("Attendance_userIdToUser")
   Certificate                          Certificate[]

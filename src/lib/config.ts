@@ -35,26 +35,25 @@ export async function getAppConfig(): Promise<AppConfig> {
     }
 
     try {
-        const configs = await prisma.configuration.findMany({
-            where: {
-                key: { in: ['festivalName', 'departments', 'festivalYear', 'galleryImages', 'galleryText', 'notifications', 'artsFestManual', 'contactInfo', 'teamMembers', 'showScoreboard', 'appFavicon', 'appLogo'] }
-            }
-        })
-
+        const configs = await prisma.configuration.findMany()
         const configMap = new Map(configs.map(c => [c.key, c.value]))
+        const configMapLower = new Map(configs.map(c => [c.key.toLowerCase(), c.value]))
 
-        const festivalName = configMap.get('festivalName') || 'ArtsFest GPTC'
-        const festivalYear = configMap.get('festivalYear') || new Date().getFullYear().toString()
-        const galleryImages = configMap.get('galleryImages') || '[]'
-        const galleryText = configMap.get('galleryText') || ''
-        const notifications = configMap.get('notifications') || '[]'
-        const artsFestManual = configMap.get('artsFestManual') || ''
-        const contactInfo = configMap.get('contactInfo') || JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' })
-        const teamMembers = configMap.get('teamMembers') || '[]'
-        const showScoreboard = configMap.get('showScoreboard')?.toLowerCase() === 'true'
+        const getValue = (key: string) => configMap.get(key) || configMapLower.get(key.toLowerCase())
+
+        const festivalName = getValue('festivalName') || 'ArtsFest GPTC'
+        const festivalYear = getValue('festivalYear') || new Date().getFullYear().toString()
+        const galleryImages = getValue('galleryImages') || '[]'
+        const galleryText = getValue('galleryText') || ''
+        const notifications = getValue('notifications') || '[]'
+        const artsFestManual = getValue('artsFestManual') || ''
+        const contactInfo = getValue('contactInfo') || JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' })
+        const teamMembers = getValue('teamMembers') || '[]'
+        const showScoreboardValue = getValue('showScoreboard')?.trim().toLowerCase()
+        const showScoreboard = showScoreboardValue === 'true' || showScoreboardValue === 'yes' || showScoreboardValue === '1'
 
         let departments: AppConfig['departments'] = []
-        const deptJson = configMap.get('departments')
+        const deptJson = getValue('departments')
         if (deptJson) {
             try {
                 departments = JSON.parse(deptJson)
@@ -85,8 +84,8 @@ export async function getAppConfig(): Promise<AppConfig> {
             teamMembers,
             showScoreboard,
             departments,
-            appFavicon: configMap.get('appFavicon') || '/favicon.png',
-            appLogo: configMap.get('appLogo') || '/favicon.png'
+            appFavicon: getValue('appFavicon') || '/favicon.png',
+            appLogo: getValue('appLogo') || '/favicon.png'
         }
         lastFetchTime = now
 
