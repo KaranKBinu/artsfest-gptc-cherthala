@@ -63,3 +63,43 @@ export async function getHouseLeaderboard() {
         return { success: false, error: 'Failed to fetch leaderboard' }
     }
 }
+
+export async function getRecentResults() {
+    try {
+        const recentResults = await prisma.registration.findMany({
+            where: {
+                grade: {
+                    not: null,
+                    notIn: ['PARTICIPATION', '']
+                }
+            },
+            take: 10,
+            orderBy: {
+                updatedAt: 'desc'
+            },
+            include: {
+                Program: {
+                    select: {
+                        name: true
+                    }
+                },
+                User: {
+                    select: {
+                        fullName: true
+                    }
+                },
+                House: {
+                    select: {
+                        name: true,
+                        color: true
+                    }
+                }
+            }
+        })
+
+        return { success: true, data: recentResults }
+    } catch (error) {
+        console.error('Failed to fetch recent results:', error)
+        return { success: false, error: 'Failed to fetch recent results' }
+    }
+}
