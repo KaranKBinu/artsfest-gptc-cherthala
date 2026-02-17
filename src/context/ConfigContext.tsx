@@ -19,6 +19,8 @@ interface AppConfig {
     contactInfo: any
     teamMembers: TeamMember[]
     showScoreboard: boolean
+    showRegistration: boolean
+    showLogin: boolean
     departments: {
         code: string
         name: string
@@ -43,6 +45,8 @@ const defaultConfig: AppConfig = {
     contactInfo: null,
     teamMembers: [],
     showScoreboard: false,
+    showRegistration: true,
+    showLogin: true,
     departments: [],
     appFavicon: '/favicon.png',
     appLogo: '/favicon.png'
@@ -104,6 +108,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     contactInfo,
                     teamMembers,
                     showScoreboard: d.showScoreboard === true || d.showScoreboard === 'true',
+                    showRegistration: d.showRegistration === true || d.showRegistration === 'true',
+                    showLogin: d.showLogin === true || d.showLogin === 'true',
                     departments,
                     appFavicon: d.appFavicon || defaultConfig.appFavicon,
                     appLogo: d.appLogo || defaultConfig.appLogo

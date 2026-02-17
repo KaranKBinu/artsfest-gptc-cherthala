@@ -68,6 +68,8 @@ async function main() {
             description: 'SMTP settings (JSON)'
         },
         { key: 'showScoreboard', value: 'true', description: 'Show house leaderboard on home page' },
+        { key: 'showRegistration', value: 'true', description: 'Show register button and link in Navbar/Home' },
+        { key: 'showLogin', value: 'true', description: 'Show login button and link in Navbar/Home' },
         { key: 'appFavicon', value: '/favicon.png', description: 'Application favicon URL' },
         { key: 'appLogo', value: '/favicon.png', description: 'Application logo URL used in Navbar' }
     ]

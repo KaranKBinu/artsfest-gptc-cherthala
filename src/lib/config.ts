@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
 
 export interface AppConfig {
     festivalName: string
@@ -10,6 +11,8 @@ export interface AppConfig {
     contactInfo: string
     teamMembers: string
     showScoreboard: boolean
+    showRegistration: boolean
+    showLogin: boolean
     departments: {
         code: string
         name: string
@@ -52,6 +55,37 @@ export async function getAppConfig(): Promise<AppConfig> {
         const showScoreboardValue = getValue('showScoreboard')?.trim().toLowerCase()
         const showScoreboard = showScoreboardValue === 'true' || showScoreboardValue === 'yes' || showScoreboardValue === '1'
 
+        const showRegistrationValue = getValue('showRegistration')?.trim().toLowerCase()
+        const showRegistration = showRegistrationValue === undefined ? true : (showRegistrationValue === 'true' || showRegistrationValue === 'yes' || showRegistrationValue === '1')
+
+        const showLoginValue = getValue('showLogin')?.trim().toLowerCase()
+        const showLogin = showLoginValue === undefined ? true : (showLoginValue === 'true' || showLoginValue === 'yes' || showLoginValue === '1')
+
+        // Proactively ensure these keys exist in DB if missing, so they show up in settings UI
+        // This is a "lazy seed" for new config toggles
+        const ensureKey = async (key: string, value: string, desc: string) => {
+            if (getValue(key) === undefined) {
+                try {
+                    await prisma.configuration.create({
+                        data: {
+                            id: crypto.randomUUID(),
+                            key,
+                            value,
+                            description: desc,
+                            updatedAt: new Date()
+                        }
+                    })
+                } catch (e) { /* ignore collision or err */ }
+            }
+        }
+
+        // Only do this if we are not in a read-only environment if possible, 
+        // but here we just try and ignore errors.
+        if (typeof window === 'undefined') {
+            ensureKey('showRegistration', 'true', 'Show register button and link in Navbar/Home')
+            ensureKey('showLogin', 'true', 'Show login button and link in Navbar/Home')
+        }
+
         let departments: AppConfig['departments'] = []
         const deptJson = getValue('departments')
         if (deptJson) {
@@ -83,6 +117,8 @@ export async function getAppConfig(): Promise<AppConfig> {
             contactInfo,
             teamMembers,
             showScoreboard,
+            showRegistration,
+            showLogin,
             departments,
             appFavicon: getValue('appFavicon') || '/favicon.png',
             appLogo: getValue('appLogo') || '/favicon.png'
@@ -103,6 +139,8 @@ export async function getAppConfig(): Promise<AppConfig> {
             contactInfo: JSON.stringify({ title: 'Contact Us', email: 'arts@gptccherthala.org', phone: '+91 9876543210', address: 'GPTC Cherthala' }),
             teamMembers: '[]',
             showScoreboard: false,
+            showRegistration: true,
+            showLogin: true,
             departments: [
                 { code: 'CHE', name: 'Computer Hardware Engineering' },
                 { code: 'CT', name: 'Computer Engineering' },

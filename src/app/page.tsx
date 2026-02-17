@@ -128,12 +128,16 @@ export default function Home() {
                 </Link>
               ) : (
                 <>
-                  <Link href="/register" className={styles.ctaButton}>
-                    Register Now
-                  </Link>
-                  <Link href="/login" className={styles.secondaryButton}>
-                    Sign In
-                  </Link>
+                  {config.showRegistration && (
+                    <Link href="/register" className={styles.ctaButton}>
+                      Register Now
+                    </Link>
+                  )}
+                  {config.showLogin && (
+                    <Link href="/login" className={styles.secondaryButton}>
+                      Sign In
+                    </Link>
+                  )}
                 </>
               )}
             </div>

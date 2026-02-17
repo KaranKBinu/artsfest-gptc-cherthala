@@ -272,20 +272,24 @@ export default function Navbar() {
                         </>
                     ) : (
                         <>
-                            <Link
-                                href="/register"
-                                className={`${styles.navLink} ${pathname === '/register' ? styles.active : ''}`}
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                Register
-                            </Link>
-                            <Link
-                                href="/login"
-                                className={`${styles.navLink} ${pathname === '/login' ? styles.active : ''}`}
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                Login
-                            </Link>
+                            {config.showRegistration && (
+                                <Link
+                                    href="/register"
+                                    className={`${styles.navLink} ${pathname === '/register' ? styles.active : ''}`}
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    Register
+                                </Link>
+                            )}
+                            {config.showLogin && (
+                                <Link
+                                    href="/login"
+                                    className={`${styles.navLink} ${pathname === '/login' ? styles.active : ''}`}
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    Login
+                                </Link>
+                            )}
                         </>
                     )
                 )}
