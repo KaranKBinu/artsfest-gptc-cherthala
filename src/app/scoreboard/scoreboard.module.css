@@ -1,0 +1,515 @@
+.container {
+    min-height: 100vh;
+    width: 100vw;
+    background: radial-gradient(circle at center, #1a0505 0%, #000000 100%);
+    color: var(--primary-gold);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Background decorative elements */
+.container::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 50%;
+    height: 50%;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 60%);
+    filter: blur(80px);
+    z-index: 0;
+    animation: float 10s ease-in-out infinite;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 50%;
+    height: 50%;
+    background: radial-gradient(circle, rgba(139, 0, 0, 0.05) 0%, transparent 60%);
+    filter: blur(80px);
+    z-index: 0;
+    animation: float 15s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(25px, -25px);
+    }
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 3vh;
+    z-index: 2;
+    position: relative;
+    width: 100%;
+}
+
+.title {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    background: linear-gradient(to right, #D4AF37, #FFD700, #D4AF37);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+/* Navigation & Status Positioning */
+.backButton {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.backButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.liveStatusContainer {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 10;
+}
+
+@media (max-width: 768px) {
+    .backButton {
+        top: 1rem;
+        left: 1rem;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .liveStatusContainer {
+        top: 1rem;
+        right: 1rem;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+
+.subtitle {
+    font-size: clamp(0.9rem, 2vw, 1.2rem);
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    display: none;
+    /* Hidden as it's moved to top right */
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.liveIndicator {
+    width: 8px;
+    height: 8px;
+    background-color: #ff3b3b;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff3b3b;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Podium Section */
+.podiumSection {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 2vw;
+    width: 100%;
+    max-width: 1400px;
+    height: 45vh;
+    /* Responsive height based on viewport */
+    margin-bottom: 4vh;
+    z-index: 2;
+    padding: 0 2rem;
+}
+
+.podiumColumn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    flex: 1.5;
+    /* Allow podiums to take more space */
+    min-width: 150px;
+}
+
+.podiumColumn.firstPlace {
+    flex: 2;
+    /* 1st place gets even more space if tied */
+}
+
+.tieContainer {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    justify-content: center;
+    height: 100%;
+    align-items: flex-end;
+}
+
+.tieContainer>div {
+    flex: 1;
+}
+
+/* 1st Place */
+.firstPlace {
+    order: 2;
+    height: 100%;
+    z-index: 3;
+}
+
+/* 2nd Place */
+.secondPlace {
+    order: 1;
+    height: 80%;
+    z-index: 2;
+}
+
+/* 3rd Place */
+.thirdPlace {
+    order: 3;
+    height: 65%;
+    z-index: 2;
+}
+
+.crown {
+    font-size: clamp(3rem, 6vw, 4rem);
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+    animation: bounce 2.5s infinite ease-in-out;
+    position: absolute;
+    top: -80px;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+.podiumBar {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Push content to top of bar */
+    padding-top: 3rem;
+    /* Space for rank label */
+    align-items: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Specific styling for ranks */
+.rank1 {
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.05) 100%);
+    border-top: 2px solid rgba(212, 175, 55, 0.6);
+    box-shadow: 0 0 50px rgba(212, 175, 55, 0.15);
+}
+
+.rank2 {
+    background: linear-gradient(180deg, rgba(192, 192, 192, 0.25) 0%, rgba(192, 192, 192, 0.05) 100%);
+    border-top: 2px solid rgba(192, 192, 192, 0.6);
+}
+
+.rank3 {
+    background: linear-gradient(180deg, rgba(205, 127, 50, 0.25) 0%, rgba(205, 127, 50, 0.05) 100%);
+    border-top: 2px solid rgba(205, 127, 50, 0.6);
+}
+
+.houseName {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: white;
+    text-transform: uppercase;
+    z-index: 2;
+    letter-spacing: 1px;
+    padding: 0 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.houseScore {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    color: #fff;
+    z-index: 2;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    margin-top: auto;
+    margin-bottom: 2rem;
+    line-height: 1;
+}
+
+.firstPlace .houseScore {
+    color: #FFD700;
+}
+
+.secondPlace .houseScore {
+    color: #E0E0E0;
+}
+
+.thirdPlace .houseScore {
+    color: #E6A368;
+}
+
+
+.rankLabel {
+    position: absolute;
+    top: -25px;
+    background: var(--background);
+    border: 3px solid;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 900;
+    font-size: 1.5rem;
+    z-index: 3;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.rankLabel.r1 {
+    border-color: #D4AF37;
+    color: #D4AF37;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+}
+
+.rankLabel.r2 {
+    border-color: #C0C0C0;
+    color: #C0C0C0;
+}
+
+.rankLabel.r3 {
+    border-color: #CD7F32;
+    color: #CD7F32;
+}
+
+/* List Section */
+.listSection {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    z-index: 2;
+    padding-bottom: 2rem;
+}
+
+.listRow {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px;
+    /* Rank | Name | Score */
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.listRow:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(5px);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.listRank {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.listName {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0 1rem;
+}
+
+.listScore {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-gold);
+    text-align: right;
+}
+
+/* Loader */
+.loader {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(212, 175, 55, 0.3);
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    margin-top: 2rem;
+}
+
+.loader::after {
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-bottom-color: #D4AF37;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .podiumSection {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .firstPlace,
+    .secondPlace,
+    .thirdPlace {
+        width: 100%;
+        max-width: 100%;
+        order: unset;
+        /* Stack naturally */
+        height: auto;
+        margin-bottom: 0;
+    }
+
+    .tieContainer {
+        flex-direction: column;
+        height: auto;
+        gap: 0.8rem;
+    }
+
+    .tieContainer>div {
+        flex: none;
+        width: 100%;
+    }
+
+    .crown {
+        position: static;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .podiumBar {
+        height: auto;
+        flex-direction: row;
+        /* Horizontal on mobile */
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        align-items: center;
+        border-radius: 12px;
+    }
+
+    .rankLabel {
+        position: static;
+        margin-right: 1rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .houseScore {
+        font-size: 1.8rem;
+        margin: 0;
+    }
+
+    .houseName {
+        margin: 0;
+        text-align: left;
+        flex: 1;
+    }
+
+    /* Hide list headers if added later, simplifying mobile view */
+}

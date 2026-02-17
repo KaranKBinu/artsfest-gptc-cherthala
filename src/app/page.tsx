@@ -136,7 +136,12 @@ export default function Home() {
         {/* Scoreboard Section */}
         {config.showScoreboard && (
           <section className={styles.scoreboardSection}>
-            <h2 className={`${styles.sectionTitle} ${cinzel.className}`}>Live Scoreboard</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <h2 className={`${styles.sectionTitle} ${cinzel.className}`} style={{ marginBottom: 0 }}>Live Scoreboard</h2>
+              <Link href="/scoreboard" className={styles.ctaButton} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', width: 'auto' }}>
+                Full Screen View
+              </Link>
+            </div>
             {houseStats.length > 0 ? (
               <div className={styles.scoreboardGrid}>
                 {houseStats.map((house) => (
