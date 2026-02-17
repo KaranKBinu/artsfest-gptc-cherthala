@@ -8,10 +8,13 @@ import { Cinzel, Inter } from 'next/font/google'
 import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
+import { useConfig } from '@/context/ConfigContext'
+
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
 export default function LoginPage() {
+    const { config } = useConfig()
     const router = useRouter()
     const [formData, setFormData] = useState({
         studentAdmnNo: '',
@@ -21,6 +24,13 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [showPassword, setShowPassword] = useState(false)
+
+    // Redirect if login is disabled
+    React.useEffect(() => {
+        if (config && config.showLogin === false) {
+            router.push('/')
+        }
+    }, [config.showLogin, router])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -151,12 +161,14 @@ export default function LoginPage() {
                             Forgot Password?
                         </Link>
                     </p>
-                    <p>
-                        Don't have an account?
-                        <Link href="/register" className={styles.link}>
-                            Register here
-                        </Link>
-                    </p>
+                    {config.showRegistration && (
+                        <p>
+                            Don't have an account?
+                            <Link href="/register" className={styles.link}>
+                                Register here
+                            </Link>
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

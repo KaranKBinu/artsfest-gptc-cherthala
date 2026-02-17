@@ -33,8 +33,8 @@ export default function Footer() {
                         </div>
                         <div className={styles.linkGroup}>
                             <h3>Quick Access</h3>
-                            <Link href="/login">Portal Login</Link>
-                            <Link href="/register">Student Registration</Link>
+                            {config.showLogin && <Link href="/login">Portal Login</Link>}
+                            {config.showRegistration && <Link href="/register">Student Registration</Link>}
                             {config.artsFestManual && (
                                 <a href={config.artsFestManual} target="_blank" rel="noopener noreferrer">
                                     Festival Manual

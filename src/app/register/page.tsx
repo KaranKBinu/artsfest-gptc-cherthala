@@ -8,10 +8,13 @@ import { Cinzel, Inter } from 'next/font/google'
 import { useLoading } from '@/context/LoadingContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
+import { useConfig } from '@/context/ConfigContext'
+
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
 export default function RegisterPage() {
+    const { config } = useConfig()
     const router = useRouter()
     const [formData, setFormData] = useState({
         fullName: '',
@@ -54,6 +57,14 @@ export default function RegisterPage() {
 
         fetchConfig()
     }, [])
+
+    // Redirect if registration is disabled
+    useEffect(() => {
+        // If config is loaded and showRegistration is false, redirect to login or home
+        if (config && config.showRegistration === false) {
+            router.push(config.showLogin ? '/login' : '/')
+        }
+    }, [config.showRegistration, config.showLogin, router])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
@@ -351,12 +362,14 @@ export default function RegisterPage() {
                 </form>
 
                 <div className={styles.links}>
-                    <p>
-                        Already have an account?
-                        <Link href="/login" className={styles.link}>
-                            Sign In here
-                        </Link>
-                    </p>
+                    {config.showLogin && (
+                        <p>
+                            Already have an account?
+                            <Link href="/login" className={styles.link}>
+                                Sign In here
+                            </Link>
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
