@@ -37,7 +37,7 @@ import {
 } from '@/actions/admin'
 import { getVolunteers, addVolunteer, removeVolunteer } from '@/actions/volunteers'
 import { getPrograms } from '@/actions/programs'
-import { Program, ProgramType, ProgramCategory, Configuration } from '@prisma/client'
+import { Program, ProgramType, ProgramCategory, Configuration, RegistrationStatus } from '@prisma/client'
 
 // Helper to check if string is JSON
 const isJsonString = (str: string) => {
@@ -1675,6 +1675,53 @@ export default function DashboardPage() {
                                                                             </button>
                                                                         </Tooltip>
 
+                                                                        {/* Registration Status Selector */}
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                                                                            <select
+                                                                                value={reg.status || 'PENDING'}
+                                                                                onChange={async (e) => {
+                                                                                    const newStatus = e.target.value;
+                                                                                    // Optimistic Update
+                                                                                    setAdminUsers(prev => prev.map(userItem => {
+                                                                                        if (userItem.id === u.id) {
+                                                                                            return {
+                                                                                                ...userItem,
+                                                                                                registrations: userItem.registrations.map((r: any) => {
+                                                                                                    if (r.id === reg.id) return { ...r, status: newStatus };
+                                                                                                    return r;
+                                                                                                })
+                                                                                            };
+                                                                                        }
+                                                                                        return userItem;
+                                                                                    }));
+
+                                                                                    const { updateRegistrationStatus } = await import('@/actions/registrations');
+                                                                                    const res = await updateRegistrationStatus(reg.id, newStatus as any);
+                                                                                    if (res.success) {
+                                                                                        modals.showToast(`Updated status to ${newStatus}`, 'success')
+                                                                                    } else {
+                                                                                        modals.showToast('Failed to update status', 'error')
+                                                                                        fetchAdminData(undefined, false);
+                                                                                    }
+                                                                                }}
+                                                                                style={{
+                                                                                    padding: '2px 8px',
+                                                                                    fontSize: '0.7rem',
+                                                                                    backgroundColor: reg.status === 'CONFIRMED' ? 'var(--color-success)' : reg.status === 'CANCELLED' ? 'var(--color-danger)' : '#222',
+                                                                                    color: 'white',
+                                                                                    border: '1px solid var(--border-color)',
+                                                                                    borderRadius: '4px',
+                                                                                    cursor: 'pointer',
+                                                                                    marginRight: '8px'
+                                                                                }}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            >
+                                                                                <option value="PENDING">Pending</option>
+                                                                                <option value="CONFIRMED">Confirmed</option>
+                                                                                <option value="CANCELLED">Cancelled</option>
+                                                                            </select>
+                                                                        )}
+
                                                                         {/* Checkbox for Certification */}
                                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
                                                                             <input
@@ -1821,6 +1868,51 @@ export default function DashboardPage() {
                                                                             >
                                                                                 {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark Presence'}
                                                                             </button>
+                                                                        )}
+
+                                                                        {/* Registration Status Selector Mobile */}
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                                                                            <select
+                                                                                value={reg.status || 'PENDING'}
+                                                                                onChange={async (e) => {
+                                                                                    const newStatus = e.target.value;
+                                                                                    // Optimistic Update
+                                                                                    setAdminUsers(prev => prev.map(userItem => {
+                                                                                        if (userItem.id === u.id) {
+                                                                                            return {
+                                                                                                ...userItem,
+                                                                                                registrations: userItem.registrations.map((r: any) => {
+                                                                                                    if (r.id === reg.id) return { ...r, status: newStatus };
+                                                                                                    return r;
+                                                                                                })
+                                                                                            };
+                                                                                        }
+                                                                                        return userItem;
+                                                                                    }));
+
+                                                                                    const { updateRegistrationStatus } = await import('@/actions/registrations');
+                                                                                    const res = await updateRegistrationStatus(reg.id, newStatus as any);
+                                                                                    if (res.success) {
+                                                                                        modals.showToast(`Updated status to ${newStatus}`, 'success')
+                                                                                    } else {
+                                                                                        modals.showToast('Failed to update status', 'error')
+                                                                                        fetchAdminData(undefined, false);
+                                                                                    }
+                                                                                }}
+                                                                                style={{
+                                                                                    padding: '4px 10px',
+                                                                                    fontSize: '0.75rem',
+                                                                                    backgroundColor: reg.status === 'CONFIRMED' ? 'var(--color-success)' : reg.status === 'CANCELLED' ? 'var(--color-danger)' : '#222',
+                                                                                    color: 'white',
+                                                                                    border: '1px solid var(--border-color)',
+                                                                                    borderRadius: '4px',
+                                                                                    cursor: 'pointer'
+                                                                                }}
+                                                                            >
+                                                                                <option value="PENDING">Pending</option>
+                                                                                <option value="CONFIRMED">Confirmed</option>
+                                                                                <option value="CANCELLED">Cancelled</option>
+                                                                            </select>
                                                                         )}
 
                                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
