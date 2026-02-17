@@ -5,14 +5,19 @@ import styles from './ContactFloat.module.css'
 import { Cinzel, Inter } from 'next/font/google'
 import { useConfig } from '@/context/ConfigContext'
 import Tooltip from './ui/Tooltip'
+import { usePathname } from 'next/navigation'
 
 const cinzel = Cinzel({ subsets: ['latin'] })
 const inter = Inter({ subsets: ['latin'] })
 
 export default function ContactFloat() {
     const { config } = useConfig()
+    const pathname = usePathname()
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
+
+    // Hide on scoreboard page
+    if (pathname === '/scoreboard') return null
 
     // Close on click outside
     useEffect(() => {

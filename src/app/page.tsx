@@ -121,15 +121,22 @@ export default function Home() {
               <span className={styles.festivalName}>{config.festivalName}</span>
               <span className={styles.festivalYear}>{config.festivalYear}</span>
             </p>
-            {isLoggedIn ? (
-              <Link href="/dashboard" className={styles.ctaButton}>
-                Go to Dashboard
-              </Link>
-            ) : (
-              <Link href="/register" className={styles.ctaButton}>
-                Register Now
-              </Link>
-            )}
+            <div className={styles.heroActions}>
+              {isLoggedIn ? (
+                <Link href="/dashboard" className={styles.ctaButton}>
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/register" className={styles.ctaButton}>
+                    Register Now
+                  </Link>
+                  <Link href="/login" className={styles.secondaryButton}>
+                    Sign In
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </section>
 
