@@ -351,10 +351,12 @@ export default function RegisterPage() {
                 </form>
 
                 <div className={styles.links}>
-                    Already have an account?
-                    <Link href="/login" className={styles.link}>
-                        Sign In
-                    </Link>
+                    <p>
+                        Already have an account?
+                        <Link href="/login" className={styles.link}>
+                            Sign In here
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>

@@ -146,13 +146,17 @@ export default function LoginPage() {
                 </form>
 
                 <div className={styles.links}>
-                    <Link href="/forgot-password" className={styles.link} style={{ display: 'block', marginBottom: '1rem' }}>
-                        Forgot Password?
-                    </Link>
-                    Don't have an account?
-                    <Link href="/register" className={styles.link}>
-                        Register
-                    </Link>
+                    <p style={{ marginBottom: '1rem' }}>
+                        <Link href="/forgot-password" className={styles.link}>
+                            Forgot Password?
+                        </Link>
+                    </p>
+                    <p>
+                        Don't have an account?
+                        <Link href="/register" className={styles.link}>
+                            Register here
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>

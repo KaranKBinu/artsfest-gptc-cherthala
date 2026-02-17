@@ -24,6 +24,17 @@
     transition: all 0.3s ease;
 }
 
+@media (prefers-color-scheme: dark) {
+    .authCard {
+        background: #1a1a1a;
+        border-color: #333;
+    }
+
+    .label {
+        color: var(--cream-white);
+    }
+}
+
 [data-theme='dark'] .authCard {
     background: #1a1a1a;
     border-color: #333;

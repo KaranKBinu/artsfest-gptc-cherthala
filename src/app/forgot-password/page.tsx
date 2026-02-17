@@ -189,9 +189,11 @@ export default function ForgotPasswordPage() {
                 )}
 
                 <div className={styles.links}>
-                    <Link href="/login" className={styles.link}>
-                        Back to Login
-                    </Link>
+                    <p>
+                        <Link href="/login" className={styles.link}>
+                            Back to Login
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>
