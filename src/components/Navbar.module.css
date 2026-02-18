@@ -47,10 +47,8 @@
     object-fit: contain;
 }
 
-@media (min-width: 769px) {
-    .header:not(.solidHeader) .logo {
-        color: var(--cream-white);
-    }
+.header:not(.solidHeader) .logo {
+    color: var(--cream-white);
 }
 
 /* Desktop Nav */
@@ -122,10 +120,8 @@
     transition: all 0.3s ease;
 }
 
-@media (min-width: 769px) {
-    .header:not(.solidHeader) .hamburgerLine {
-        background-color: var(--cream-white);
-    }
+.header:not(.solidHeader) .hamburgerLine {
+    background-color: var(--cream-white);
 }
 
 /* Mobile Menu State */
@@ -204,10 +200,8 @@
     padding: 0.5rem;
 }
 
-@media (min-width: 769px) {
-    .header:not(.solidHeader) .mobileLogoutIcon {
-        color: var(--cream-white);
-    }
+.header:not(.solidHeader) .mobileLogoutIcon {
+    color: var(--cream-white);
 }
 
 .mobileLogoutIcon:hover {
@@ -266,10 +260,8 @@
     transition: color 0.3s;
 }
 
-@media (min-width: 769px) {
-    .header:not(.solidHeader) .notificationBtn {
-        color: var(--cream-white);
-    }
+.header:not(.solidHeader) .notificationBtn {
+    color: var(--cream-white);
 }
 
 .notificationBtn:hover {
