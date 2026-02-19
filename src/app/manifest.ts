@@ -8,12 +8,11 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         name: config.festivalName,
         short_name: config.festivalName.length > 15 ? "ArtsFest" : config.festivalName,
         description: `Celebrating Culture & Creativity at ${config.festivalName}.`,
-        start_url: '/dashboard',
-        display: 'standalone',
-        background_color: '#0A0A0A',
+        background_color: '#000000',
         theme_color: '#8B0000',
         orientation: 'portrait',
         scope: '/',
+        start_url: '/',
         icons: [
             {
                 src: config.appFavicon || '/favicon.png',

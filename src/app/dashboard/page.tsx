@@ -715,7 +715,7 @@ export default function DashboardPage() {
     }
 
     // Admin State - Navigation
-    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'feedbacks' | 'volunteers' | 'database'>('users')
+    const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'settings' | 'gallery' | 'usermanagement' | 'feedbacks' | 'volunteers' | 'database' | 'notifications'>('users')
 
     useEffect(() => {
         if (activeTab === 'volunteers' && (user?.role === 'ADMIN' || user?.role === 'MASTER')) {
@@ -769,6 +769,44 @@ export default function DashboardPage() {
     // Admin State - Feedbacks
     const [feedbacks, setFeedbacks] = useState<any[]>([])
     const [loadingFeedbacks, setLoadingFeedbacks] = useState(false)
+
+    // Admin State - Notifications
+    const [notifTitle, setNotifTitle] = useState('')
+    const [notifBody, setNotifBody] = useState('')
+    const [notifUrl, setNotifUrl] = useState('/')
+    const [sendingNotif, setSendingNotif] = useState(false)
+
+    const handleSendNotification = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!notifTitle.trim() || !notifBody.trim()) {
+            modals.showToast('Title and Body are required', 'error')
+            return
+        }
+
+        setSendingNotif(true)
+        try {
+            const { sendNotification } = await import('@/actions/notifications')
+            const res = await sendNotification({
+                title: notifTitle,
+                body: notifBody,
+                url: notifUrl
+            })
+
+            if (res.success) {
+                modals.showToast(`Notified ${res.successCount} users (${res.failureCount} failed)`, 'success')
+                setNotifTitle('')
+                setNotifBody('')
+                setNotifUrl('/')
+            } else {
+                modals.showToast(res.error || 'Failed to send notification', 'error')
+            }
+        } catch (err) {
+            console.error(err)
+            modals.showToast('An error occurred', 'error')
+        } finally {
+            setSendingNotif(false)
+        }
+    }
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -1407,6 +1445,20 @@ export default function DashboardPage() {
                                 )}
 
                             </>
+                        )}
+                        {(user.role === 'ADMIN' || user.role === 'MASTER') && (
+                            <Tooltip content="Send Push Notifications" position="bottom">
+                                <button
+                                    className={`${styles.navItem} ${activeTab === 'notifications' ? styles.active : ''}`}
+                                    onClick={() => setActiveTab('notifications')}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    Notifications
+                                </button>
+                            </Tooltip>
                         )}
                     </div>
 
@@ -3152,6 +3204,103 @@ export default function DashboardPage() {
                     )}
                     {activeTab === 'database' && user?.role === 'MASTER' && (
                         <DatabasePanel />
+                    )}
+                    {activeTab === 'notifications' && (user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                        <div className={styles.tableCard} style={{ maxWidth: '800px', margin: '0 auto' }}>
+                            <div className={styles.crudHeader}>
+                                <h3 className={`${styles.cardTitle} ${cinzel.className}`}>Send Push Notification</h3>
+                            </div>
+                            <div style={{ padding: '1rem' }}>
+                                <div style={{
+                                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                                    border: '1px solid rgba(255, 215, 0, 0.2)',
+                                    borderRadius: '8px',
+                                    padding: '1rem',
+                                    marginBottom: '2rem',
+                                    fontSize: '0.9rem',
+                                    display: 'flex',
+                                    gap: '1rem',
+                                    alignItems: 'start'
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <div>
+                                        <strong style={{ color: 'var(--primary-gold)' }}>Note:</strong> This will send a push notification to all users who have subscribed on their devices. Use this specifically for important announcements like "Results Published" or "Schedule Changes".
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handleSendNotification} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.formLabel}>Notification Title</label>
+                                        <input
+                                            value={notifTitle}
+                                            onChange={(e) => setNotifTitle(e.target.value)}
+                                            className={styles.searchInput}
+                                            placeholder="e.g. Results Published!"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.formLabel}>Message Body</label>
+                                        <textarea
+                                            value={notifBody}
+                                            onChange={(e) => setNotifBody(e.target.value)}
+                                            className={styles.searchInput}
+                                            placeholder="e.g. The results for light music have been published. Check them out now!"
+                                            style={{ minHeight: '120px', resize: 'vertical' }}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.formLabel}>Click URL (Optional)</label>
+                                        <input
+                                            value={notifUrl}
+                                            onChange={(e) => setNotifUrl(e.target.value)}
+                                            className={styles.searchInput}
+                                            placeholder="e.g. /results or /schedule"
+                                        />
+                                        <p style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '0.5rem' }}>
+                                            Where should the user be taken when they click the notification? Default is home page.
+                                        </p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                        <button
+                                            type="submit"
+                                            className={styles.addButton}
+                                            disabled={sendingNotif}
+                                            style={{
+                                                minWidth: '150px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                backgroundColor: 'var(--primary-red)'
+                                            }}
+                                        >
+                                            {sendingNotif ? (
+                                                <>
+                                                    <LoadingSpinner size="18px" /> Sending...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M22 2L11 13"></path>
+                                                        <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                                    </svg>
+                                                    Send Broadcast
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     )}
                 </div>
             ) : (

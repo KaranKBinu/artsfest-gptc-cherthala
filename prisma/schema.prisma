@@ -171,6 +171,7 @@ model User {
   Registration                         Registration[]
   House                                House?         @relation(fields: [houseId], references: [id])
   assignedPrograms                     Program[]      @relation("ProgramCoordinators")
+  PushSubscription                     PushSubscription[]
 
   @@index([email])
   @@index([houseId])
@@ -202,6 +203,20 @@ enum RegistrationStatus {
   PENDING
   CONFIRMED
   CANCELLED
+}
+
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String?
+  User      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 enum Role {
