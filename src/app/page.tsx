@@ -5,7 +5,7 @@ import Image from 'next/image'
 import styles from './home.module.css'
 import Link from 'next/link'
 import Tooltip from '@/components/ui/Tooltip'
-import { cinzel } from '@/lib/fonts'
+import { cinzel, baloo, gayathri } from '@/lib/fonts'
 
 import { ProgramWithStats } from '@/types'
 import { useConfig } from '@/context/ConfigContext'
@@ -178,8 +178,12 @@ export default function Home() {
               Celebrating Culture & Creativity
             </h1>
             <p className={styles.subtitle}>
-              <span className={styles.festivalName}>{config.festivalName}</span>
-              <span className={styles.festivalYear}>{config.festivalYear}</span>
+              <span className={`${styles.shinyWrap} ${baloo.className}`}>
+                <span className={styles.festivalName}>{config.festivalName}</span>
+              </span>
+              <span className={styles.shinyWrap}>
+                <span className={styles.festivalYear}>{config.festivalYear}</span>
+              </span>
             </p>
             <div className={styles.heroActions}>
               {isLoggedIn ? (

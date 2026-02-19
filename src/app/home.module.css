@@ -45,6 +45,8 @@
     max-width: 800px;
     padding: 0 20px;
     animation: fadeInUp 1s ease-out;
+    margin-top: -4rem;
+    /* Move everything to top */
 }
 
 .title {
@@ -55,10 +57,13 @@
 }
 
 .subtitle {
-    font-size: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    /* Reduce gap */
     margin-bottom: 2.5rem;
-    font-weight: 300;
-    opacity: 0.9;
+    font-size: 1.5rem;
 }
 
 .ctaButton {
@@ -242,27 +247,97 @@
         font-size: 2rem;
     }
 
+    .festivalName {
+        font-size: 1.8rem;
+    }
+
     .grid {
         grid-template-columns: 1fr;
     }
 }
 
+.shinyWrap {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+}
+
 .festivalName {
     display: inline-block;
-    color: var(--primary-gold);
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
+    font-size: 3rem;
     letter-spacing: 2px;
-    margin-right: 0.5rem;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    border-bottom: 2px solid var(--primary-gold);
-    padding-bottom: 2px;
+    margin-right: 1rem;
+    padding: 0.2rem 0;
+
+    /* Luxury Gold Gradient */
+    background: linear-gradient(to right,
+            #BF953F,
+            /* Metallic Gold */
+            #FCF6BA,
+            /* Bright Pale Gold */
+            #B38728,
+            /* Darker Metallic */
+            #FBF5B7,
+            /* Highlights */
+            #AA771C
+            /* Deep Gold */
+        );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    /* Shiny Animation */
+    animation: shine 3s linear infinite;
+
+    /* Depth */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes shine {
+    to {
+        background-position: 200% center;
+    }
 }
 
 .festivalYear {
-    font-weight: 300;
-    color: var(--cream-white);
+    font-weight: 800;
+    font-size: 1.6rem;
+    padding: 0.1rem 0;
+    letter-spacing: 4px;
     opacity: 0.9;
+
+    /* Silver/White Metallic Gradient */
+    background: linear-gradient(to right,
+            #E8E8E8,
+            /* Light Silver */
+            #FFFFFF,
+            /* White Highlight */
+            #B8B8B8,
+            /* Medium Silver */
+            #F0F0F0,
+            /* Subtle Highlight */
+            #999999
+            /* Deep Silver */
+        );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    /* Shiny Animation */
+    animation: shine 4s linear infinite;
+
+    /* Depth */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@media (max-width: 480px) {
+    .festivalYear {
+        font-size: 1.1rem;
+    }
 }
 
 /* Futuristic Gallery Styles */

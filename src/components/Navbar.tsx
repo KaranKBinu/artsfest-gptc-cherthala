@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { cinzel, inter } from '@/lib/fonts'
+import { cinzel, inter, baloo } from '@/lib/fonts'
 import styles from './Navbar.module.css'
 
 import { useConfig } from '@/context/ConfigContext'
@@ -95,7 +95,7 @@ export default function Navbar() {
                         className={styles.logoImage}
                     />
                 )}
-                <span>{config.festivalName}</span>
+                <span className={`${styles.shimmerText} ${cinzel.className}`}>{config.festivalName}</span>
             </Link>
 
             <div className={styles.mobileControls}>
