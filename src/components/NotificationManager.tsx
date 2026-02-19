@@ -11,8 +11,11 @@ export default function NotificationManager() {
 
     // Auto-ask logic - simplified
     useEffect(() => {
-        // Only run on home page, if supported, not already subscribed, and haven't tried yet
-        if (pathname === '/' && isSupported && !isSubscribed && !hasAttemptedAutoSubscribe && registration) {
+        // Check if running as PWA (standalone mode)
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
+
+        // Only run on home page, if PWA, supported, not already subscribed, and haven't tried yet
+        if (pathname === '/' && isPWA && isSupported && !isSubscribed && !hasAttemptedAutoSubscribe && registration) {
 
             // Check if permission is default (not denied or already granted)
             if (Notification.permission === 'default') {
