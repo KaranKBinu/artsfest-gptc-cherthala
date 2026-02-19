@@ -95,6 +95,33 @@
     }
 }
 
+.subscribeBtn {
+    background: transparent;
+    border: 1px solid var(--primary-gold);
+    color: var(--primary-gold);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subscribeBtn:hover {
+    background: var(--primary-gold);
+    color: #000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
 .bottomSection {
     padding-top: 3rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);

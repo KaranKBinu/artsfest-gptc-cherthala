@@ -1,69 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { subscribeUser } from '@/actions/notifications'
-import { urlBase64ToUint8Array, arrayBufferToBase64 } from '@/utils/notifications'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { useModals } from '@/context/ModalContext'
-
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 export default function NotificationManager() {
-    const [isSupported, setIsSupported] = useState(false)
-    const [isSubscribed, setIsSubscribed] = useState(false)
-    const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null)
+    const { isSupported, isSubscribed, subscribe, registration } = usePushNotifications()
     const pathname = usePathname()
-    const { showToast } = useModals()
     const [hasAttemptedAutoSubscribe, setHasAttemptedAutoSubscribe] = useState(false)
-
-    useEffect(() => {
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
-            setIsSupported(true)
-
-            navigator.serviceWorker.ready.then(reg => {
-                setRegistration(reg)
-                reg.pushManager.getSubscription().then(sub => {
-                    if (sub) {
-                        setIsSubscribed(true)
-                    }
-                })
-            })
-        }
-    }, [])
-
-    const subscribe = async () => {
-        if (!registration || !VAPID_PUBLIC_KEY) return
-
-        try {
-            // This is the direct browser prompt
-            const sub = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-            })
-
-            const p256dh = sub.getKey('p256dh')
-            const auth = sub.getKey('auth')
-
-            if (p256dh && auth) {
-                const subscriptionData = {
-                    endpoint: sub.endpoint,
-                    keys: {
-                        p256dh: arrayBufferToBase64(p256dh),
-                        auth: arrayBufferToBase64(auth)
-                    }
-                }
-
-                await subscribeUser(subscriptionData)
-                setIsSubscribed(true)
-                showToast('Notifications enabled successfully!', 'success')
-            }
-
-        } catch (e) {
-            console.error('Failed to subscribe during auto-prompt:', e)
-            // If it failed because of user interaction requirement, we might silently fail here.
-            // But if it was a denial, we respect it.
-        }
-    }
 
     // Auto-ask logic - simplified
     useEffect(() => {
@@ -86,7 +30,7 @@ export default function NotificationManager() {
                 return () => clearTimeout(timer)
             }
         }
-    }, [pathname, isSupported, isSubscribed, hasAttemptedAutoSubscribe, registration])
+    }, [pathname, isSupported, isSubscribed, hasAttemptedAutoSubscribe, registration, subscribe])
 
     // No UI rendered
     return null
