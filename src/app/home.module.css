@@ -475,17 +475,41 @@
 
 .galleryText {
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: var(--cream-white);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.8s ease-out 0.3s;
-}
-
-.galleryWrapper:hover .galleryText {
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.9);
     opacity: 1;
     transform: translateY(0);
+    transition: all 0.8s ease-out;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem 2rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.typingCursor {
+    margin-left: 2px;
+    animation: blink 0.8s infinite;
+    color: var(--primary-gold);
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .galleryText {
+        font-size: 1.5rem;
+        padding: 0.5rem 1rem;
+    }
 }
 
 /* Skeleton Loader */

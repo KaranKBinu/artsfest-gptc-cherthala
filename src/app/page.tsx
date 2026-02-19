@@ -1,13 +1,11 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import styles from './home.module.css'
-import { Cinzel } from 'next/font/google'
 import Link from 'next/link'
 import Tooltip from '@/components/ui/Tooltip'
-
-const cinzel = Cinzel({ subsets: ['latin'] })
+import { cinzel } from '@/lib/fonts'
 
 import { ProgramWithStats } from '@/types'
 import { useConfig } from '@/context/ConfigContext'
@@ -19,9 +17,70 @@ export default function Home() {
   const [programs, setPrograms] = useState<ProgramWithStats[]>([])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loadingPrograms, setLoadingPrograms] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   // Chunk images into layouts
   const [slides, setSlides] = useState<string[][]>([])
   const [houseStats, setHouseStats] = useState<any[]>([])
+  const [displayText, setDisplayText] = useState('')
+  const [isGalleryInView, setIsGalleryInView] = useState(false)
+  const [showGalleryText, setShowGalleryText] = useState(true)
+  const galleryRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  useEffect(() => {
+    if (!galleryRef.current) return
+
+    // Fallback if IntersectionObserver is not supported
+    if (!window.IntersectionObserver) {
+      setIsGalleryInView(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsGalleryInView(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(galleryRef.current)
+    return () => observer.disconnect()
+  }, [slides.length]) // Re-run when slides are ready and gallery renders
+
+  useEffect(() => {
+    if (!config.galleryText || !isGalleryInView || !showGalleryText) return
+
+    const textToType = String(config.galleryText).trim()
+    if (!textToType) return
+
+    setDisplayText('')
+    let i = 0
+
+    const timer = setInterval(() => {
+      i++
+      setDisplayText(textToType.substring(0, i))
+
+      if (i >= textToType.length) {
+        clearInterval(timer)
+        // Auto-hide after 10 seconds of completion
+        const hideTimer = setTimeout(() => {
+          setShowGalleryText(false)
+        }, 10000)
+        return () => clearTimeout(hideTimer)
+      }
+    }, 65)
+
+    return () => clearInterval(timer)
+  }, [config.galleryText, isGalleryInView, showGalleryText])
 
   useEffect(() => {
     if (!config.galleryImages || config.galleryImages.length === 0) return
@@ -34,7 +93,8 @@ export default function Home() {
 
     while (i < shuffled.length) {
       // Randomly pick layout size: Prefer 3 and 4, fewer 2 and 1
-      const options = [3, 4, 3, 4, 2, 2, 1]
+      // On mobile, always use 1 image per slide
+      const options = isMobile ? [1] : [3, 4, 3, 4, 2, 2, 1]
       const count = options[Math.floor(Math.random() * options.length)]
 
       const chunk = shuffled.slice(i, i + count)
@@ -46,7 +106,7 @@ export default function Home() {
       i += count
     }
     setSlides(newSlides)
-  }, [config.galleryImages])
+  }, [config.galleryImages, isMobile])
 
   useEffect(() => {
     if (slides.length <= 1) return
@@ -182,7 +242,12 @@ export default function Home() {
               Gallery
             </h2>
 
-            <div className={styles.galleryWrapper}>
+            <div
+              ref={galleryRef}
+              className={styles.galleryWrapper}
+              onClick={() => setShowGalleryText(false)}
+              style={{ cursor: showGalleryText ? 'pointer' : 'default' }}
+            >
               {/* Tech Deco */}
               <div className={`${styles.techCorner} ${styles.tl}`}></div>
               <div className={`${styles.techCorner} ${styles.tr}`}></div>
@@ -190,9 +255,12 @@ export default function Home() {
               <div className={`${styles.techCorner} ${styles.br}`}></div>
 
               {/* Overlay Text */}
-              {config.galleryText && (
+              {config.galleryText && showGalleryText && isGalleryInView && (
                 <div className={styles.galleryOverlay}>
-                  <h3 className={`${styles.galleryText} ${cinzel.className}`}>{config.galleryText}</h3>
+                  <h3 className={`${styles.galleryText} ${styles.isTyping} ${cinzel.className}`}>
+                    {displayText}
+                    <span className={styles.typingCursor}>|</span>
+                  </h3>
                 </div>
               )}
 

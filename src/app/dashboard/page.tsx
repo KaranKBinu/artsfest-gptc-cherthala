@@ -4,7 +4,7 @@ import 'regenerator-runtime/runtime'
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Cinzel, Inter } from 'next/font/google'
+import { cinzel, inter } from '@/lib/fonts'
 import styles from './dashboard.module.css'
 import { AuthResponse } from '@/types'
 import writeXlsxFile from 'write-excel-file'
@@ -13,9 +13,6 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { APP_VERSION } from '@/utils/version'
 import Tooltip from '@/components/ui/Tooltip'
 import DatabasePanel from '@/components/DatabasePanel'
-
-const cinzel = Cinzel({ subsets: ['latin'] })
-const inter = Inter({ subsets: ['latin'] })
 
 import { getDashboardData, DashboardData } from '@/actions/dashboard'
 import { getUsersForAdmin, getHouses, getCoordinators, updateUserRole, changePassword } from '@/actions/users'

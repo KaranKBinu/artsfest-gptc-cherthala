@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { inter } from '@/lib/fonts'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ContactFloat from '@/components/ContactFloat'
@@ -8,8 +8,6 @@ import './globals.css'
 import { ConfigProvider } from '@/context/ConfigContext'
 import { ModalProvider } from '@/context/ModalContext'
 import { LoadingProvider } from '@/context/LoadingContext'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export async function generateMetadata(): Promise<Metadata> {
   const { getAppConfig } = await import('@/lib/config')

@@ -5,9 +5,7 @@ import { getMasterModels, getMasterTableData, createMasterRecord, updateMasterRe
 import styles from '@/app/dashboard/dashboard.module.css'
 import LoadingSpinner from './LoadingSpinner'
 import { useModals } from '@/context/ModalContext'
-import { Cinzel } from 'next/font/google'
-
-const cinzel = Cinzel({ subsets: ['latin'] })
+import { cinzel } from '@/lib/fonts'
 
 interface EnumValue {
     name: string

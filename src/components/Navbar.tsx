@@ -3,11 +3,8 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { Cinzel, Inter } from 'next/font/google'
+import { cinzel, inter } from '@/lib/fonts'
 import styles from './Navbar.module.css'
-
-const cinzel = Cinzel({ subsets: ['latin'] })
-const inter = Inter({ subsets: ['latin'] })
 
 import { useConfig } from '@/context/ConfigContext'
 import { useLoading } from '@/context/LoadingContext'

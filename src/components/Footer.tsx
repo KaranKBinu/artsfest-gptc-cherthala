@@ -2,14 +2,11 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Cinzel } from 'next/font/google'
+import { cinzel } from '@/lib/fonts'
 import styles from './Footer.module.css'
 import { useConfig } from '@/context/ConfigContext'
 import { APP_VERSION } from '@/utils/version'
-
 import { usePushNotifications } from '@/hooks/usePushNotifications'
-
-const cinzel = Cinzel({ subsets: ['latin'] })
 
 export default function Footer() {
     const { config } = useConfig()
