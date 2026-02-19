@@ -24,25 +24,7 @@
     transition: all 0.3s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    .authCard {
-        background: #1a1a1a;
-        border-color: #333;
-    }
 
-    .label {
-        color: var(--cream-white);
-    }
-}
-
-[data-theme='dark'] .authCard {
-    background: #1a1a1a;
-    border-color: #333;
-}
-
-[data-theme='dark'] .label {
-    color: var(--cream-white);
-}
 
 .title {
     color: var(--primary-red);
@@ -191,4 +173,32 @@
     .subtitle {
         margin-bottom: 1.5rem;
     }
+}
+
+@media (prefers-color-scheme: dark) {
+    .authCard {
+        background: #1a1a1a;
+        border-color: #333;
+    }
+
+    .label {
+        color: var(--cream-white) !important;
+    }
+
+    .subtitle {
+        color: var(--cream-white);
+    }
+}
+
+[data-theme='dark'] .authCard {
+    background: #1a1a1a;
+    border-color: #333;
+}
+
+[data-theme='dark'] .label {
+    color: var(--cream-white) !important;
+}
+
+[data-theme='dark'] .subtitle {
+    color: var(--cream-white);
 }
