@@ -69,7 +69,7 @@ export default function Footer() {
                         <span className={styles.versionText}>v{APP_VERSION}</span>
                     </div>
                     <div className={styles.credits}>
-                        Department of Computer Hardware Engineering
+                        Developed By a Student of Department of Computer Hardware Engineering.
                     </div>
                     <div className={`${styles.premiumText} ${cinzel.className}`}>
                         Crafted with Passion
