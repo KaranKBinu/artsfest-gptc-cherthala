@@ -39,9 +39,10 @@ export default function NotificationManager() {
     // Auto-ask logic
     useEffect(() => {
         if (isSupported && !isSubscribed && !isDismissed && permission === 'default' && pathname === '/') {
+            // Show immediately (small delay for render smoothness) on home page
             const timer = setTimeout(() => {
                 setShowPrompt(true)
-            }, 3000) // Show after 3 seconds on home page
+            }, 500)
             return () => clearTimeout(timer)
         }
     }, [isSupported, isSubscribed, isDismissed, permission, pathname])
