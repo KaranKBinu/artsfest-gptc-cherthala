@@ -190,11 +190,12 @@ function TeamMembersEditor({ value, onChange }: { value: string, onChange: (val:
 }
 
 // Configuration Modal Component
-function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isOpen: boolean, config?: any, onClose: () => void, onSave: (data: { key: string, value: string, description: string }) => void, onDelete?: (key: string) => void }) {
+function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete, userRole }: { isOpen: boolean, config?: any, onClose: () => void, onSave: (data: { key: string, value: string, description: string, adminAccess: boolean }) => void, onDelete?: (key: string) => void, userRole?: string }) {
     const modals = useModals()
     const [key, setKey] = useState('')
     const [value, setValue] = useState('')
     const [description, setDescription] = useState('')
+    const [adminAccess, setAdminAccess] = useState(false)
     const [type, setType] = useState<'TEXT' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'FILE'>('TEXT')
     const [jsonError, setJsonError] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
@@ -204,6 +205,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
         if (config) {
             setKey(config.key)
             setDescription(config.description || '')
+            setAdminAccess(config.adminAccess || false)
 
             // Infer type
             const isJson = isJsonString(config.value) || config.key === 'REGISTRATION_LIMITS' || config.key === 'smtpConfig' || (config.value && (config.value.startsWith('{') || config.value.startsWith('[')))
@@ -233,6 +235,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
             setKey('')
             setValue('')
             setDescription('')
+            setAdminAccess(false)
             setType('TEXT')
         }
     }, [config, isOpen])
@@ -265,7 +268,8 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
             await onSave({
                 key,
                 description,
-                value: finalValue
+                value: finalValue,
+                adminAccess
             })
         } finally {
             setIsSaving(false)
@@ -424,6 +428,19 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete }: { isO
                                 className={styles.searchInput}
                                 required
                             />
+                        )}
+                        {userRole === 'MASTER' && (
+                            <div className={styles.formGroup} style={{ marginTop: '1rem', width: '100%' }}>
+                                <label className={styles.checkboxLabel} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={adminAccess}
+                                        onChange={(e) => setAdminAccess(e.target.checked)}
+                                        style={{ width: '18px', height: '18px' }}
+                                    />
+                                    <span>Allow Admin Access (assigned by Master)</span>
+                                </label>
+                            </div>
                         )}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', alignItems: 'center' }}>
@@ -2369,7 +2386,23 @@ export default function DashboardPage() {
                                         return (
                                             <div key={c.id} className={styles.configCard}>
                                                 <div>
-                                                    <div className={styles.configKey}>{c.key}</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                                        <div className={styles.configKey}>{c.key}</div>
+                                                        {user?.role === 'MASTER' && (c as any).adminAccess && (
+                                                            <span style={{
+                                                                fontSize: '0.7rem',
+                                                                backgroundColor: 'rgba(52, 152, 219, 0.15)',
+                                                                color: '#3498db',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '4px',
+                                                                fontWeight: 600,
+                                                                letterSpacing: '0.5px',
+                                                                textTransform: 'uppercase'
+                                                            }}>
+                                                                Assigned to Admin
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className={styles.configDesc}>{c.description || 'No description provided.'}</div>
                                                 </div>
                                                 <div className={styles.configValueContainer} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -2839,12 +2872,18 @@ export default function DashboardPage() {
                             <ConfigurationModal
                                 isOpen={configModalOpen}
                                 config={editingConfig}
+                                userRole={user?.role}
                                 onClose={() => setConfigModalOpen(false)}
                                 onSave={async (data) => {
                                     if (editingConfig) {
-                                        await updateConfig(data.key, data.value, data.description)
+                                        await updateConfig(data.key, data.value, data.description, data.adminAccess)
                                     } else {
-                                        await createConfig({ key: data.key, value: data.value, description: data.description })
+                                        await createConfig({
+                                            key: data.key,
+                                            value: data.value,
+                                            description: data.description,
+                                            adminAccess: data.adminAccess
+                                        })
                                     }
                                     await refreshConfig() // Refresh app context properly
                                     const res = await getConfigs()

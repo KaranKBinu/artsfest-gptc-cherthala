@@ -48,6 +48,7 @@ model Configuration {
   key         String   @unique
   value       String
   description String?
+  adminAccess Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

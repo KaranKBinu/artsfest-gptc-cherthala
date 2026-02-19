@@ -84,10 +84,36 @@ export async function deleteProgram(id: string) {
 }
 
 // --- Configuration Management ---
+import { cookies } from 'next/headers'
+import { verifyToken } from '@/lib/auth'
 
 export async function getConfigs() {
     try {
+        const token = cookies().get('token')?.value
+        if (!token) return { success: false, error: 'Unauthorized' }
+
+        const payload = verifyToken(token)
+        if (!payload) return { success: false, error: 'Invalid token' }
+
+        const role = payload.role
+
+        const where: any = {}
+
+        // If not MASTER or ADMIN, they shouldn't be here (though middleware might catch this)
+        if (role !== 'MASTER' && role !== 'ADMIN') {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        // If ADMIN, only show configs assigned to them
+        if (role === 'ADMIN') {
+            where.adminAccess = true
+        } else if (role !== 'MASTER') {
+            // Redundant check but safe
+            return { success: false, error: 'Unauthorized' }
+        }
+
         const configs = await prisma.configuration.findMany({
+            where,
             orderBy: { key: 'asc' }
         })
         return { success: true, data: configs }
@@ -97,11 +123,16 @@ export async function getConfigs() {
     }
 }
 
-export async function updateConfig(key: string, value: string, description?: string) {
+export async function updateConfig(key: string, value: string, description?: string, adminAccess?: boolean) {
     try {
+        const data: any = { value, description }
+        if (adminAccess !== undefined) {
+            data.adminAccess = adminAccess
+        }
+
         const config = await prisma.configuration.update({
             where: { key },
-            data: { value, description }
+            data
         })
         invalidateConfigCache()
         revalidatePath('/')
@@ -113,10 +144,13 @@ export async function updateConfig(key: string, value: string, description?: str
 }
 
 
-export async function createConfig(data: { key: string, value: string, description?: string }) {
+export async function createConfig(data: { key: string, value: string, description?: string, adminAccess?: boolean }) {
     try {
         const config = await prisma.configuration.create({
-            data
+            data: {
+                ...data,
+                adminAccess: data.adminAccess || false
+            }
         })
         return { success: true, data: config }
     } catch (error) {
