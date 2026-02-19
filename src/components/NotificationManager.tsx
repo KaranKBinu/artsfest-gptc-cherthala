@@ -97,7 +97,19 @@ export default function NotificationManager() {
     if (!isSupported || isSubscribed || isDismissed || permission === 'denied') return null
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4" style={{ fontFamily: 'var(--font-inter)' }}>
+        <div
+            style={{
+                position: 'fixed',
+                bottom: '24px',
+                left: '24px',
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start', // Align to left since we are on left side
+                gap: '16px',
+                fontFamily: 'var(--font-inter)'
+            }}
+        >
             {/* Full Prompt Card */}
             {showPrompt && (
                 <div
