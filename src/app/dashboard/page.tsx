@@ -277,11 +277,14 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete, userRol
 
     return (
         <div className={styles.modalOverlay}>
-            <div className={styles.adminModal} style={{ maxWidth: '600px' }}>
-                <h2 className={`${styles.cardTitle} ${cinzel.className}`}>{config ? 'Edit Configuration' : 'Create Configuration'}</h2>
+            <div className={styles.adminModal}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0 }}>{config ? 'Edit Configuration' : 'Create Configuration'}</h2>
+                    <button onClick={onClose} className={styles.closeButton}>&times;</button>
+                </div>
                 <form onSubmit={handleSubmit}>
-                    <div className={styles.formGrid} style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', marginBottom: '1rem', display: 'grid' }}>
-                        <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                    <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Key</label>
                             <input
                                 name="key"
@@ -294,7 +297,7 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete, userRol
                                 placeholder="Key (e.g. siteTitle)"
                             />
                         </div>
-                        <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                        <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Type</label>
                             <select
                                 className={styles.selectInput}
@@ -440,49 +443,43 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete, userRol
                             </div>
                         )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', alignItems: 'center' }}>
+                    <div className={styles.modalActions}>
                         {config && onDelete && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    modals.confirm({
-                                        title: 'Delete Configuration',
-                                        message: 'Are you sure you want to delete this configuration? This action cannot be undone.',
-                                        confirmText: 'Delete',
-                                        onConfirm: () => onDelete(config.key)
-                                    })
-                                }}
-                                className={styles.cancelButton}
-                                style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
-                            >
-                                Delete
-                            </button>
+                            <div style={{ marginRight: 'auto' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        modals.confirm({
+                                            title: 'Delete Configuration',
+                                            message: 'Are you sure you want to delete this configuration? This action cannot be undone.',
+                                            confirmText: 'Delete',
+                                            onConfirm: () => onDelete(config.key)
+                                        })
+                                    }}
+                                    className={styles.cancelButton}
+                                    style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         )}
-                        {!config && <div />}
-                        <div style={{ display: 'flex', gap: '1rem', marginLeft: 'auto' }}>
-                            <button type="button" onClick={onClose} className={styles.cancelButton}>Cancel</button>
-                            <button
-                                type="submit"
-                                className={styles.addButton}
-                                disabled={(type === 'JSON' && !!jsonError) || isSaving || isUploading}
-                                style={{
-                                    opacity: ((type === 'JSON' && !!jsonError) || isSaving || isUploading) ? 0.5 : 1,
-                                    cursor: ((type === 'JSON' && !!jsonError) || isSaving || isUploading) ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    minWidth: '80px',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                {isSaving || isUploading ? (
-                                    <>
-                                        <LoadingSpinner size="18px" />
-                                        {isUploading ? 'Uploading...' : 'Saving'}
-                                    </>
-                                ) : 'Save'}
-                            </button>
-                        </div>
+                        <button type="button" onClick={onClose} className={styles.cancelButton}>Cancel</button>
+                        <button
+                            type="submit"
+                            className={styles.addButton}
+                            disabled={(type === 'JSON' && !!jsonError) || isSaving || isUploading}
+                            style={{
+                                opacity: ((type === 'JSON' && !!jsonError) || isSaving || isUploading) ? 0.5 : 1,
+                                cursor: ((type === 'JSON' && !!jsonError) || isSaving || isUploading) ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            {isSaving || isUploading ? (
+                                <>
+                                    <LoadingSpinner size="18px" />
+                                    {isUploading ? 'Uploading...' : 'Saving'}
+                                </>
+                            ) : 'Save'}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -490,14 +487,16 @@ function ConfigurationModal({ isOpen, config, onClose, onSave, onDelete, userRol
     )
 }
 
-function UserModal({ isOpen, user, houses, onClose, onSave }: {
+function UserModal({ isOpen, user, houses, onClose, onSave, isEditInfoOnly = false }: {
     isOpen: boolean,
     user: any | null,
     houses: any[],
     onClose: () => void,
-    onSave: (data: any) => Promise<void>
+    onSave: (data: any) => Promise<void>,
+    isEditInfoOnly?: boolean
 }) {
     const modals = useModals()
+    const { config } = useConfig()
     const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
         fullName: '',
@@ -559,10 +558,13 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
 
     return (
         <div className={styles.modalOverlay}>
-            <div className={styles.adminModal} style={{ maxWidth: '800px' }}>
-                <h2 className={`${styles.cardTitle} ${cinzel.className}`}>
-                    {user ? 'Edit User' : 'Create New User'}
-                </h2>
+            <div className={styles.adminModal}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0 }}>
+                        {user ? 'Edit User' : 'Create New User'}
+                    </h2>
+                    <button onClick={onClose} className={styles.closeButton}>&times;</button>
+                </div>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.formGrid}>
                         <div className={styles.formGroup}>
@@ -606,36 +608,38 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                                 <option value="OTHER">Other</option>
                             </select>
                         </div>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Password {!user && <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Optional, default: Welcome@123)</span>}</label>
-                            <div className={styles.passwordWrapper}>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={formData.password}
-                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                    className={styles.searchInput}
-                                    placeholder={user ? "Leave blank to keep current" : "Set password"}
-                                />
-                                <button
-                                    type="button"
-                                    className={styles.passwordToggle}
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    tabIndex={-1}
-                                >
-                                    {showPassword ? (
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                                        </svg>
-                                    ) : (
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </svg>
-                                    )}
-                                </button>
+                        {!isEditInfoOnly && (
+                            <div className={styles.formGroup}>
+                                <label className={styles.formLabel}>Password {!user && <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Optional, default: Welcome@123)</span>}</label>
+                                <div className={styles.passwordWrapper}>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={formData.password}
+                                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                        className={styles.searchInput}
+                                        placeholder={user ? "Leave blank to keep current" : "Set password"}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.passwordToggle}
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                                            </svg>
+                                        ) : (
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Phone</label>
                             <input
@@ -644,19 +648,21 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                                 className={styles.searchInput}
                             />
                         </div>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Role</label>
-                            <select
-                                value={formData.role}
-                                onChange={e => setFormData({ ...formData, role: e.target.value as any })}
-                                className={styles.selectInput}
-                            >
-                                <option value="STUDENT">STUDENT</option>
-                                <option value="COORDINATOR">COORDINATOR</option>
-                                <option value="ADMIN">ADMIN</option>
-                                <option value="MASTER">MASTER</option>
-                            </select>
-                        </div>
+                        {!isEditInfoOnly && (
+                            <div className={styles.formGroup}>
+                                <label className={styles.formLabel}>Role</label>
+                                <select
+                                    value={formData.role}
+                                    onChange={e => setFormData({ ...formData, role: e.target.value as any })}
+                                    className={styles.selectInput}
+                                >
+                                    <option value="STUDENT">STUDENT</option>
+                                    <option value="COORDINATOR">COORDINATOR</option>
+                                    <option value="ADMIN">ADMIN</option>
+                                    <option value="MASTER">MASTER</option>
+                                </select>
+                            </div>
+                        )}
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>House</label>
                             <select
@@ -671,26 +677,40 @@ function UserModal({ isOpen, user, houses, onClose, onSave }: {
                             </select>
                         </div>
                         <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Department</label>
-                            <input
+                            <label className={styles.formLabel}>Department {formData.role !== 'ADMIN' && formData.role !== 'MASTER' && '*'}</label>
+                            <select
                                 value={formData.department}
                                 onChange={e => setFormData({ ...formData, department: e.target.value })}
-                                className={styles.searchInput}
-                            />
+                                className={styles.selectInput}
+                                required={formData.role !== 'ADMIN' && formData.role !== 'MASTER'}
+                            >
+                                <option value="" disabled>Select Department</option>
+                                {config.departments.map(dept => (
+                                    <option key={dept.code} value={dept.code}>
+                                        {dept.name} ({dept.code})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Year</label>
-                            <input
+                            <label className={styles.formLabel}>Year {formData.role !== 'ADMIN' && formData.role !== 'MASTER' && '*'}</label>
+                            <select
                                 value={formData.semester}
                                 onChange={e => setFormData({ ...formData, semester: e.target.value })}
-                                className={styles.searchInput}
-                            />
+                                className={styles.selectInput}
+                                required={formData.role !== 'ADMIN' && formData.role !== 'MASTER'}
+                            >
+                                <option value="" disabled>Select Year</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                            </select>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                    <div className={styles.modalActions}>
                         <button type="button" onClick={onClose} className={styles.cancelButton} disabled={isSaving}>Cancel</button>
-                        <button type="submit" className={styles.addButton} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '100px', justifyContent: 'center' }}>
-                            {isSaving ? <><LoadingSpinner size="18px" /> Saving...</> : (user ? 'Save Changes' : 'Create User')}
+                        <button type="submit" className={styles.addButton} disabled={isSaving}>
+                            {isSaving ? <LoadingSpinner size="18px" /> : (user ? 'Save Changes' : 'Create User')}
                         </button>
                     </div>
                 </form>
@@ -766,6 +786,7 @@ export default function DashboardPage() {
     const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'STUDENT' | 'COORDINATOR' | 'ADMIN' | 'MASTER'>('ALL')
     const [editingUser, setEditingUser] = useState<any | null>(null)
     const [userModalOpen, setUserModalOpen] = useState(false)
+    const [isEditInfoOnly, setIsEditInfoOnly] = useState(false)
     const [programModalOpen, setProgramModalOpen] = useState(false)
     const [editingProgram, setEditingProgram] = useState<any | null>(null)
     const [coordinatorModalOpen, setCoordinatorModalOpen] = useState(false)
@@ -1646,7 +1667,17 @@ export default function DashboardPage() {
                                                 <th>Admission No</th>
                                                 <th>House</th>
                                                 <th>Registrations</th>
-                                                {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'COORDINATOR') && <th>Attendance & Select</th>}
+                                                {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'COORDINATOR') && (
+                                                    <th style={{ paddingBottom: 0 }}>
+                                                        <div className={styles.nestedTableHeader} style={{ borderBottom: 'none', marginBottom: 0 }}>
+                                                            <div>Program</div>
+                                                            <div>Attend.</div>
+                                                            <div>Status</div>
+                                                            <div>Grade</div>
+                                                            <div>Cert</div>
+                                                        </div>
+                                                    </th>
+                                                )}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1654,27 +1685,31 @@ export default function DashboardPage() {
                                                 <tr><td colSpan={(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'COORDINATOR') ? 5 : 4} style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
                                             ) : adminUsers.length > 0 ? (
                                                 adminUsers.map(u => (
-                                                    <tr key={u.id}>
+                                                    <tr key={u.id} className={styles.directoryItem}>
                                                         <td className={styles.tdName}>
-                                                            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                {u.fullName}
-                                                                {u.isVolunteer && (
-                                                                    <span style={{
-                                                                        fontSize: '0.65rem',
-                                                                        padding: '2px 6px',
-                                                                        borderRadius: '10px',
-                                                                        background: 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)',
-                                                                        color: '#000',
-                                                                        fontWeight: 700,
-                                                                        textTransform: 'uppercase',
-                                                                        letterSpacing: '0.5px',
-                                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                                                    }}>
-                                                                        VOLUNTEER
-                                                                    </span>
-                                                                )}
+                                                            <div className={styles.studentIdentity}>
+                                                                <div className={styles.studentNameRow}>
+                                                                    {u.fullName}
+                                                                    {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                                                                        <button
+                                                                            onClick={() => { setEditingUser(u); setUserModalOpen(true); setIsEditInfoOnly(true) }}
+                                                                            className={styles.editIconBtn}
+                                                                            title="Edit User Info"
+                                                                        >
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
+                                                                    {u.isVolunteer && (
+                                                                        <span className={styles.volunteerBadge}>
+                                                                            VOLUNTEER
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className={styles.studentSubText}>{u.department}</div>
                                                             </div>
-                                                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{u.department}</div>
                                                         </td>
                                                         <td>{u.studentAdmnNo}</td>
                                                         <td>
@@ -1688,7 +1723,7 @@ export default function DashboardPage() {
                                                             {u.registrations.length > 0 ? (
                                                                 <div className={styles.regTags}>
                                                                     {u.registrations.map((reg: any) => (
-                                                                        <span key={reg.id} className={styles.miniTag}>
+                                                                        <span key={reg.id} className={`${styles.typeBadge} ${reg.program.type === 'GROUP' ? styles.groupType : styles.soloType}`}>
                                                                             {reg.program.name} ({reg.program.type === 'GROUP' ? 'G' : 'S'})
                                                                             {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
                                                                         </span>
@@ -1699,157 +1734,150 @@ export default function DashboardPage() {
                                                             )}
                                                         </td>
                                                         {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') && (
-                                                            <td>
+                                                            <td style={{ minWidth: '600px' }}>
                                                                 {u.registrations.map((reg: any) => (
-                                                                    <div key={reg.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-                                                                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>
-                                                                            {reg.program.name}:
+                                                                    <div key={reg.id} className={styles.nestedTableRow}>
+                                                                        {/* Name Column */}
+                                                                        <div className={`${styles.nestedTableCol} ${styles.progNameCol}`} title={reg.program.name}>
+                                                                            {reg.program.name}
                                                                             {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '4px' }} title="Certificate Sent">✓</span>}
-                                                                        </span>
-                                                                        <Tooltip content={reg.attendances?.some((a: any) => a.isPresent) ? "Mark as Absent" : "Mark as Present"}>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    const isPresentNow = reg.attendances?.some((a: any) => a.isPresent);
-                                                                                    const nextState = !isPresentNow;
-                                                                                    modals.confirm({
-                                                                                        title: 'Change Attendance',
-                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${reg.program.name}?`,
-                                                                                        onConfirm: async () => {
-                                                                                            const { markAttendance } = await import('@/actions/coordinator');
-                                                                                            const res = await markAttendance(u.id, reg.id, reg.program.id, user.id, nextState);
-                                                                                            if (res.success) {
-                                                                                                modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
-                                                                                                fetchAdminData()
-                                                                                            } else {
-                                                                                                modals.showToast('Failed to update attendance.', 'error')
+                                                                        </div>
+
+                                                                        {/* Attendance Column */}
+                                                                        <div className={styles.nestedTableCol}>
+                                                                            <Tooltip content={reg.attendances?.some((a: any) => a.isPresent) ? "Mark as Absent" : "Mark as Present"}>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        const isPresentNow = reg.attendances?.some((a: any) => a.isPresent);
+                                                                                        const nextState = !isPresentNow;
+                                                                                        modals.confirm({
+                                                                                            title: 'Change Attendance',
+                                                                                            message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${reg.program.name}?`,
+                                                                                            onConfirm: async () => {
+                                                                                                const { markAttendance } = await import('@/actions/coordinator');
+                                                                                                const res = await markAttendance(u.id, reg.id, reg.program.id, user.id, nextState);
+                                                                                                if (res.success) {
+                                                                                                    modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
+                                                                                                    fetchAdminData()
+                                                                                                } else {
+                                                                                                    modals.showToast('Failed to update attendance.', 'error')
+                                                                                                }
                                                                                             }
+                                                                                        })
+                                                                                    }}
+                                                                                    style={{
+                                                                                        padding: '4px 10px',
+                                                                                        fontSize: '0.7rem',
+                                                                                        backgroundColor: reg.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
+                                                                                        color: reg.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
+                                                                                        border: '1px solid var(--border-color)',
+                                                                                        borderRadius: '6px',
+                                                                                        cursor: 'pointer',
+                                                                                        width: '100%',
+                                                                                        textAlign: 'center'
+                                                                                    }}
+                                                                                >
+                                                                                    {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
+                                                                                </button>
+                                                                            </Tooltip>
+                                                                        </div>
+
+                                                                        {/* Status Column */}
+                                                                        <div className={styles.nestedTableCol}>
+                                                                            {(user?.role === 'ADMIN' || user?.role === 'MASTER') ? (
+                                                                                <select
+                                                                                    value={reg.status || 'PENDING'}
+                                                                                    className={styles.regStatusSelect}
+                                                                                    onChange={async (e) => {
+                                                                                        const newStatus = e.target.value;
+                                                                                        setAdminUsers(prev => prev.map(userItem => {
+                                                                                            if (userItem.id === u.id) {
+                                                                                                return {
+                                                                                                    ...userItem,
+                                                                                                    registrations: userItem.registrations.map((r: any) => {
+                                                                                                        if (r.id === reg.id) return { ...r, status: newStatus };
+                                                                                                        return r;
+                                                                                                    })
+                                                                                                };
+                                                                                            }
+                                                                                            return userItem;
+                                                                                        }));
+                                                                                        const { updateRegistrationStatus } = await import('@/actions/registrations');
+                                                                                        const res = await updateRegistrationStatus(reg.id, newStatus as any);
+                                                                                        if (res.success) modals.showToast(`Updated status to ${newStatus}`, 'success')
+                                                                                        else {
+                                                                                            modals.showToast('Failed to update status', 'error')
+                                                                                            fetchAdminData(undefined, false);
                                                                                         }
-                                                                                    })
-                                                                                }}
-                                                                                style={{
-                                                                                    padding: '2px 8px',
-                                                                                    fontSize: '0.7rem',
-                                                                                    backgroundColor: reg.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
-                                                                                    color: reg.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
-                                                                                    border: '1px solid var(--border-color)',
-                                                                                    borderRadius: '4px',
-                                                                                    cursor: 'pointer',
-                                                                                    transition: 'all 0.2s ease'
-                                                                                }}
-                                                                            >
-                                                                                {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
-                                                                            </button>
-                                                                        </Tooltip>
+                                                                                    }}
+                                                                                    style={{
+                                                                                        backgroundColor: reg.status === 'CONFIRMED' ? 'rgba(34, 197, 94, 0.1)' : reg.status === 'CANCELLED' ? 'rgba(234, 67, 53, 0.1)' : undefined,
+                                                                                        color: reg.status === 'CONFIRMED' ? '#22c55e' : reg.status === 'CANCELLED' ? '#ea4335' : 'inherit',
+                                                                                        fontWeight: reg.status !== 'PENDING' ? 600 : 400
+                                                                                    }}
+                                                                                >
+                                                                                    <option value="PENDING">Pending</option>
+                                                                                    <option value="CONFIRMED">Confirmed</option>
+                                                                                    <option value="CANCELLED">Cancelled</option>
+                                                                                </select>
+                                                                            ) : (
+                                                                                <span className={styles.miniTag}>{reg.status}</span>
+                                                                            )}
+                                                                        </div>
 
-                                                                        {/* Registration Status Selector */}
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
-                                                                            <select
-                                                                                value={reg.status || 'PENDING'}
-                                                                                onChange={async (e) => {
-                                                                                    const newStatus = e.target.value;
-                                                                                    // Optimistic Update
-                                                                                    setAdminUsers(prev => prev.map(userItem => {
-                                                                                        if (userItem.id === u.id) {
-                                                                                            return {
-                                                                                                ...userItem,
-                                                                                                registrations: userItem.registrations.map((r: any) => {
-                                                                                                    if (r.id === reg.id) return { ...r, status: newStatus };
-                                                                                                    return r;
-                                                                                                })
-                                                                                            };
+                                                                        {/* Results Column */}
+                                                                        <div className={styles.nestedTableCol}>
+                                                                            {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) ? (
+                                                                                <select
+                                                                                    value={reg.grade || 'PARTICIPATION'}
+                                                                                    className={styles.regGradeSelect}
+                                                                                    onChange={async (e) => {
+                                                                                        const newGrade = e.target.value;
+                                                                                        setAdminUsers(prev => prev.map(userItem => {
+                                                                                            if (userItem.id === u.id) {
+                                                                                                return {
+                                                                                                    ...userItem,
+                                                                                                    registrations: userItem.registrations.map((r_map: any) => {
+                                                                                                        if (r_map.id === reg.id) return { ...r_map, grade: newGrade };
+                                                                                                        return r_map;
+                                                                                                    })
+                                                                                                };
+                                                                                            }
+                                                                                            return userItem;
+                                                                                        }));
+                                                                                        const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
+                                                                                        const res = await updateRegistrationResult(reg.id, newGrade);
+                                                                                        if (res.success) {
+                                                                                            modals.showToast(`Updated result for ${u.fullName}`, 'success');
+                                                                                            fetchAdminData(undefined, false);
+                                                                                            const scoreRes = await getHouseLeaderboard();
+                                                                                            if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
                                                                                         }
-                                                                                        return userItem;
-                                                                                    }));
+                                                                                    }}
+                                                                                >
+                                                                                    <option value="PARTICIPATION">Participant</option>
+                                                                                    <option value="WINNER">Winner</option>
+                                                                                    <option value="FIRST_RUNNER_UP">1st Runner</option>
+                                                                                    <option value="SECOND_RUNNER_UP">2nd Runner</option>
+                                                                                </select>
+                                                                            ) : <span style={{ opacity: 0.3 }}>-</span>}
+                                                                        </div>
 
-                                                                                    const { updateRegistrationStatus } = await import('@/actions/registrations');
-                                                                                    const res = await updateRegistrationStatus(reg.id, newStatus as any);
-                                                                                    if (res.success) {
-                                                                                        modals.showToast(`Updated status to ${newStatus}`, 'success')
-                                                                                    } else {
-                                                                                        modals.showToast('Failed to update status', 'error')
-                                                                                        fetchAdminData(undefined, false);
-                                                                                    }
-                                                                                }}
-                                                                                style={{
-                                                                                    padding: '2px 8px',
-                                                                                    fontSize: '0.7rem',
-                                                                                    backgroundColor: reg.status === 'CONFIRMED' ? 'var(--color-success)' : reg.status === 'CANCELLED' ? 'var(--color-danger)' : '#222',
-                                                                                    color: 'white',
-                                                                                    border: '1px solid var(--border-color)',
-                                                                                    borderRadius: '4px',
-                                                                                    cursor: 'pointer',
-                                                                                    marginRight: '8px'
-                                                                                }}
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                            >
-                                                                                <option value="PENDING">Pending</option>
-                                                                                <option value="CONFIRMED">Confirmed</option>
-                                                                                <option value="CANCELLED">Cancelled</option>
-                                                                            </select>
-                                                                        )}
-
-                                                                        {/* Checkbox for Certification */}
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                className={styles.tableCheckbox}
-                                                                                checked={selectedRegs.includes(reg.id)}
-                                                                                onChange={(e) => {
-                                                                                    if (e.target.checked) {
-                                                                                        setSelectedRegs(prev => [...prev, reg.id]);
-                                                                                    } else {
-                                                                                        setSelectedRegs(prev => prev.filter(id => id !== reg.id));
-                                                                                    }
-                                                                                }}
-                                                                                title="Select for certificate"
-                                                                            />
-                                                                        )}
-
-                                                                        {/* Grade Selector for ADMIN/MASTER */}
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
-                                                                            <select
-                                                                                value={reg.grade || 'PARTICIPATION'}
-                                                                                onChange={async (e) => {
-                                                                                    const newGrade = e.target.value;
-                                                                                    // Optimistic update
-                                                                                    setAdminUsers(prev => prev.map(userItem => {
-                                                                                        if (userItem.id === u.id) {
-                                                                                            return {
-                                                                                                ...userItem,
-                                                                                                registrations: userItem.registrations.map((r_map: any) => {
-                                                                                                    if (r_map.id === reg.id) return { ...r_map, grade: newGrade };
-                                                                                                    return r_map;
-                                                                                                })
-                                                                                            };
-                                                                                        }
-                                                                                        return userItem;
-                                                                                    }));
-
-                                                                                    const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
-                                                                                    const res = await updateRegistrationResult(reg.id, newGrade);
-                                                                                    if (res.success) {
-                                                                                        modals.showToast(`Updated result for ${u.fullName}`, 'success');
-                                                                                        fetchAdminData(undefined, false);
-                                                                                        const scoreRes = await getHouseLeaderboard();
-                                                                                        if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
-                                                                                    }
-                                                                                }}
-                                                                                style={{
-                                                                                    padding: '2px 4px',
-                                                                                    fontSize: '0.7rem',
-                                                                                    backgroundColor: '#222',
-                                                                                    color: 'white',
-                                                                                    border: '1px solid #444',
-                                                                                    borderRadius: '3px',
-                                                                                    cursor: 'pointer'
-                                                                                }}
-                                                                            >
-                                                                                <option value="PARTICIPATION">Participant (0)</option>
-                                                                                <option value="WINNER">Winner (5)</option>
-                                                                                <option value="FIRST_RUNNER_UP">1st Runner (4)</option>
-                                                                                <option value="SECOND_RUNNER_UP">2nd Runner (3)</option>
-                                                                            </select>
-                                                                        )}
+                                                                        {/* Select Column */}
+                                                                        <div className={`${styles.nestedTableCol} ${styles.certSelectCol}`}>
+                                                                            {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    className={styles.certCheckbox}
+                                                                                    checked={selectedRegs.includes(reg.id)}
+                                                                                    onChange={(e) => {
+                                                                                        if (e.target.checked) setSelectedRegs(prev => [...prev, reg.id]);
+                                                                                        else setSelectedRegs(prev => prev.filter(id => id !== reg.id));
+                                                                                    }}
+                                                                                    title="Select for certificate"
+                                                                                />
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                             </td>
@@ -1871,9 +1899,24 @@ export default function DashboardPage() {
                                         adminUsers.map(u => (
                                             <div key={u.id} className={styles.mobileCard}>
                                                 <div className={styles.mobileCardHeader}>
-                                                    <div>
-                                                        <div className={styles.mobileCardTitle}>{u.fullName}</div>
-                                                        <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{u.department} • {u.studentAdmnNo}</div>
+                                                    <div className={styles.studentIdentity}>
+                                                        <div className={styles.studentNameRow}>
+                                                            {u.fullName}
+                                                            {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                                                                <button
+                                                                    onClick={() => { setEditingUser(u); setUserModalOpen(true); setIsEditInfoOnly(true) }}
+                                                                    className={styles.editIconBtn}
+                                                                    title="Edit User Info"
+                                                                >
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            )}
+                                                            {u.isVolunteer && <span className={styles.volunteerBadge}>VOLUNTEER</span>}
+                                                        </div>
+                                                        <div className={styles.studentSubText}>{u.department} • {u.studentAdmnNo}</div>
                                                     </div>
                                                     {u.house && (
                                                         <span className={styles.houseBadge} style={{ backgroundColor: u.house.color + '20', color: u.house.color }}>
@@ -1883,66 +1926,66 @@ export default function DashboardPage() {
                                                 </div>
 
                                                 <div style={{ marginTop: '0.8rem' }}>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Registrations:</div>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.5rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Registrations</div>
                                                     {u.registrations.length > 0 ? (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                                             {u.registrations.map((reg: any) => (
-                                                                <div key={reg.id} style={{
-                                                                    padding: '0.8rem',
-                                                                    backgroundColor: 'rgba(255,255,255,0.03)',
-                                                                    borderRadius: '8px',
-                                                                    border: '1px solid rgba(255,255,255,0.05)'
-                                                                }}>
-                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                                                                            {reg.program.name}
-                                                                            {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '8px' }} title="Certificate Sent">✓</span>}
-                                                                        </span>
-                                                                        <span className={styles.miniTag}>{reg.program.type === 'GROUP' ? 'Group' : 'Solo'}</span>
+                                                                <div key={reg.id} className={styles.nestedTableRow}>
+                                                                    {/* Name & Type */}
+                                                                    <div className={`${styles.nestedTableCol} ${styles.progNameCol}`} style={{ borderBottom: 'none' }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                                                            <span style={{ fontWeight: 600 }}>
+                                                                                {reg.program.name}
+                                                                                {reg.certificates?.some((c: any) => c.emailSent) && <span style={{ color: '#22c55e', marginLeft: '6px' }}>✓</span>}
+                                                                            </span>
+                                                                            <span className={styles.miniTag} style={{ fontSize: '0.6rem' }}>{reg.program.type}</span>
+                                                                        </div>
                                                                     </div>
 
-                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER' || user?.role === 'VOLUNTEER' || user?.role === 'COORDINATOR') && (
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    const isPresentNow = reg.attendances?.some((a: any) => a.isPresent);
-                                                                                    const nextState = !isPresentNow;
-                                                                                    modals.confirm({
-                                                                                        title: 'Change Attendance',
-                                                                                        message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${reg.program.name}?`,
-                                                                                        onConfirm: async () => {
-                                                                                            const { markAttendance } = await import('@/actions/coordinator');
-                                                                                            const res = await markAttendance(u.id, reg.id, reg.program.id, user.id, nextState);
-                                                                                            if (res.success) {
-                                                                                                modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
-                                                                                                fetchAdminData()
-                                                                                            } else {
-                                                                                                modals.showToast('Failed to update attendance.', 'error')
-                                                                                            }
+                                                                    {/* Attendance */}
+                                                                    <div className={styles.nestedTableCol}>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const isPresentNow = reg.attendances?.some((a: any) => a.isPresent);
+                                                                                const nextState = !isPresentNow;
+                                                                                modals.confirm({
+                                                                                    title: 'Change Attendance',
+                                                                                    message: `Mark ${u.fullName} as ${nextState ? 'PRESENT' : 'ABSENT'} for ${reg.program.name}?`,
+                                                                                    onConfirm: async () => {
+                                                                                        const { markAttendance } = await import('@/actions/coordinator');
+                                                                                        const res = await markAttendance(u.id, reg.id, reg.program.id, user.id, nextState);
+                                                                                        if (res.success) {
+                                                                                            modals.showToast(`Attendance updated for ${u.fullName}`, 'success')
+                                                                                            fetchAdminData()
+                                                                                        } else {
+                                                                                            modals.showToast('Failed to update attendance.', 'error')
                                                                                         }
-                                                                                    })
-                                                                                }}
-                                                                                style={{
-                                                                                    padding: '4px 10px',
-                                                                                    fontSize: '0.75rem',
-                                                                                    backgroundColor: reg.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
-                                                                                    color: reg.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
-                                                                                    border: '1px solid var(--border-color)',
-                                                                                    borderRadius: '4px',
-                                                                                    cursor: 'pointer'
-                                                                                }}
-                                                                            >
-                                                                                {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark Presence'}
-                                                                            </button>
-                                                                        )}
+                                                                                    }
+                                                                                })
+                                                                            }}
+                                                                            style={{
+                                                                                padding: '4px 8px',
+                                                                                fontSize: '0.7rem',
+                                                                                backgroundColor: reg.attendances?.some((a: any) => a.isPresent) ? 'var(--color-success)' : 'var(--border-color)',
+                                                                                color: reg.attendances?.some((a: any) => a.isPresent) ? 'white' : 'var(--foreground)',
+                                                                                border: '1px solid var(--border-color)',
+                                                                                borderRadius: '6px',
+                                                                                cursor: 'pointer',
+                                                                                width: '100%'
+                                                                            }}
+                                                                        >
+                                                                            {reg.attendances?.some((a: any) => a.isPresent) ? 'Present' : 'Mark'}
+                                                                        </button>
+                                                                    </div>
 
-                                                                        {/* Registration Status Selector Mobile */}
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+                                                                    {/* Status & Results */}
+                                                                    <div className={styles.nestedTableCol} style={{ gap: '4px' }}>
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') ? (
                                                                             <select
                                                                                 value={reg.status || 'PENDING'}
+                                                                                className={styles.regStatusSelect}
                                                                                 onChange={async (e) => {
                                                                                     const newStatus = e.target.value;
-                                                                                    // Optimistic Update
                                                                                     setAdminUsers(prev => prev.map(userItem => {
                                                                                         if (userItem.id === u.id) {
                                                                                             return {
@@ -1955,85 +1998,79 @@ export default function DashboardPage() {
                                                                                         }
                                                                                         return userItem;
                                                                                     }));
-
                                                                                     const { updateRegistrationStatus } = await import('@/actions/registrations');
                                                                                     const res = await updateRegistrationStatus(reg.id, newStatus as any);
-                                                                                    if (res.success) {
-                                                                                        modals.showToast(`Updated status to ${newStatus}`, 'success')
-                                                                                    } else {
+                                                                                    if (res.success) modals.showToast(`Updated status to ${newStatus}`, 'success')
+                                                                                    else {
                                                                                         modals.showToast('Failed to update status', 'error')
                                                                                         fetchAdminData(undefined, false);
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    padding: '4px 10px',
-                                                                                    fontSize: '0.75rem',
-                                                                                    backgroundColor: reg.status === 'CONFIRMED' ? 'var(--color-success)' : reg.status === 'CANCELLED' ? 'var(--color-danger)' : '#222',
-                                                                                    color: 'white',
-                                                                                    border: '1px solid var(--border-color)',
-                                                                                    borderRadius: '4px',
-                                                                                    cursor: 'pointer'
+                                                                                    fontSize: '0.65rem',
+                                                                                    backgroundColor: reg.status === 'CONFIRMED' ? 'rgba(34, 197, 94, 0.1)' : reg.status === 'CANCELLED' ? 'rgba(234, 67, 53, 0.1)' : undefined,
+                                                                                    color: reg.status === 'CONFIRMED' ? '#22c55e' : reg.status === 'CANCELLED' ? '#ea4335' : 'inherit'
                                                                                 }}
                                                                             >
                                                                                 <option value="PENDING">Pending</option>
                                                                                 <option value="CONFIRMED">Confirmed</option>
                                                                                 <option value="CANCELLED">Cancelled</option>
                                                                             </select>
+                                                                        ) : (
+                                                                            <span className={styles.miniTag} style={{ fontSize: '0.65rem' }}>{reg.status}</span>
                                                                         )}
+                                                                    </div>
 
-                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
-                                                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                                                <select
-                                                                                    value={reg.grade || 'PARTICIPATION'}
-                                                                                    onChange={async (e) => {
-                                                                                        const newGrade = e.target.value;
-                                                                                        // Optimistic update
-                                                                                        setAdminUsers(prev => prev.map(userItem => {
-                                                                                            if (userItem.id === u.id) {
-                                                                                                return {
-                                                                                                    ...userItem,
-                                                                                                    registrations: userItem.registrations.map((r_mob: any) => {
-                                                                                                        if (r_mob.id === reg.id) return { ...r_mob, grade: newGrade };
-                                                                                                        return r_mob;
-                                                                                                    })
-                                                                                                };
-                                                                                            }
-                                                                                            return userItem;
-                                                                                        }));
-
-                                                                                        const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
-                                                                                        const res = await updateRegistrationResult(reg.id, newGrade);
-                                                                                        if (res.success) {
-                                                                                            modals.showToast(`Updated result for ${u.fullName}`, 'success');
-                                                                                            fetchAdminData(undefined, false);
-                                                                                            const scoreRes = await getHouseLeaderboard();
-                                                                                            if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
+                                                                    <div className={styles.nestedTableCol}>
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) ? (
+                                                                            <select
+                                                                                value={reg.grade || 'PARTICIPATION'}
+                                                                                className={styles.regGradeSelect}
+                                                                                onChange={async (e) => {
+                                                                                    const newGrade = e.target.value;
+                                                                                    setAdminUsers(prev => prev.map(userItem => {
+                                                                                        if (userItem.id === u.id) {
+                                                                                            return {
+                                                                                                ...userItem,
+                                                                                                registrations: userItem.registrations.map((r_m: any) => {
+                                                                                                    if (r_m.id === reg.id) return { ...r_m, grade: newGrade };
+                                                                                                    return r_m;
+                                                                                                })
+                                                                                            };
                                                                                         }
-                                                                                    }}
-                                                                                    style={{
-                                                                                        padding: '4px',
-                                                                                        fontSize: '0.75rem',
-                                                                                        backgroundColor: '#222',
-                                                                                        color: 'white',
-                                                                                        border: '1px solid #444',
-                                                                                        borderRadius: '4px'
-                                                                                    }}
-                                                                                >
-                                                                                    <option value="PARTICIPATION">Participant</option>
-                                                                                    <option value="WINNER">Winner</option>
-                                                                                    <option value="FIRST_RUNNER_UP">1st Runner</option>
-                                                                                    <option value="SECOND_RUNNER_UP">2nd Runner</option>
-                                                                                </select>
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    checked={selectedRegs.includes(reg.id)}
-                                                                                    onChange={(e) => {
-                                                                                        if (e.target.checked) setSelectedRegs(prev => [...prev, reg.id]);
-                                                                                        else setSelectedRegs(prev => prev.filter(id => id !== reg.id));
-                                                                                    }}
-                                                                                    style={{ width: '18px', height: '18px' }}
-                                                                                />
-                                                                            </div>
+                                                                                        return userItem;
+                                                                                    }));
+                                                                                    const { updateRegistrationResult, getHouseLeaderboard } = await import('@/actions/results');
+                                                                                    const res = await updateRegistrationResult(reg.id, newGrade);
+                                                                                    if (res.success) {
+                                                                                        modals.showToast(`Updated result`, 'success');
+                                                                                        fetchAdminData(undefined, false);
+                                                                                        const scoreRes = await getHouseLeaderboard();
+                                                                                        if (scoreRes.success && scoreRes.data) setHouseScores(scoreRes.data);
+                                                                                    }
+                                                                                }}
+                                                                                style={{ fontSize: '0.65rem' }}
+                                                                            >
+                                                                                <option value="PARTICIPATION">Part.</option>
+                                                                                <option value="WINNER">Winner</option>
+                                                                                <option value="FIRST_RUNNER_UP">1st</option>
+                                                                                <option value="SECOND_RUNNER_UP">2nd</option>
+                                                                            </select>
+                                                                        ) : <span style={{ opacity: 0.3 }}>-</span>}
+                                                                    </div>
+
+                                                                    <div className={`${styles.nestedTableCol} ${styles.certSelectCol}`}>
+                                                                        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && reg.attendances?.some((a: any) => a.isPresent) && (
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                className={styles.certCheckbox}
+                                                                                checked={selectedRegs.includes(reg.id)}
+                                                                                onChange={(e) => {
+                                                                                    if (e.target.checked) setSelectedRegs(prev => [...prev, reg.id]);
+                                                                                    else setSelectedRegs(prev => prev.filter(id => id !== reg.id));
+                                                                                }}
+                                                                                title="Select for certificate"
+                                                                            />
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -2796,65 +2833,67 @@ export default function DashboardPage() {
                         programModalOpen && (
                             <div className={styles.modalOverlay}>
                                 <div className={styles.adminModal}>
-                                    <h2 className={`${styles.cardTitle} ${cinzel.className}`}>
-                                        {editingProgram ? 'Edit Program' : 'Add New Program'}
-                                    </h2>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0 }}>
+                                            {editingProgram ? 'Edit Program' : 'Add New Program'}
+                                        </h2>
+                                        <button onClick={() => setProgramModalOpen(false)} className={styles.closeButton}>&times;</button>
+                                    </div>
                                     <form onSubmit={handleSaveProgram}>
                                         <div className={styles.formGroup}>
                                             <label className={styles.formLabel}>Program Name</label>
                                             <input name="name" defaultValue={editingProgram?.name} className={styles.searchInput} required />
                                         </div>
                                         <div className={styles.formGrid}>
-                                            <div>
+                                            <div className={styles.formGroup}>
                                                 <label className={styles.formLabel}>Type</label>
                                                 <select name="type" defaultValue={editingProgram?.type || 'SOLO'} className={styles.selectInput}>
                                                     <option value="SOLO">SOLO</option>
                                                     <option value="GROUP">GROUP</option>
                                                 </select>
                                             </div>
-                                            <div>
+                                            <div className={styles.formGroup}>
                                                 <label className={styles.formLabel}>Category</label>
                                                 <select name="category" defaultValue={editingProgram?.category || 'ON_STAGE'} className={styles.selectInput}>
                                                     <option value="ON_STAGE">ON STAGE</option>
                                                     <option value="OFF_STAGE">OFF STAGE</option>
                                                 </select>
                                             </div>
-                                            <div>
+                                            <div className={styles.formGroup}>
                                                 <label className={styles.formLabel}>Min Members</label>
                                                 <input type="number" name="minMembers" defaultValue={editingProgram?.minMembers || 1} className={styles.searchInput} required />
                                             </div>
-                                            <div>
+                                            <div className={styles.formGroup}>
                                                 <label className={styles.formLabel}>Max Members</label>
                                                 <input type="number" name="maxMembers" defaultValue={editingProgram?.maxMembers || 1} className={styles.searchInput} required />
                                             </div>
                                         </div>
-                                        <div className={styles.formGroup} style={{ marginTop: '1rem' }}>
+                                        <div className={styles.formGroup}>
                                             <label className={styles.formLabel}>Description</label>
                                             <textarea name="description" defaultValue={editingProgram?.description || ''} className={styles.searchInput} style={{ minHeight: '80px' }} />
                                         </div>
-                                        <div className={styles.formGroup} style={{ marginTop: '1rem' }}>
+                                        <div className={styles.formGroup}>
                                             <label className={styles.formLabel}>Assign Coordinators</label>
-                                            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #444', padding: '0.5rem', borderRadius: '4px' }}>
+                                            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', backgroundColor: 'rgba(0,0,0,0.02)' }}>
                                                 {coordinators.map(v => (
-                                                    <div key={`${v.id}-${editingProgram?.id || 'new'}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                                    <div key={`${v.id}-${editingProgram?.id || 'new'}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.8rem' }}>
                                                         <input
                                                             type="checkbox"
                                                             name="coordinatorIds"
                                                             value={v.id}
                                                             defaultChecked={editingProgram?.coordinators?.some((pv: any) => pv.id === v.id)}
-                                                            style={{ transform: 'scale(1.2)', marginRight: '0.5rem' }}
+                                                            style={{ width: '18px', height: '18px', marginRight: '0.8rem', cursor: 'pointer' }}
                                                         />
-                                                        <span>{v.fullName}</span>
+                                                        <span style={{ fontSize: '0.9rem' }}>{v.fullName}</span>
                                                     </div>
                                                 ))}
-                                                {coordinators.length === 0 && <span style={{ opacity: 0.5 }}>No coordinators found.</span>}
+                                                {coordinators.length === 0 && <span style={{ opacity: 0.5, fontSize: '0.9rem' }}>No coordinators found.</span>}
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                                        <div className={styles.modalActions}>
                                             <button type="button" onClick={() => setProgramModalOpen(false)} className={styles.cancelButton}>Cancel</button>
-                                            <button type="submit" className={styles.addButton} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                {/* Button content handled by parent state for simplicity or just plain text if fast */}
-                                                Save Program
+                                            <button type="submit" className={styles.addButton}>
+                                                {editingProgram ? 'Save Changes' : 'Create Program'}
                                             </button>
                                         </div>
                                     </form>
@@ -2912,41 +2951,43 @@ export default function DashboardPage() {
                         coordinatorModalOpen && (
                             <div className={styles.modalOverlay}>
                                 <div className={styles.adminModal}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                        <h2 className={`${styles.cardTitle} ${cinzel.className}`}>Add Coordinator</h2>
-                                        <button onClick={() => setCoordinatorModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0 }}>Add Coordinator</h2>
+                                        <button onClick={() => setCoordinatorModalOpen(false)} className={styles.closeButton}>&times;</button>
                                     </div>
-                                    <p style={{ marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>Search for a student to promote to Coordinator status.</p>
+                                    <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem', opacity: 0.8 }}>Search for a student to promote to Coordinator status.</p>
 
-                                    <input
-                                        type="text"
-                                        placeholder="Search student name or admission no..."
-                                        className={styles.searchInput}
-                                        style={{ width: '100%', marginBottom: '1rem' }}
-                                        value={coordinatorSearch}
-                                        onChange={(e) => setCoordinatorSearch(e.target.value)}
-                                        autoFocus
-                                    />
+                                    <div className={styles.formGroup}>
+                                        <input
+                                            type="text"
+                                            placeholder="Search student name or admission no..."
+                                            className={styles.searchInput}
+                                            style={{ width: '100%' }}
+                                            value={coordinatorSearch}
+                                            onChange={(e) => setCoordinatorSearch(e.target.value)}
+                                            autoFocus
+                                        />
+                                    </div>
 
-                                    <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                                    <div style={{ maxHeight: '40vh', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.02)' }}>
                                         {searchingCoordinators ? (
-                                            <div style={{ padding: '1rem', textAlign: 'center' }}>Searching...</div>
+                                            <div style={{ padding: '2rem', textAlign: 'center' }}><LoadingSpinner size="24px" /></div>
                                         ) : potentialCoordinators.length > 0 ? (
                                             potentialCoordinators.map(u => (
                                                 <div key={u.id} style={{
-                                                    padding: '0.8rem',
+                                                    padding: '1rem',
                                                     borderBottom: '1px solid var(--border-color)',
                                                     display: 'flex',
                                                     justifyContent: 'space-between',
                                                     alignItems: 'center'
                                                 }}>
                                                     <div>
-                                                        <div style={{ fontWeight: 600 }}>{u.fullName}</div>
-                                                        <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{u.studentAdmnNo} • {u.department}</div>
+                                                        <div style={{ fontWeight: 600, fontSize: '1rem' }}>{u.fullName}</div>
+                                                        <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>{u.studentAdmnNo} • {u.department}</div>
                                                     </div>
                                                     <button
                                                         className={styles.addButton}
-                                                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
                                                         onClick={() => {
                                                             modals.confirm({
                                                                 title: 'Promote to Coordinator',
@@ -2972,8 +3013,11 @@ export default function DashboardPage() {
                                                 </div>
                                             ))
                                         ) : (
-                                            <div style={{ padding: '1rem', textAlign: 'center', opacity: 0.6 }}>Start typing...</div>
+                                            <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>{coordinatorSearch.length < 2 ? 'Start typing to search...' : 'No students found.'}</div>
                                         )}
+                                    </div>
+                                    <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
+                                        <button type="button" onClick={() => setCoordinatorModalOpen(false)} className={styles.cancelButton}>Close</button>
                                     </div>
                                 </div>
                             </div>
@@ -2986,8 +3030,9 @@ export default function DashboardPage() {
                             isOpen={userModalOpen}
                             user={editingUser}
                             houses={houses}
-                            onClose={() => { setUserModalOpen(false); setEditingUser(null) }}
+                            onClose={() => { setUserModalOpen(false); setEditingUser(null); setIsEditInfoOnly(false) }}
                             onSave={handleSaveUser}
+                            isEditInfoOnly={isEditInfoOnly}
                         />
                     )}
 
@@ -3009,7 +3054,7 @@ export default function DashboardPage() {
                                     />
                                     <button
                                         className={styles.addButton}
-                                        onClick={() => { setEditingUser(null); setUserModalOpen(true) }}
+                                        onClick={() => { setEditingUser(null); setUserModalOpen(true); setIsEditInfoOnly(false) }}
                                         style={{ height: '42px', padding: '0 1.5rem' }}
                                     >
                                         + Add User
@@ -3065,7 +3110,7 @@ export default function DashboardPage() {
                                                     <td className={styles.actionButtons} style={{ justifyContent: 'flex-end' }}>
                                                         <button
                                                             className={styles.editBtn}
-                                                            onClick={() => { setEditingUser(u); setUserModalOpen(true) }}
+                                                            onClick={() => { setEditingUser(u); setUserModalOpen(true); setIsEditInfoOnly(false) }}
                                                         >
                                                             Edit
                                                         </button>
@@ -3124,7 +3169,7 @@ export default function DashboardPage() {
                                                 <div className={styles.mobileCardActions}>
                                                     <button
                                                         className={styles.editBtn}
-                                                        onClick={() => { setEditingUser(u); setUserModalOpen(true) }}
+                                                        onClick={() => { setEditingUser(u); setUserModalOpen(true); setIsEditInfoOnly(false) }}
                                                     >
                                                         Edit
                                                     </button>
@@ -3565,63 +3610,65 @@ export default function DashboardPage() {
                 </>
             )
             }
-            {passwordModalOpen && (
-                <div className={styles.modalOverlay} style={{ zIndex: 9999 }}>
-                    <div className={styles.adminModal} style={{ maxWidth: '450px', padding: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0, color: 'var(--primary-gold)' }}>Security Settings</h2>
-                            <button
-                                onClick={() => setPasswordModalOpen(false)}
-                                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '2rem', lineHeight: 1 }}
-                            >
-                                &times;
-                            </button>
+            {
+                passwordModalOpen && (
+                    <div className={styles.modalOverlay} style={{ zIndex: 9999 }}>
+                        <div className={styles.adminModal}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <h2 className={`${styles.cardTitle} ${cinzel.className}`} style={{ marginBottom: 0, color: 'var(--primary-gold)' }}>Security Settings</h2>
+                                <button
+                                    onClick={() => setPasswordModalOpen(false)}
+                                    className={styles.closeButton}
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                            <form onSubmit={handlePasswordChange}>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>Current Password</label>
+                                    <input
+                                        name="currentPassword"
+                                        type="password"
+                                        required
+                                        className={styles.searchInput}
+                                        placeholder="Enter existing password"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>New Password</label>
+                                    <input
+                                        name="newPassword"
+                                        type="password"
+                                        required
+                                        className={styles.searchInput}
+                                        placeholder="Minimum 6 characters"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>Confirm New Password</label>
+                                    <input
+                                        name="confirmPassword"
+                                        type="password"
+                                        required
+                                        className={styles.searchInput}
+                                        placeholder="Re-type new password"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                                <div className={styles.modalActions}>
+                                    <button type="button" onClick={() => setPasswordModalOpen(false)} className={styles.cancelButton}>Cancel</button>
+                                    <button type="submit" className={styles.addButton}>Update Password</button>
+                                </div>
+                            </form>
                         </div>
-                        <form onSubmit={handlePasswordChange}>
-                            <div className={styles.formGroup} style={{ marginBottom: '1.5rem' }}>
-                                <label className={styles.formLabel} style={{ display: 'block', marginBottom: '8px', opacity: 0.8 }}>Current Password</label>
-                                <input
-                                    name="currentPassword"
-                                    type="password"
-                                    required
-                                    className={styles.searchInput}
-                                    placeholder="Enter existing password"
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-                            <div className={styles.formGroup} style={{ marginBottom: '1.5rem' }}>
-                                <label className={styles.formLabel} style={{ display: 'block', marginBottom: '8px', opacity: 0.8 }}>New Password</label>
-                                <input
-                                    name="newPassword"
-                                    type="password"
-                                    required
-                                    className={styles.searchInput}
-                                    placeholder="Minimum 6 characters"
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-                            <div className={styles.formGroup} style={{ marginBottom: '2rem' }}>
-                                <label className={styles.formLabel} style={{ display: 'block', marginBottom: '8px', opacity: 0.8 }}>Confirm New Password</label>
-                                <input
-                                    name="confirmPassword"
-                                    type="password"
-                                    required
-                                    className={styles.searchInput}
-                                    placeholder="Re-type new password"
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                <button type="button" onClick={() => setPasswordModalOpen(false)} className={styles.cancelButton}>Cancel</button>
-                                <button type="submit" className={styles.addButton} style={{ padding: '10px 24px', background: 'var(--primary-gold)', color: 'black', fontWeight: 600 }}>Update Password</button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
+                )
+            }
             <div style={{ textAlign: 'center', padding: '2rem 0', opacity: 0.5, fontSize: '0.8rem' }}>
                 ArtsFest v{APP_VERSION}
             </div>
-        </div>
+        </div >
     )
 }

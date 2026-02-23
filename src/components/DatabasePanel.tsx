@@ -465,19 +465,19 @@ export default function DatabasePanel() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className={styles.modalOverlay} style={{ padding: '1rem' }}>
-                    <div className={styles.adminModal} style={{ width: '100%', maxWidth: '900px', padding: '0', borderRadius: '24px', overflow: 'hidden', minHeight: 'auto' }}>
-                        <div style={{ background: '#1a1a1a', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
+                <div className={styles.modalOverlay}>
+                    <div className={`${styles.adminModal} ${styles.wideModal}`} style={{ padding: 0 }}>
+                        <div style={{ padding: '1.5rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
                             <h3 className={cinzel.className} style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary-gold)' }}>
-                                {editingRecord ? 'Override' : 'New'} {selectedModelName} Entry
+                                {editingRecord ? 'Edit' : 'New'} {selectedModelName}
                             </h3>
-                            <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '2rem', lineHeight: 1 }}>&times;</button>
+                            <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '2rem', lineHeight: 1, opacity: 0.5 }}>&times;</button>
                         </div>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ padding: '2rem', maxHeight: '65vh', overflowY: 'auto' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '2rem' }}>
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ padding: '2.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
+                                <div className={styles.formGrid}>
                                     {visibleFields.map(f => (
-                                        <div key={f.name} className={styles.formGroup} style={{ margin: 0 }}>
+                                        <div key={f.name} className={styles.formGroup}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                                 <label className={styles.formLabel} style={{ margin: 0 }}>{f.name} {f.isRequired && !f.isId && '*'}</label>
                                                 <span style={{ fontSize: '0.7rem', opacity: 0.3, textTransform: 'uppercase' }}>{f.type}</span>
@@ -487,10 +487,10 @@ export default function DatabasePanel() {
                                     ))}
                                 </div>
                             </div>
-                            <div style={{ padding: '1.5rem 2rem', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                                <button type="button" onClick={() => setIsModalOpen(false)} className={styles.cancelButton} style={{ padding: '0.8rem 1.5rem' }}>Abort</button>
-                                <button type="submit" className={styles.addButton} disabled={loading} style={{ padding: '0.8rem 2.5rem' }}>
-                                    {loading ? 'Processing...' : 'Commit Changes'}
+                            <div className={styles.modalActions} style={{ padding: '1.5rem 2.5rem', borderTop: '1px solid var(--border-color)', marginTop: 0 }}>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className={styles.cancelButton}>Cancel</button>
+                                <button type="submit" className={styles.addButton} disabled={loading}>
+                                    {loading ? <LoadingSpinner size="18px" /> : (editingRecord ? 'Update Record' : 'Create Record')}
                                 </button>
                             </div>
                         </form>

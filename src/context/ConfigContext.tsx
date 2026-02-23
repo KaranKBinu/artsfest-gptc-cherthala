@@ -82,10 +82,12 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
                     if (!Array.isArray(notifications)) notifications = []
                 } catch (e) { }
 
-                let departments = []
-                try {
-                    departments = JSON.parse(d.departments || '[]')
-                } catch (e) { }
+                let departments = Array.isArray(d.departments) ? d.departments : []
+                if (typeof d.departments === 'string') {
+                    try {
+                        departments = JSON.parse(d.departments)
+                    } catch (e) { }
+                }
 
                 let contactInfo = null
                 try {
